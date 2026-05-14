@@ -1,0 +1,99 @@
+// colors
+$primary-1: #3ec6d4;
+$primary-2: #4db87a;
+$primary-3: #e63c2f;
+$primary-4: #f5a623;
+$primary-5: #ffee52;
+$secondary: #fffaf0;
+
+// infos
+$warning: #ff0000;
+$error: #b90c0c;
+$notice: #a1b2d3;
+
+$white: #ffffff !default;
+$gray-100: #fcfcfc !default;
+$gray-200: #e9ecef !default;
+$gray-300: #dee2e6 !default;
+$gray-400: #c9c9c9 !default;
+$gray-500: #adb5bd !default;
+$gray-600: #6c757d !default;
+$gray-700: #495057 !default;
+$gray-800: #343a40 !default;
+$gray-900: #202020 !default;
+$black: #1e1e1e !default;
+
+// fonts
+$font-family: "Roboto Condensed", sans-serif;
+$font-weight-base: 400;
+$font-size-base: 1.6rem;
+
+// ease function
+$ease: 0.3s cubic-bezier(0.58, 0.13, 0, 0.37);
+
+html {
+  // important to set the html base to 10px
+  font-size: 62.5%;
+  box-sizing: border-box;
+}
+
+*,
+*:before,
+*:after {
+  box-sizing: inherit;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: $gray-100;
+}
+
+// Media queries
+// Phones
+$screen-sm-min: 25em;
+
+// Small tablets (portrait view)
+$screen-md-min: 40em;
+
+// Tablets and small desktops
+$screen-lg-min: 50em;
+
+// Large tablets and desktops
+$screen-xl-min: 64em;
+
+// Extra large screens
+$screen-xxl-min: 75em;
+
+//selecting Text on website
+::-moz-selection {
+  /* Code for Firefox */
+  color: $white;
+  background: $primary-1;
+}
+
+::selection {
+  color: $white;
+  background: $primary-1;
+}
+
+//custom scrollbar
+::-webkit-scrollbar {
+  width: 0.5rem;
+}
+::-webkit-scrollbar-thumb {
+  background: $primary-1;
+  border-radius: 1rem;
+  transition: all 0.3s ease;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: $secondary;
+}
+
+img {
+  -webkit-user-drag: none;
+  user-select: none;
+  -moz-user-select: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+}

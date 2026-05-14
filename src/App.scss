@@ -1,0 +1,12 @@
+// config styles
+@import "/src/styleconfig/_settings.scss";
+@import "/src/styleconfig/_mixins.scss";
+@import "/src/styleconfig/_typo.scss";
+@import "/src/styleconfig/_utilities.scss";
+
+// components
+@import "/src/ui/components/auth/login/login.scss";
+@import "/src/ui/components/navigation/navigation.scss";
+@import "/src/ui/pages/dashboard.scss";
+
+// pages

@@ -1,0 +1,51 @@
+.section {
+  position: relative;
+  max-width: 845px;
+  margin: 2.4rem;
+
+  @include lg-up {
+    margin: 2.4rem auto;
+  }
+}
+
+.text-right {
+  text-align: right !important;
+}
+
+.d-none {
+  display: none;
+}
+
+.c-pointer {
+  cursor: pointer;
+}
+
+.text-select-none {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10 and IE 11 */
+  user-select: none; /* Standard syntax */
+}
+
+.cappitalize {
+  text-transform: capitalize;
+}
+
+.mt-3 {
+  margin-top: 3.2rem !important;
+}
+
+.mt-6 {
+  margin-top: 6.4rem !important;
+}
+
+.mb-0 {
+  margin-bottom: 0rem !important;
+}
+
+.mb-1 {
+  margin-bottom: 1.2rem !important;
+}
+
+.mb-6 {
+  margin-bottom: 6.4rem !important;
+}
