@@ -4,7 +4,8 @@ import { useAuth } from "./auth/authContext";
 import Register from "./ui/components/auth/register/Register";
 import Login from "./ui/components/auth/login/Login";
 import ResetPassword from "./ui/components/auth/resetpassword/ResetPassword";
-import Dashboard from "./ui/pages/Dashboard";
+import Home from "./ui/pages/Home";
+import CreateExcercise from "./ui/pages/CreateExcercise";
 
 const App: React.FC = () => {
   const { userLoggedIn, currentUser } = useAuth() || {
@@ -20,7 +21,8 @@ const App: React.FC = () => {
       <Routes>
         {userLoggedIn ? (
           <>
-            <Route path="/" element={<Dashboard />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/create-exercise" element={<CreateExcercise />} />
           </>
         ) : (
           <>

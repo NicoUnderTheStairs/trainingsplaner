@@ -1,9 +1,10 @@
 // colors
-$primary-1: #3ec6d4;
-$primary-2: #4db87a;
+$primary-1: #ffee52;
+$primary-2: #f5a623;
 $primary-3: #e63c2f;
-$primary-4: #f5a623;
-$primary-5: #ffee52;
+$primary-4: #4db87a;
+$primary-5: #3ec6d4;
+$primary-6: #624db8;
 $secondary: #fffaf0;
 $secondary-2: #262239;
 
@@ -47,7 +48,7 @@ html {
 body {
   margin: 0;
   padding: 0;
-  background-color: $gray-100;
+  background-color: $secondary;
 }
 
 // Media queries

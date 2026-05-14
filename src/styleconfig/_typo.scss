@@ -5,9 +5,10 @@ body {
 }
 
 h1 {
-  font-weight: 400;
+  font-weight: 900;
   font-size: 3.2rem;
   line-height: 120%;
+  text-transform: uppercase;
 
   @include lg-up {
     font-size: 5.6rem;
@@ -15,19 +16,17 @@ h1 {
 }
 
 h2 {
-  font-weight: 400;
+  font-weight: 700;
   font-size: 2.8rem;
   line-height: 120%;
-
-  @include lg-up {
-    font-size: 4.8rem;
-  }
+  text-transform: uppercase;
 }
 
 h3 {
   font-weight: 400;
   font-size: 2.4rem;
   line-height: 120%;
+  font-weight: 700;
 
   @include lg-up {
     font-size: 3.2rem;
@@ -49,7 +48,7 @@ h6 {
 
 p {
   text-rendering: auto;
-  font-weight: 300;
+  font-weight: 400;
   font-size: $font-size-base;
   line-height: 135%;
   margin-top: 0;
@@ -58,7 +57,7 @@ p {
 
 li {
   text-rendering: auto;
-  font-weight: 300;
+  font-weight: 400;
   font-size: $font-size-base;
   line-height: 135%;
   margin-top: 0;
@@ -68,7 +67,7 @@ li {
 a {
   text-decoration: none;
   color: $secondary;
-  font-weight: 500;
+  font-weight: 400;
 
   &:focus {
     outline: 2px solid $primary-1;
