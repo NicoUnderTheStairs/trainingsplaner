@@ -1,25 +1,19 @@
 import React, { useEffect } from "react";
-import withNavigation from "../../../hoc/withNavigation";
+import withTrainingNavigation from "../../../hoc/withTrainingNavigation";
 import { useNavigate } from "react-router-dom";
 
 type Props = {
   title: string;
   tags?: string[];
   difficulty?: number;
+  duration?: number;
   description?: string;
   author?: string;
   date?: string;
   onChange: (data: unknown) => void;
 };
 
-const AVAILABLE_TAGS = [
-  "Warmup",
-  "Defense",
-  "Attack",
-  "Block",
-  "Reception",
-  "Service",
-];
+const AVAILABLE_TAGS = ["Defense", "Attack", "Block", "Reception", "Service"];
 
 const DEFAULT_AUTHOR = "Default Author";
 
@@ -27,6 +21,8 @@ const DefaultInfo: React.FC<Props> = ({
   title,
   description,
   difficulty,
+  duration,
+  date,
   tags = [],
   onChange,
 }) => {
@@ -50,7 +46,7 @@ const DefaultInfo: React.FC<Props> = ({
 
   return (
     <>
-      <div className="excercisewizard">
+      <div className="trainingwizard">
         <div className="exercisedetail__back">
           <button className="btn__wired" onClick={() => navigate(-1)}>
             <svg
@@ -69,45 +65,70 @@ const DefaultInfo: React.FC<Props> = ({
           </button>
         </div>
 
-        <h2>General Information</h2>
+        <h2>General Training Information</h2>
 
-        <div className="excercisewizard__input__field">
+        <div className="trainingwizard__input__field">
+          <input
+            id="Date"
+            className="trainingwizard__input"
+            type="date"
+            placeholder=" "
+            value={date}
+            onChange={(e) => onChange({ date: e.target.value })}
+          />
+          <label className="trainingwizard__label" htmlFor="Date">
+            Date of training
+          </label>
+        </div>
+
+        <div className="trainingwizard__input__field">
           <input
             id="Title"
-            className="excercisewizard__input"
+            className="trainingwizard__input"
             type="text"
             placeholder=" "
             value={title}
             onChange={(e) => onChange({ title: e.target.value })}
           />
-          <label className="excercisewizard__label" htmlFor="Title">
+          <label className="trainingwizard__label" htmlFor="Title">
             Title
           </label>
         </div>
 
-        <div className="excercisewizard__input__field excercisewizard__input__field--description">
+        <div className="trainingwizard__input__field trainingwizard__input__field--description">
           <textarea
             id="Description"
-            className="excercisewizard__input"
+            className="trainingwizard__input"
             placeholder=" "
             value={description}
             onChange={(e) => onChange({ description: e.target.value })}
           />
-          <label className="excercisewizard__label" htmlFor="Description">
-            Description
+          <label className="trainingwizard__label" htmlFor="Description">
+            Description (optional)
           </label>
         </div>
 
-        <div className="excercisewizard__select__field">
-          <label
-            className="excercisewizard__select__label"
-            htmlFor="Difficulty"
-          >
+        <div className="trainingwizard__input__field">
+          <input
+            id="Duration"
+            className="trainingwizard__input"
+            type="number"
+            placeholder=" "
+            value={duration}
+            onChange={(e) => onChange({ duration: e.target.value })}
+          />
+          <label className="trainingwizard__label" htmlFor="Duration">
+            Duration of training (in minutes)
+          </label>
+        </div>
+
+        <div className="trainingwizard__select__field">
+          <label className="trainingwizard__select__label" htmlFor="Difficulty">
             Difficulty
           </label>
           <select
             value={difficulty || ""}
-            className="excercisewizard__select__input"
+            className="trainingwizard__select__input"
             name="Difficulty"
             id="Difficulty"
             onChange={(e) => onChange({ difficulty: parseInt(e.target.value) })}
@@ -121,17 +142,17 @@ const DefaultInfo: React.FC<Props> = ({
           </select>
         </div>
 
-        <div className="excercisewizard__select__field">
-          <label className="excercisewizard__select__label">Select tags</label>
-          <div className="excercisewizard__tags">
+        <div className="trainingwizard__select__field">
+          <label className="trainingwizard__select__label">Select tags</label>
+          <div className="trainingwizard__tags">
             {AVAILABLE_TAGS.map((tag) => (
               <label
                 key={tag}
                 className={[
-                  "excercisewizard__tags__option",
-                  `excercisewizard__tags--${tag.toLowerCase()}`,
+                  "trainingwizard__tags__option",
+                  `trainingwizard__tags--${tag.toLowerCase()}`,
                   tags.includes(tag)
-                    ? `excercisewizard__tags--${tag.toLowerCase()}--active`
+                    ? `trainingwizard__tags--${tag.toLowerCase()}--active`
                     : "",
                 ]
                   .filter(Boolean)
@@ -139,11 +160,11 @@ const DefaultInfo: React.FC<Props> = ({
               >
                 <input
                   type="checkbox"
-                  className="excercisewizard__tags__checkbox"
+                  className="trainingwizard__tags__checkbox"
                   checked={tags.includes(tag)}
                   onChange={() => handleTagToggle(tag)}
                 />
-                <span className="excercisewizard__tags__label">{tag}</span>
+                <span className="trainingwizard__tags__label">{tag}</span>
               </label>
             ))}
           </div>
@@ -153,4 +174,4 @@ const DefaultInfo: React.FC<Props> = ({
   );
 };
 
-export default withNavigation(DefaultInfo);
+export default withTrainingNavigation(DefaultInfo);

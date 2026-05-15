@@ -1,6 +1,10 @@
 .excercisewizard {
-  margin: 44px auto;
-  max-width: 60rem;
+  margin: 44px auto 0 auto;
+  max-width: 56rem;
+
+  & h2 {
+    margin: 0 0 1.2rem 0;
+  }
 
   &__select {
     &__field {
@@ -61,7 +65,7 @@
 
       &--description {
         & .excercisewizard__input {
-          height: 10rem;
+          height: 20rem;
           resize: none;
         }
       }
@@ -94,8 +98,12 @@
     &__wrapper {
       display: flex;
       justify-content: space-between;
-      margin: 0 auto;
-      max-width: 60rem;
+      margin: 0 auto 6rem auto;
+      max-width: 56rem;
+
+      &--right {
+        justify-content: flex-end !important;
+      }
     }
 
     & svg path {
@@ -183,6 +191,65 @@
 
     &__label {
       font-size: 1.8rem;
+    }
+  }
+}
+
+.sketch {
+  &__toolbar {
+    &__group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      align-items: start;
+      padding: 2.8rem 2.8rem;
+      background-color: $white;
+      border-radius: 1rem;
+      margin-bottom: 1.2rem;
+
+      & h4 {
+        margin: 0;
+      }
+
+      &--tools {
+        display: flex;
+        flex-direction: row;
+        gap: 1.2rem;
+
+        & button {
+          padding: 0.6rem 1.6rem;
+          cursor: pointer;
+          border: 0.2rem solid $black;
+          border-radius: 1rem;
+          background-color: $secondary;
+          font-size: 1.8rem;
+          font-weight: 700;
+        }
+      }
+    }
+  }
+
+  &__palette {
+    &__player {
+      width: 3.2rem;
+      height: 3.2rem;
+      border-radius: 50%;
+      cursor: grab;
+      font-size: 1.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 0.2rem solid $black;
+    }
+  }
+
+  &__tool {
+    &__btn {
+      &--active {
+        background-color: $secondary-2 !important;
+        color: $white !important;
+        border-color: $black !important;
+      }
     }
   }
 }

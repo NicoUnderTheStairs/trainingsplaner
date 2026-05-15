@@ -1,14 +1,14 @@
 import React from "react";
 
-interface WithNavigationProps {
+interface WithTrainingNavigationProps {
   onNext: () => void;
   onPrev: () => void;
   isLastStep?: boolean;
   isFirstStep?: boolean;
 }
 
-function withNavigation<T>(Component: React.ComponentType<T>) {
-  return (props: T & WithNavigationProps) => {
+function WithTrainingNavigation<T>(Component: React.ComponentType<T>) {
+  return (props: T & WithTrainingNavigationProps) => {
     const { onNext, onPrev, isLastStep, isFirstStep, ...restProps } = props;
 
     return (
@@ -42,7 +42,7 @@ function withNavigation<T>(Component: React.ComponentType<T>) {
           )}
 
           <button className="excercisewizard__btn" onClick={onNext}>
-            {isLastStep ? "Create Exercise" : "Create Sketch"}
+            {isLastStep ? "Create Training" : "Select Exercises"}
             <svg
               style={{ marginLeft: "10px" }}
               width="23"
@@ -63,4 +63,4 @@ function withNavigation<T>(Component: React.ComponentType<T>) {
   };
 }
 
-export default withNavigation;
+export default WithTrainingNavigation;

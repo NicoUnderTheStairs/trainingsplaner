@@ -13,6 +13,14 @@
 
     & h2 {
       margin: 0;
+      display: flex;
+      align-items: start;
+      gap: 0.4rem;
+
+      & span {
+        font-size: 1.4rem;
+        margin-top: -0.4rem;
+      }
     }
 
     &__buttons {
@@ -45,6 +53,7 @@
   }
 
   &__exercise {
+    cursor: pointer;
     min-width: 28rem;
     max-width: 28rem;
     border: 0.5rem solid $black;
@@ -95,6 +104,11 @@
         font-size: 2.5rem;
         margin-top: 0;
         margin-bottom: 0.8rem;
+      }
+
+      &--detail {
+        display: flex;
+        justify-content: space-between;
       }
     }
 

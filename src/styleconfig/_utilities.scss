@@ -49,3 +49,171 @@
 .mb-6 {
   margin-bottom: 6.4rem !important;
 }
+
+.btn {
+  &__wired {
+    padding: 0.6rem 1.6rem;
+    cursor: pointer;
+    border: 0.2rem solid $black;
+    border-radius: 1rem;
+    background-color: $secondary;
+    font-size: 1.8rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  &__primary {
+    font-size: 1.8rem;
+    font-weight: 500;
+    color: $secondary;
+    cursor: pointer;
+    padding: 0.8rem 2.2rem;
+    border-radius: 1.4rem;
+    text-transform: uppercase;
+    transition: all $ease;
+    border: 0.2rem solid $black;
+    background-color: $secondary-2;
+  }
+}
+
+.difficulty {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+
+  &--1 {
+    &__path1 {
+      fill: $primary-4;
+    }
+    &__path2 {
+      fill: $gray-500;
+    }
+    &__path3 {
+      fill: $gray-500;
+    }
+  }
+  &--2 {
+    &__path1 {
+      fill: $primary-4;
+    }
+    &__path2 {
+      fill: $gray-500;
+    }
+    &__path3 {
+      fill: $gray-500;
+    }
+  }
+  &--3 {
+    &__path1 {
+      fill: $primary-2;
+    }
+    &__path2 {
+      fill: $primary-2;
+    }
+    &__path3 {
+      fill: $gray-500;
+    }
+  }
+  &--4 {
+    &__path1 {
+      fill: $primary-2;
+    }
+    &__path2 {
+      fill: $primary-2;
+    }
+    &__path3 {
+      fill: $gray-500;
+    }
+  }
+  &--5 {
+    &__path1 {
+      fill: $primary-3;
+    }
+    &__path2 {
+      fill: $primary-3;
+    }
+    &__path3 {
+      fill: $primary-3;
+    }
+  }
+
+  & h4 {
+    font-weight: 900;
+    font-size: 2.2rem;
+    margin: 0;
+  }
+
+  & svg {
+    height: 2.1rem;
+  }
+}
+
+.tags {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 6px;
+  align-items: center;
+  width: fit-content;
+  cursor: pointer;
+  padding: 0.4rem 1.4rem;
+  border-radius: 5.2rem;
+  font-size: 1.6rem;
+
+  &--warmup {
+    background-color: rgba($primary-1, 0.2);
+    border: 0.1rem solid $primary-1;
+
+    &--active {
+      background-color: rgba($primary-1, 1);
+    }
+  }
+
+  &--defense {
+    background-color: rgba($primary-2, 0.2);
+    border: 0.1rem solid $primary-2;
+
+    &--active {
+      background-color: rgba($primary-2, 1);
+    }
+  }
+
+  &--attack {
+    background-color: rgba($primary-3, 0.2);
+    border: 0.1rem solid $primary-3;
+
+    &--active {
+      background-color: rgba($primary-3, 1);
+    }
+  }
+
+  &--block {
+    background-color: rgba($primary-4, 0.2);
+    border: 0.1rem solid $primary-4;
+
+    &--active {
+      background-color: rgba($primary-4, 1);
+    }
+  }
+
+  &--reception {
+    background-color: rgba($primary-5, 0.2);
+    border: 0.1rem solid $primary-5;
+
+    &--active {
+      background-color: rgba($primary-5, 1);
+    }
+  }
+
+  &--service {
+    background-color: rgba($primary-6, 0.2);
+    border: 0.1rem solid $primary-6;
+
+    &--active {
+      background-color: rgba($primary-6, 1);
+    }
+  }
+}
