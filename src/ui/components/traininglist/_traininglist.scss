@@ -1,0 +1,59 @@
+.traininglist {
+  margin: 44px 0;
+
+  &__inner {
+    padding: 0 11.2rem;
+  }
+
+  &__menu {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5.2rem;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+
+    &__row {
+      display: grid;
+      grid-template-columns: 1fr 180px 1fr 40px;
+      align-items: center;
+      background: $white;
+      border: 0.3rem solid $black;
+      padding: 1.2rem 2.1rem;
+      border-radius: 2rem;
+      cursor: pointer;
+
+      &__cell {
+        &--title {
+          display: flex;
+          flex-direction: column;
+          margin: 0;
+          font-size: 2.4rem;
+        }
+
+        &--author {
+          font-size: 1.4rem;
+          height: 2.5rem;
+        }
+
+        &--date {
+          margin: 0;
+          font-size: 2rem;
+        }
+
+        &--duration {
+          font-size: 1.4rem;
+        }
+
+        &--tags {
+          display: flex;
+          gap: 1rem;
+        }
+      }
+    }
+  }
+}

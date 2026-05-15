@@ -97,7 +97,7 @@ const Navigation = () => {
             <a href="/create-training" className="navigation__menu__item">
               Create Training
             </a>
-            <a href="/5" className="navigation__menu__item">
+            <a href="/training-overview" className="navigation__menu__item">
               My trainings
             </a>
           </div>

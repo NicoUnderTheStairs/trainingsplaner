@@ -8,6 +8,7 @@ import Home from "./ui/pages/Home";
 import CreateExcercise from "./ui/pages/CreateExcercise";
 import CreateTraining from "./ui/pages/CreateTraining";
 import ExerciseDetail from "./ui/pages/ExerciseDetail";
+import TrainingOverview from "./ui/pages/TrainingOverview";
 import ExerciseOverview from "./ui/pages/ExerciseOverview";
 
 const App: React.FC = () => {
@@ -26,6 +27,7 @@ const App: React.FC = () => {
           <>
             <Route path="/" element={<Home />} />
             <Route path="/exercise-overview" element={<ExerciseOverview />} />
+            <Route path="/training-overview" element={<TrainingOverview />} />
             <Route path="/create-exercise" element={<CreateExcercise />} />
             <Route path="/create-training" element={<CreateTraining />} />
             <Route
