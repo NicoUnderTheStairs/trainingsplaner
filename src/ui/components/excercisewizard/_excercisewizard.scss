@@ -74,6 +74,7 @@
     left: 2rem;
     top: 1.2rem;
     transition: all 0.3s ease;
+    pointer-events: none;
   }
 
   &__btn {

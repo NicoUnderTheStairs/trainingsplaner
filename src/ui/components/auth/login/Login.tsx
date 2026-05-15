@@ -169,15 +169,17 @@ const Login = () => {
               </a>
             </p>
 
-            <button
-              className={
-                isSigningIn ? "login__btn login__btn--disabled" : "login__btn"
-              }
-              type="submit"
-              disabled={isSigningIn}
-            >
-              {isSigningIn ? "Signing In..." : "Sign In"}
-            </button>
+            <div className="login__btn__wrapper">
+              <button
+                className={
+                  isSigningIn ? "login__btn login__btn--disabled" : "login__btn"
+                }
+                type="submit"
+                disabled={isSigningIn}
+              >
+                {isSigningIn ? "Signing In..." : "Sign In"}
+              </button>
+            </div>
           </form>
           <p className="login__signup">
             Don't have an account? <Link to={"/register"}>Sign up</Link>
