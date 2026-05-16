@@ -154,7 +154,8 @@
   flex-direction: row;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 6px;
+  margin: 0 !important;
+  // margin-top: 6px;
   align-items: center;
   width: fit-content;
   cursor: pointer;

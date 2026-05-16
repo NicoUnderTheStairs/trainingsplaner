@@ -166,6 +166,7 @@
         margin-top: 0;
         margin-bottom: 0.8rem;
         color: $black;
+        min-height: 6rem;
       }
 
       & p {
@@ -330,6 +331,366 @@
           min-height: auto;
         }
       }
+    }
+  }
+
+
+  // ── Search wrapper ───────────────────────────────────────────────────────
+
+  &__search__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+
+    // Override the button styles since it's now an input
+    .excerciselist__menu__buttons--search {
+      min-width: 18.4rem;
+      padding-right: 3.6rem; // space for clear button
+      font-size: 1.8rem;
+      font-weight: 400;
+      font-family: $font-family;
+      background-color: $secondary;
+      border: 0.2rem solid $black;
+      border-radius: 1rem;
+      padding-top: 0.6rem;
+      padding-bottom: 0.6rem;
+      padding-left: 1.6rem;
+      cursor: text;
+      outline: none;
+      transition: all $ease;
+
+      &:focus {
+        min-width: 28rem;
+        box-shadow: 0.3rem 0.3rem 0 $black;
+      }
+
+      &::placeholder {
+        color: $gray-500;
+        font-weight: 700;
+      }
+    }
+  }
+
+  &__search__clear {
+    position: absolute;
+    right: 1rem;
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    font-weight: 700;
+    color: $black;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    transition: all $ease;
+
+    &:hover {
+      background-color: $primary-1;
+    }
+  }
+
+  // ── Filter dropdown ──────────────────────────────────────────────────────
+
+  &__filter__wrapper {
+    position: relative;
+  }
+
+  .excerciselist__menu__buttons--filter {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    position: relative;
+
+    &--open {
+      background-color: $secondary-2;
+      color: $secondary;
+      box-shadow: 0.3rem 0.3rem 0 $black;
+      transform: translate(-0.1rem, -0.1rem);
+    }
+  }
+
+  &__filter__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: $primary-1;
+    color: $black;
+    font-size: 1.2rem;
+    font-weight: 900;
+    font-family: $font-family;
+    line-height: 1;
+  }
+
+  &__filter__dropdown {
+    position: absolute;
+    top: calc(100% + 0.8rem);
+    right: 0;
+    z-index: 50;
+    background-color: $white;
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    padding: 2rem;
+    min-width: 30rem;
+    box-shadow: 0.4rem 0.4rem 0 $black;
+
+    // Triangle pointer
+    &::before {
+      content: '';
+      position: absolute;
+      top: -1rem;
+      right: 2.4rem;
+      width: 1.6rem;
+      height: 1.6rem;
+      background-color: $white;
+      border-left: 0.3rem solid $black;
+      border-top: 0.3rem solid $black;
+      transform: rotate(45deg);
+    }
+  }
+
+  &__filter__section {
+    margin-bottom: 1.6rem;
+
+    &:last-of-type {
+      margin-bottom: 0;
+    }
+  }
+
+  &__filter__label {
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15rem;
+    color: $gray-600;
+    font-family: $font-family;
+    margin: 0 0 0.8rem 0;
+  }
+
+  &__filter__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+
+    // tags reuse the existing .tags classes
+    .tags {
+      cursor: pointer;
+      font-size: 1.4rem;
+      transition: all $ease;
+      border: 0.2rem solid transparent;
+
+      &:hover {
+        transform: translate(-0.1rem, -0.1rem);
+        box-shadow: 0.2rem 0.2rem 0 $black;
+      }
+    }
+  }
+
+  &__filter__difficulties {
+    display: flex;
+    gap: 0.8rem;
+  }
+
+  &__filter__difficulty {
+    width: 3.6rem;
+    height: 3.6rem;
+    border: 0.2rem solid $black;
+    border-radius: 0.8rem;
+    background-color: $secondary;
+    font-size: 1.8rem;
+    font-weight: 900;
+    font-family: $font-family;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all $ease;
+
+    &:hover {
+      transform: translate(-0.2rem, -0.2rem);
+      box-shadow: 0.3rem 0.3rem 0 $black;
+    }
+
+    &--active {
+      background-color: $secondary-2;
+      color: $primary-1;
+      transform: translate(-0.2rem, -0.2rem);
+      box-shadow: 0.3rem 0.3rem 0 $black;
+    }
+  }
+
+  &__filter__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.2rem;
+    margin-top: 1.6rem;
+    padding-top: 1.6rem;
+    border-top: 0.2rem solid $gray-200;
+  }
+
+  &__filter__clear {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $gray-600;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    transition: color $ease;
+
+    &:hover {
+      color: $black;
+    }
+
+    &:disabled {
+      color: $gray-300;
+      cursor: not-allowed;
+      text-decoration: none;
+    }
+  }
+
+  &__filter__apply {
+    // inherits .btn__primary styles
+    font-size: 1.4rem !important;
+    padding: 0.6rem 1.6rem !important;
+  }
+
+  // ── Active filter chips ──────────────────────────────────────────────────
+
+  &__filter__chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 2.4rem;
+  }
+
+  &__filter__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.6rem 0.4rem 1.2rem;
+    border: 0.2rem solid $black;
+    border-radius: 5.2rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: $font-family;
+    background-color: $secondary;
+
+    &--difficulty {
+      background-color: rgba($secondary-2, 0.1);
+    }
+
+    & button {
+      background: transparent;
+      border: none;
+      font-size: 1.6rem;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: $black;
+      transition: background $ease;
+
+      &:hover {
+        background-color: $primary-1;
+      }
+    }
+  }
+
+  &__filter__chip__clear {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $gray-600;
+    cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    text-decoration: underline;
+    transition: color $ease;
+
+    &:hover {
+      color: $black;
+    }
+  }
+
+  // ── No results ───────────────────────────────────────────────────────────
+
+  &__no__results {
+    width: 100%;
+    padding: 4.8rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.6rem;
+    text-align: center;
+
+    & p {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $gray-500;
+      margin: 0;
+    }
+  }
+
+  // ── Responsive additions ─────────────────────────────────────────────────
+
+  @media (max-width: #{$screen-lg-min}) {
+    &__filter__dropdown {
+      right: auto;
+      left: 0;
+
+      &::before {
+        right: auto;
+        left: 2.4rem;
+      }
+    }
+
+    &__search__wrapper {
+      .excerciselist__menu__buttons--search:focus {
+        min-width: 100%;
+      }
+    }
+  }
+
+  @media (max-width: #{$screen-md-min}) {
+    &__filter__dropdown {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      top: auto;
+      border-radius: 2rem 2rem 0 0;
+      min-width: unset;
+      padding: 2.4rem;
+      box-shadow: 0 -0.4rem 0 $black;
+
+      &::before {
+        display: none;
+      }
+    }
+
+    &__filter__chips {
+      margin-bottom: 1.6rem;
     }
   }
 }

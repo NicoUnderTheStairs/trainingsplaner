@@ -261,8 +261,8 @@
     position: relative;
     background-color: $white;
     transition:
-      transform $ease,
-      box-shadow $ease;
+    transform $ease,
+    box-shadow $ease;
 
     &:hover {
       transform: translateY(-0.4rem);
@@ -279,7 +279,11 @@
       left: -0.3rem;
       top: -0.3rem;
       overflow: hidden;
-      background-color: $secondary;
+      background-color: $white;
+
+      @media (max-width: #{$screen-md-min}) {
+        width: calc(100% + 0.6rem);
+      }
 
       svg {
         width: 100%;
@@ -374,19 +378,6 @@
     &__tags {
       display: flex;
       gap: 0.4rem;
-    }
-
-    &__arrow {
-      color: $black;
-      flex-shrink: 0;
-      transition:
-        transform $ease,
-        color $ease;
-
-      .home__training__row:hover & {
-        transform: translateX(0.4rem);
-        color: $black;
-      }
     }
   }
 

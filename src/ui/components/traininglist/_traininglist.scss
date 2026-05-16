@@ -57,3 +57,565 @@
     }
   }
 }
+
+
+.traininglist {
+  margin: 4.4rem 0;
+
+  &__inner {
+    padding: 0 11.2rem;
+  }
+
+  // ── Header ──────────────────────────────────────────────────────────────
+
+  &__menu {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 5.2rem;
+
+    & h2 {
+      margin: 0;
+      font-size: 4rem;
+      font-family: $font-family;
+      font-weight: 900;
+      text-transform: uppercase;
+      display: flex;
+      align-items: start;
+      gap: 0.4rem;
+
+      & span {
+        font-size: 1.4rem;
+        margin-top: -0.4rem;
+        color: $gray-500;
+        font-weight: 400;
+      }
+    }
+
+    &__buttons {
+      display: flex;
+      align-items: center;
+      gap: 1.6rem;
+
+      // Base button style (search + filter)
+      button,
+      input {
+        padding: 0.6rem 1.6rem;
+        cursor: pointer;
+        border: 0.2rem solid $black;
+        border-radius: 1rem;
+        background-color: $secondary;
+        font-size: 1.8rem;
+        font-weight: 700;
+        font-family: $font-family;
+        transition: all $ease;
+      }
+
+      &--search {
+        // overridden by wrapper below
+      }
+
+      &--filter {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+
+        &:hover {
+          transform: translate(-0.2rem, -0.2rem);
+          box-shadow: 0.3rem 0.3rem 0 $black;
+        }
+
+        &--open {
+          background-color: $secondary-2;
+          color: $secondary;
+          box-shadow: 0.3rem 0.3rem 0 $black;
+          transform: translate(-0.1rem, -0.1rem);
+        }
+      }
+    }
+  }
+
+  // ── Search ───────────────────────────────────────────────────────────────
+
+  &__search__wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  .traininglist__menu__buttons--search {
+    min-width: 18.4rem;
+    padding-right: 3.6rem;
+    text-align: left;
+    cursor: text;
+    outline: none;
+    font-weight: 400;
+
+    &::placeholder {
+      color: $gray-500;
+      font-weight: 700;
+    }
+
+    &:focus {
+      min-width: 28rem;
+      box-shadow: 0.3rem 0.3rem 0 $black;
+    }
+  }
+
+  &__search__clear {
+    position: absolute;
+    right: 1rem;
+    background: transparent;
+    border: none !important;
+    font-size: 2rem;
+    font-weight: 700;
+    color: $black;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0 !important;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background $ease;
+    box-shadow: none !important;
+    transform: none !important;
+
+    &:hover {
+      background-color: $primary-1 !important;
+    }
+  }
+
+  // ── Filter dropdown ───────────────────────────────────────────────────────
+
+  &__filter__wrapper {
+    position: relative;
+  }
+
+  &__filter__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    background-color: $primary-1;
+    color: $black;
+    font-size: 1.2rem;
+    font-weight: 900;
+    font-family: $font-family;
+    line-height: 1;
+  }
+
+  &__filter__dropdown {
+    position: absolute;
+    top: calc(100% + 0.8rem);
+    right: 0;
+    z-index: 50;
+    background-color: $white;
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    padding: 2rem;
+    min-width: 30rem;
+    box-shadow: 0.4rem 0.4rem 0 $black;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: -1rem;
+      right: 2.4rem;
+      width: 1.6rem;
+      height: 1.6rem;
+      background-color: $white;
+      border-left: 0.3rem solid $black;
+      border-top: 0.3rem solid $black;
+      transform: rotate(45deg);
+    }
+  }
+
+  &__filter__section {
+    margin-bottom: 1.6rem;
+  }
+
+  &__filter__label {
+    font-size: 1.2rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.15rem;
+    color: $gray-600;
+    font-family: $font-family;
+    margin: 0 0 0.8rem 0;
+  }
+
+  &__filter__tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+
+    .tags {
+      cursor: pointer;
+      font-size: 1.4rem;
+      transition: all $ease;
+
+      &:hover {
+        transform: translate(-0.1rem, -0.1rem);
+        box-shadow: 0.2rem 0.2rem 0 $black;
+      }
+    }
+  }
+
+  &__filter__footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.2rem;
+    margin-top: 1.6rem;
+    padding-top: 1.6rem;
+    border-top: 0.2rem solid $gray-200;
+  }
+
+  &__filter__clear {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $gray-600;
+    cursor: pointer;
+    padding: 0;
+    text-decoration: underline;
+    transition: color $ease;
+
+    &:hover { color: $black; }
+    &:disabled { color: $gray-300; cursor: not-allowed; text-decoration: none; }
+  }
+
+  &__filter__apply {
+    font-size: 1.4rem !important;
+    padding: 0.6rem 1.6rem !important;
+  }
+
+  // ── Filter chips ──────────────────────────────────────────────────────────
+
+  &__filter__chips {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 2.4rem;
+  }
+
+  &__filter__chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.4rem 0.6rem 0.4rem 1.2rem;
+    border: 0.2rem solid $black;
+    border-radius: 5.2rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: $font-family;
+    background-color: $secondary;
+
+    & button {
+      background: transparent;
+      border: none;
+      font-size: 1.6rem;
+      font-weight: 700;
+      cursor: pointer;
+      line-height: 1;
+      padding: 0;
+      width: 2rem;
+      height: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: $black;
+      transition: background $ease;
+
+      &:hover { background-color: $primary-1; }
+    }
+  }
+
+  &__filter__chip__clear {
+    background: transparent;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $gray-600;
+    cursor: pointer;
+    padding: 0.4rem 0.8rem;
+    text-decoration: underline;
+    transition: color $ease;
+
+    &:hover { color: $black; }
+  }
+
+  // ── Status ────────────────────────────────────────────────────────────────
+
+  &__status {
+    font-size: 1.8rem;
+    font-family: $font-family;
+    color: $gray-500;
+
+    &--error { color: $error; }
+  }
+
+  // ── Empty state ───────────────────────────────────────────────────────────
+
+  &__empty {
+    padding: 6rem 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+    text-align: center;
+
+    & p {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $gray-500;
+      margin: 0;
+    }
+  }
+
+  // ── Card grid ─────────────────────────────────────────────────────────────
+
+  &__cards {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+  }
+
+  &__card {
+    display: flex;
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    background-color: $white;
+    cursor: pointer;
+    overflow: hidden;
+    transition: transform $ease, box-shadow $ease;
+
+    &:hover {
+      transform: translate(-0.4rem, -0.4rem);
+      box-shadow: 0.8rem 0.8rem 0 $black;
+    }
+
+    &:active {
+      transform: translate(0.2rem, 0.2rem);
+      box-shadow: 0.2rem 0.2rem 0 $black;
+    }
+
+    // Coloured left accent bar — cycles through brand colours
+    &__accent {
+      width: 0.8rem;
+      flex-shrink: 0;
+      background-color: $secondary-2;
+    }
+
+    // Give each card a different accent colour using nth-child
+    &:nth-child(5n + 1) .traininglist__card__accent { background-color: $primary-3; }
+    &:nth-child(5n + 2) .traininglist__card__accent { background-color: $primary-2; }
+    &:nth-child(5n + 3) .traininglist__card__accent { background-color: $primary-1; }
+    &:nth-child(5n + 4) .traininglist__card__accent { background-color: $primary-4; }
+    &:nth-child(5n + 5) .traininglist__card__accent { background-color: $primary-5; }
+
+    &__body {
+      flex: 1;
+      padding: 1.8rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    &__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.6rem;
+    }
+
+    &__meta {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+    }
+
+    &__author {
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      text-transform: uppercase;
+      letter-spacing: 0.05rem;
+    }
+
+    &__date {
+      font-size: 1.4rem;
+      font-weight: 400;
+      font-family: $font-family;
+      color: $gray-600;
+
+      // Separator dot between author and date
+      &::before {
+        content: '·';
+        margin-right: 1.2rem;
+        color: $gray-400;
+      }
+    }
+
+    &__duration {
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      background-color: $secondary;
+      border: 0.2rem solid $black;
+      border-radius: 5.2rem;
+      padding: 0.2rem 1rem;
+      white-space: nowrap;
+    }
+
+    &__title {
+      font-size: 2.8rem;
+      font-weight: 900;
+      font-family: $font-family;
+      text-transform: uppercase;
+      color: $black;
+      margin: 0;
+      line-height: 1.1;
+    }
+
+    &__desc {
+      font-size: 1.6rem;
+      color: $gray-600;
+      margin: 0;
+      line-height: 1.5;
+    }
+
+    &__footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.6rem;
+      margin-top: 0.4rem;
+    }
+
+    &__tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.8rem;
+    }
+
+    &__exercises {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: gap $ease;
+
+      svg {
+        transition: transform $ease;
+      }
+
+      .traininglist__card:hover & svg {
+        transform: translateX(0.4rem);
+      }
+    }
+  }
+
+  // ── Responsive ────────────────────────────────────────────────────────────
+
+  @media (max-width: #{$screen-xl-min}) {
+    &__inner { padding: 0 4.8rem; }
+  }
+
+  @media (max-width: #{$screen-lg-min}) {
+    &__inner { padding: 0 2.4rem; }
+
+    &__menu {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 2rem;
+      margin-bottom: 3.2rem;
+
+      &__buttons {
+        flex-wrap: wrap;
+        gap: 1.2rem;
+        width: 100%;
+
+        .traininglist__menu__buttons--search {
+          min-width: 100%;
+        }
+      }
+    }
+
+    &__filter__dropdown {
+      right: auto;
+      left: 0;
+
+      &::before {
+        right: auto;
+        left: 2.4rem;
+      }
+    }
+
+    &__card {
+      &__top {
+        flex-wrap: wrap;
+      }
+
+      &__title {
+        font-size: 2.2rem;
+      }
+    }
+  }
+
+  @media (max-width: #{$screen-md-min}) {
+    &__inner { padding: 0 1.6rem; }
+
+    &__filter__dropdown {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      top: auto;
+      border-radius: 2rem 2rem 0 0;
+      min-width: unset;
+      padding: 2.4rem;
+      box-shadow: 0 -0.4rem 0 $black;
+
+      &::before { display: none; }
+    }
+
+    &__card {
+      &:hover {
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.4rem 0.4rem 0 $black;
+      }
+
+      &__footer {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+    }
+  }
+
+  @media (max-width: #{$screen-sm-min}) {
+    margin: 2.4rem 0;
+
+    &__inner { padding: 0 1.2rem; }
+
+    &__menu h2 { font-size: 3.2rem; }
+  }
+}

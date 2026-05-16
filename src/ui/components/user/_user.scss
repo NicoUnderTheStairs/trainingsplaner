@@ -300,10 +300,10 @@ $transition-slow: 250ms ease;
   }
 
   &__value {
-    font-size: 13.5px;
+    font-size: 1.6rem;
     color: $text;
     font-weight: 500;
-    text-align: right;
+    text-align: left;
 
     &--accent {
       font-size: 20px;

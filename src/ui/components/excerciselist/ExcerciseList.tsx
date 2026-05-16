@@ -1,9 +1,22 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import db from "../../../firebase";
 import type { SketchData } from "../../../types/Sketch";
 import type { Exercise } from "../../../types/Exercise";
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const AVAILABLE_TAGS = [
+  "Warmup",
+  "Defense",
+  "Attack",
+  "Block",
+  "Reception",
+  "Service",
+];
+
+const DIFFICULTIES = [1, 2, 3, 4, 5];
 
 // ─── Sketch thumbnail ─────────────────────────────────────────────────────────
 
@@ -33,7 +46,6 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
       fill="none"
       preserveAspectRatio="xMidYMid meet"
     >
-      {/* Arrow marker */}
       <defs>
         <marker
           id="thumb-arrow"
@@ -47,7 +59,6 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
         </marker>
       </defs>
 
-      {/* Court background */}
       <path d="M560 0H0V440H560V0Z" fill="white" />
       <path
         d="M363.814 77H496.261V365H279.5L280 77H363.814ZM280 77L279.5 365H194.203V77H280ZM194.203 77V365H62.9062V77H194.203Z"
@@ -59,7 +70,6 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
         strokeWidth="1"
       />
 
-      {/* Arrows */}
       {arrows.map(([id, arrow]) => (
         <line
           key={id}
@@ -74,7 +84,6 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
         />
       ))}
 
-      {/* Players */}
       {players.map(([id, player]) => (
         <g key={id} transform={`translate(${player.x}, ${player.y})`}>
           <circle r={11} fill={PLAYER_COLORS[player.type] ?? "#999"} />
@@ -98,10 +107,21 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
 
 const ExcerciseList = () => {
   const navigate = useNavigate();
+
+  // ── Data ────────────────────────────────────────────────────────────────────
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // ── Search & filter state ───────────────────────────────────────────────────
+  const [search, setSearch] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [activeDifficulties, setActiveDifficulties] = useState<number[]>([]);
+  const filterRef = useRef<HTMLDivElement>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
+
+  // ── Fetch ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchExercises = async () => {
       try {
@@ -118,24 +138,170 @@ const ExcerciseList = () => {
         setLoading(false);
       }
     };
-
     fetchExercises();
   }, []);
 
+  // ── Close filter dropdown on outside click ──────────────────────────────────
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+        setFilterOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // ── Filter helpers ──────────────────────────────────────────────────────────
+  const toggleTag = (tag: string) => {
+    setActiveTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  };
+
+  const toggleDifficulty = (d: number) => {
+    setActiveDifficulties((prev) =>
+      prev.includes(d) ? prev.filter((x) => x !== d) : [...prev, d],
+    );
+  };
+
+  const clearFilters = () => {
+    setActiveTags([]);
+    setActiveDifficulties([]);
+    setSearch("");
+  };
+
+  const hasActiveFilters =
+    activeTags.length > 0 ||
+    activeDifficulties.length > 0 ||
+    search.trim() !== "";
+
+  const activeFilterCount = activeTags.length + activeDifficulties.length;
+
+  // ── Filtered list ───────────────────────────────────────────────────────────
+  const filtered = exercises.filter((ex) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      q === "" ||
+      ex.title.toLowerCase().includes(q) ||
+      ex.description?.toLowerCase().includes(q);
+
+    const matchesTags =
+      activeTags.length === 0 ||
+      activeTags.every((tag) => (ex.tags ?? []).includes(tag));
+
+    const matchesDifficulty =
+      activeDifficulties.length === 0 ||
+      activeDifficulties.includes(ex.difficulty);
+
+    return matchesSearch && matchesTags && matchesDifficulty;
+  });
+
+  // ── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="excerciselist section">
       <div className="excerciselist__inner">
+        {/* ── Header ── */}
         <div className="excerciselist__menu">
           <h2>
-            All Exercises <span>({exercises.length})</span>
+            All Exercises{" "}
+            <span>
+              ({hasActiveFilters ? `${filtered.length}/` : ""}
+              {exercises.length})
+            </span>
           </h2>
+
           <div className="excerciselist__menu__buttons">
-            <button className="excerciselist__menu__buttons--search">
-              Search...
-            </button>
-            <button className="excerciselist__menu__buttons--filter">
-              Filter
-            </button>
+            {/* Search input — expands on click */}
+            <div className="excerciselist__search__wrapper">
+              <input
+                ref={searchRef}
+                type="text"
+                className="excerciselist__menu__buttons--search"
+                placeholder="Search..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+              {search && (
+                <button
+                  className="excerciselist__search__clear"
+                  onClick={() => setSearch("")}
+                  aria-label="Clear search"
+                >
+                  ×
+                </button>
+              )}
+            </div>
+
+            {/* Filter dropdown */}
+            <div className="excerciselist__filter__wrapper" ref={filterRef}>
+              <button
+                className={`excerciselist__menu__buttons--filter ${filterOpen ? "excerciselist__menu__buttons--filter--open" : ""}`}
+                onClick={() => setFilterOpen((prev) => !prev)}
+              >
+                Filter
+                {activeFilterCount > 0 && (
+                  <span className="excerciselist__filter__badge">
+                    {activeFilterCount}
+                  </span>
+                )}
+              </button>
+
+              {filterOpen && (
+                <div className="excerciselist__filter__dropdown">
+                  {/* Tags */}
+                  <div className="excerciselist__filter__section">
+                    <p className="excerciselist__filter__label">Tags</p>
+                    <div className="excerciselist__filter__tags">
+                      {AVAILABLE_TAGS.map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => toggleTag(tag)}
+                          className={`tags tags--${tag.toLowerCase()} ${activeTags.includes(tag) ? `tags--${tag.toLowerCase()}--active` : ""}`}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Difficulty */}
+                  <div className="excerciselist__filter__section">
+                    <p className="excerciselist__filter__label">Difficulty</p>
+                    <div className="excerciselist__filter__difficulties">
+                      {DIFFICULTIES.map((d) => (
+                        <button
+                          key={d}
+                          onClick={() => toggleDifficulty(d)}
+                          className={`excerciselist__filter__difficulty ${activeDifficulties.includes(d) ? "excerciselist__filter__difficulty--active" : ""}`}
+                        >
+                          {d}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Footer */}
+                  <div className="excerciselist__filter__footer">
+                    <button
+                      className="excerciselist__filter__clear"
+                      onClick={clearFilters}
+                      disabled={!hasActiveFilters}
+                    >
+                      Clear all
+                    </button>
+                    <button
+                      className="excerciselist__filter__apply btn__primary"
+                      onClick={() => setFilterOpen(false)}
+                    >
+                      Show {filtered.length} result
+                      {filtered.length !== 1 ? "s" : ""}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <button
               onClick={() => navigate("/create-exercise")}
               className="excerciselist__menu__buttons--newexercise"
@@ -145,6 +311,58 @@ const ExcerciseList = () => {
           </div>
         </div>
 
+        {/* ── Active filter chips ── */}
+        {hasActiveFilters && (
+          <div className="excerciselist__filter__chips">
+            {search && (
+              <span className="excerciselist__filter__chip">
+                "{search}"
+                <button
+                  onClick={() => setSearch("")}
+                  aria-label="Remove search"
+                >
+                  ×
+                </button>
+              </span>
+            )}
+            {activeTags.map((tag) => (
+              <span
+                key={tag}
+                className={`excerciselist__filter__chip tags tags--${tag.toLowerCase()} tags--${tag.toLowerCase()}--active`}
+              >
+                {tag}
+                <button
+                  onClick={() => toggleTag(tag)}
+                  aria-label={`Remove ${tag}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            {activeDifficulties.map((d) => (
+              <span
+                key={d}
+                className="excerciselist__filter__chip excerciselist__filter__chip--difficulty"
+              >
+                Difficulty {d}
+                <button
+                  onClick={() => toggleDifficulty(d)}
+                  aria-label={`Remove difficulty ${d}`}
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+            <button
+              className="excerciselist__filter__chip__clear"
+              onClick={clearFilters}
+            >
+              Clear all
+            </button>
+          </div>
+        )}
+
+        {/* ── States ── */}
         {loading && <p className="excerciselist__status">Loading...</p>}
         {error && (
           <p className="excerciselist__status excerciselist__status--error">
@@ -152,41 +370,35 @@ const ExcerciseList = () => {
           </p>
         )}
 
+        {/* ── Exercise grid ── */}
         {!loading && !error && (
           <div className="excerciselist__exercise__wrapper">
-            {exercises.map((exercise) => (
+            {filtered.map((exercise) => (
               <div
                 key={exercise.id}
                 className="excerciselist__exercise"
                 onClick={() => navigate(`/exercise-detail/${exercise.id}`)}
               >
-                {/* variant count can be added later */}
-                {/* <div className="excerciselist__exercise__variants">
-                </div> */}
-
                 <div className="excerciselist__exercise__img">
                   <SketchThumbnail sketch={exercise.sketch} />
                 </div>
 
                 <div className="excerciselist__exercise__content">
                   <h3>{exercise.title}</h3>
-                  {(exercise.description.length > 100 && (
-                    <p>{exercise.description.substring(0, 100) + "..."}</p>
-                  )) || <p>{exercise.description}</p>}
+                  <p>
+                    {exercise.description?.length > 100
+                      ? exercise.description.substring(0, 100) + "..."
+                      : exercise.description}
+                  </p>
 
                   <div className="excerciselist__exercise__content--detail">
                     <div>
                       {(exercise.tags ?? []).map((tag) => (
                         <div
-                          className={
-                            "excerciselist__exercise__content__tags tags tags--" +
-                            tag.toLowerCase()
-                          }
+                          key={tag}
+                          className={`excerciselist__exercise__content__tags tags tags--${tag.toLowerCase()}`}
                         >
-                          <span
-                            key={tag}
-                            className="excerciselist__exercise__content__tags--tag"
-                          >
+                          <span className="excerciselist__exercise__content__tags--tag">
                             {tag}
                           </span>
                         </div>
@@ -224,6 +436,15 @@ const ExcerciseList = () => {
                 </div>
               </div>
             ))}
+
+            {filtered.length === 0 && exercises.length > 0 && (
+              <div className="excerciselist__no__results">
+                <p>No exercises match your filters.</p>
+                <button className="btn__wired" onClick={clearFilters}>
+                  Clear filters
+                </button>
+              </div>
+            )}
 
             {exercises.length === 0 && (
               <p className="excerciselist__status">No exercises yet.</p>

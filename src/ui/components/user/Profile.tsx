@@ -16,24 +16,24 @@ const AVATAR_OPTIONS = [
   { id: "bear", url: "https://api.dicebear.com/9.x/micah/svg?seed=Jade" },
   {
     id: "eagle",
-    url: "https://api.dicebear.com/9.x/lorelei/svg?seed=Christian",
+    url: "https://api.dicebear.com/9.x/micah/svg?seed=asdfasd",
   },
-  { id: "lynx", url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Lynx" },
+  { id: "lynx", url: "https://api.dicebear.com/9.x/micah/svg?seed=ade" },
   {
     id: "shark",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Shark",
+    url: "https://api.dicebear.com/9.x/micah/svg?seed=fun",
   },
   {
     id: "tiger",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Tiger",
+    url: "https://api.dicebear.com/9.x/micah/svg?seed=Adrian",
   },
   {
     id: "panther",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Panther",
+    url: "https://api.dicebear.com/8.x/micah/svg?seed=nicaerewqqqqq",
   },
   {
     id: "avery",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Avery",
+    url: "https://api.dicebear.com/8.x/micah/svg?seed=budfabu",
   },
 ];
 

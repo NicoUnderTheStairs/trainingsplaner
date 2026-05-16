@@ -284,18 +284,6 @@ export default function Home() {
                         </span>
                       ))}
                     </div>
-                    <svg
-                      className="home__training__row__arrow"
-                      width="14"
-                      height="10"
-                      viewBox="0 0 23 12"
-                      fill="none"
-                    >
-                      <path
-                        d="M1 5.25H0.25V6.75H1V5.25ZM22.53 6.53C22.82 6.24 22.82 5.76 22.53 5.47L17.76 0.7C17.46 0.4 16.99 0.4 16.7 0.7C16.4 0.99 16.4 1.46 16.7 1.76L20.94 6L16.7 10.24C16.4 10.54 16.4 11.01 16.7 11.3C16.99 11.6 17.46 11.6 17.76 11.3L22.53 6.53ZM1 6.75H22V5.25H1V6.75Z"
-                        fill="currentColor"
-                      />
-                    </svg>
                   </div>
                 ))}
                 <button
