@@ -94,9 +94,6 @@ const Navigation = () => {
             <a href="/exercise-overview" className="navigation__menu__item">
               Excercises
             </a>
-            <a href="/create-training" className="navigation__menu__item">
-              Create Training
-            </a>
             <a href="/training-overview" className="navigation__menu__item">
               My trainings
             </a>

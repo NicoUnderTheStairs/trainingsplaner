@@ -1,0 +1,203 @@
+.trainingdetail {
+  margin: 84px 0;
+
+  &__inner {
+    padding: 0 11.2rem;
+  }
+
+  &__back {
+    margin-bottom: 5rem;
+  }
+
+  &__edit {
+    &__input {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: inherit;
+      margin-bottom: 12px;
+
+      &--description {
+        font-size: 2rem;
+      }
+
+      &--title { font-size: 24px; font-weight: 700; }
+    }
+    &__select { padding: 8px 12px; border-radius: 6px; border: 1px solid #e5e7eb; }
+    &__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  }
+
+  &__tags { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+
+  &__meta {
+    font-size: 1.8rem;
+    display: flex;
+    gap: 1.8rem;
+    justify-content: space-between;
+  }
+
+  &__menu {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 5.2rem;
+
+    &__text {
+      width: 60%;
+      display: flex;
+      flex-direction: column;
+      gap: 1.6rem;
+
+      & h1 {
+        margin: 0;
+        font-size: 4.6rem;
+      }
+
+      & p {
+        margin: 0;
+        font-size: 2.1rem;
+      }
+    }
+
+    &__btn {
+      padding: 0.6rem 1.6rem;
+      cursor: pointer;
+      border: 0.2rem solid $black;
+      border-radius: 1rem;
+      background-color: $secondary;
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+
+      &--save { background: #1e1e1e; color: #fff; }
+
+      &__wrapper {
+        display: flex;
+        justify-content: space-between;
+        gap: 0.4rem;
+      }
+
+      &--danger {
+        border-color: $error;
+        color: $error;
+      }
+
+      & svg {
+        width: 2.1rem;
+        height: 2.1rem;
+        transition: all $ease;
+      }
+    }
+
+    &__details {
+      display: flex;
+      gap: 5rem;
+      align-items: center;
+
+      &--difficulty {
+        display: flex;
+        gap: 2rem;
+        align-items: center;
+
+        & h4 {
+          margin: 0;
+        }
+      }
+    }
+  }
+
+  &__exercises {
+    &__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 0;
+
+      &--duration {
+        margin: 0;
+      }
+    }
+
+    &__list {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 2.2rem;
+    }
+
+    &__item {
+      background-color: $white;
+      border: 0.3rem solid $black;
+      border-radius: 2rem;
+      padding: 1.2rem 2rem;
+      width: 100%;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      position: relative;
+      color: $black;
+
+      &--dragging {
+        opacity: 0.4;
+      }
+
+      &--dragover {
+        border-top: 2px solid $black;
+      }
+
+      &__handle {
+        cursor: grab;
+        color: #aaa;
+        padding: 0 8px;
+        display: flex;
+        align-items: center;
+        flex-shrink: 0;
+
+        &:active {
+          cursor: grabbing;
+        }
+      }
+
+      &__title {
+        width: 50%;
+      }
+
+      &__index {
+        font-size: 1.8rem;
+      }
+
+      &__duration {
+        display: flex;
+        align-items: flex-end;
+        font-size: 2rem;
+
+        & input {
+          border-bottom: solid $black;
+          border-width: 0 0 0.2rem 0;
+          font-size: 2.4rem;
+          text-align: center;
+          width: 5.4rem;
+        }
+      }
+
+      &__remove {
+        position: absolute;
+        top: 0.6rem;
+        right: 0.7rem;
+        padding: 0;
+        width: 5rem;
+        height: 5rem;
+      }
+
+      & h3 {
+        margin: 0;
+      }
+    }
+  }
+}

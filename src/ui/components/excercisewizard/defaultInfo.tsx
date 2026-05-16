@@ -69,7 +69,7 @@ const DefaultInfo: React.FC<Props> = ({
           </button>
         </div>
 
-        <h2>General Information</h2>
+        <h2>General Exercise Information</h2>
 
         <div className="excercisewizard__input__field">
           <input

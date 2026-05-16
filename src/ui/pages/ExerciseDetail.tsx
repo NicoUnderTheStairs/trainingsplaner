@@ -145,7 +145,15 @@ const ExerciseDetail = () => {
                   placeholder="Title"
                 />
               ) : (
-                <h1>{exercise.title}</h1>
+                <div>
+                  {/* Meta row */}
+                  <div className="exercisedetail__meta">
+                    <span className="exercisedetail__meta__author">
+                      {exercise.author}
+                    </span>
+                  </div>
+                  <h1>{exercise.title}</h1>
+                </div>
               )}
 
               {/* ── Description ── */}

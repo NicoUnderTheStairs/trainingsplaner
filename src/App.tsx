@@ -8,6 +8,7 @@ import Home from "./ui/pages/Home";
 import CreateExcercise from "./ui/pages/CreateExcercise";
 import CreateTraining from "./ui/pages/CreateTraining";
 import ExerciseDetail from "./ui/pages/ExerciseDetail";
+import TrainingDetail from "./ui/pages/TrainingDetail";
 import TrainingOverview from "./ui/pages/TrainingOverview";
 import ExerciseOverview from "./ui/pages/ExerciseOverview";
 
@@ -33,6 +34,10 @@ const App: React.FC = () => {
             <Route
               path="/exercise-detail/:exerciseId"
               element={<ExerciseDetail />}
+            />
+            <Route
+              path="/training-detail/:trainingId"
+              element={<TrainingDetail />}
             />
           </>
         ) : (
