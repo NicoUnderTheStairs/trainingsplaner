@@ -1,4 +1,4 @@
-import { auth } from "../firebase"; // Ensure this import matches the updated firebase.ts
+import { auth } from "../firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
@@ -7,64 +7,65 @@ import {
 } from "firebase/auth";
 import { registerUser } from "../services/upload/registerUser";
 
-// Create a new user with email and password
+// ─── Phone allowlist ──────────────────────────────────────────────────────────
+// Add phone numbers in E.164 format (e.g. +41791234567)
+// Only users whose phone number is in this list can register.
+const ALLOWED_PHONE_NUMBERS: string[] = [
+  "+41796167045",
+  "+41767256001",
+  // add more numbers here
+];
+
+export const isPhoneAllowed = (phone: string): boolean => {
+  const normalized = phone.replace(/\s/g, ""); // strip spaces
+  return ALLOWED_PHONE_NUMBERS.includes(normalized);
+};
+
+// ─── Create user ──────────────────────────────────────────────────────────────
+
 export const doCreateUserWithEmailAndPassword = async (
   userName: string,
   email: string,
   password: string,
+  phone: string,
 ) => {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(
-      auth,
-      email,
-      password,
-    );
-
-    // create member in firestore
-    await registerUser(userCredential.user.uid, userName, email);
-
-    return userCredential;
-  } catch (error) {
-    console.error("Error creating user:", error);
-    throw error;
+  if (!isPhoneAllowed(phone)) {
+    throw new Error("PHONE_NOT_ALLOWED");
   }
+
+  const userCredential = await createUserWithEmailAndPassword(
+    auth,
+    email,
+    password,
+  );
+
+  await registerUser(userCredential.user.uid, userName, email, phone);
+
+  return userCredential;
 };
 
-// Sign in an existing user with email and password
+// ─── Sign in ──────────────────────────────────────────────────────────────────
+
 export const doSignInWithEmailAndPassword = async (
   email: string,
   password: string,
 ) => {
-  try {
-    const userCredential = await signInWithEmailAndPassword(
-      auth,
-      email,
-      password,
-    );
-    return userCredential;
-  } catch (error) {
-    console.error("Error signing in:", error);
-    throw error; // Re-throw the error to be handled by the calling function
-  }
+  const userCredential = await signInWithEmailAndPassword(
+    auth,
+    email,
+    password,
+  );
+  return userCredential;
 };
 
-// Sign out the current user
+// ─── Sign out ─────────────────────────────────────────────────────────────────
+
 export const doSignOut = async () => {
-  try {
-    await signOut(auth);
-  } catch (error) {
-    console.error("Error signing out:", error);
-    throw error; // Re-throw the error to be handled by the calling function
-  }
+  await signOut(auth);
 };
+
+// ─── Password reset ───────────────────────────────────────────────────────────
 
 export const sendResetPasswordEmail = async (email: string) => {
-  try {
-    await sendPasswordResetEmail(auth, email);
-    // Provide feedback to the user
-  } catch (error: unknown) {
-    console.error("Error sending password reset email:", error);
-    // Provide feedback to the user
-    throw error; // Re-throw the error to be handled by the calling function
-  }
+  await sendPasswordResetEmail(auth, email);
 };

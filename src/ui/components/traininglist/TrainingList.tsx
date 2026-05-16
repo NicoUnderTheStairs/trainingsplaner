@@ -83,7 +83,7 @@ const TrainingList = () => {
   };
 
   return (
-    <div className="traininglist">
+    <div className="traininglist section">
       <div className="traininglist__inner">
         {/* Back button */}
         <div className="exercisedetail__back">

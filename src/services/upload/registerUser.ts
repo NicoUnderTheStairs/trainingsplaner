@@ -1,35 +1,41 @@
-import { getFirestore, doc, setDoc } from "firebase/firestore";
-import { getDatabase, ref, set } from "firebase/database";
+import db from "../../firebase";
+import { doc, setDoc, Timestamp } from "firebase/firestore";
+
+export interface UserProfile {
+  uid: string;
+  userName: string;
+  email: string;
+  phone: string;
+  profileImageUrl: string | null;
+  favoriteExercises: string[]; // array of exercise IDs
+  favoriteTrainings: string[]; // array of training IDs
+  createdAt: Timestamp;
+  lastLoginAt: Timestamp;
+  role: "coach" | "player" | "admin";
+  team: string | null; // optional team name
+  bio: string | null;
+}
 
 export const registerUser = async (
-  userUid: string,
+  uid: string,
   userName: string,
   email: string,
+  phone: string,
 ) => {
-  try {
-    // Initialize Firestore and Realtime Database here to ensure the Firebase app
-    // has been initialized before these services are requested.
-    const db = getFirestore();
-    const rtdb = getDatabase();
+  const userProfile: UserProfile = {
+    uid,
+    userName,
+    email,
+    phone,
+    profileImageUrl: null,
+    favoriteExercises: [],
+    favoriteTrainings: [],
+    createdAt: Timestamp.now(),
+    lastLoginAt: Timestamp.now(),
+    role: "coach",
+    team: null,
+    bio: null,
+  };
 
-    // Write user profile to Firestore
-    await setDoc(doc(db, "Users", userUid), {
-      userName,
-      email,
-    });
-
-    // Write initial entry to Realtime Database
-    await set(ref(rtdb, `users/${userUid}`), {
-      userName,
-      email,
-      lat: null, // initial location
-      lng: null,
-      speed: 0,
-      heading: 0,
-      updatedAt: Date.now(),
-      online: true,
-    });
-  } catch (error) {
-    console.error("Error registering user:", error);
-  }
+  await setDoc(doc(db, "users", uid), userProfile);
 };

@@ -133,7 +133,7 @@ const TrainingDetail = () => {
   return (
     <>
       <Navigation />
-      <div className="trainingdetail">
+      <div className="trainingdetail section">
         <div className="trainingdetail__inner">
           {/* Back */}
           <div className="trainingdetail__back">

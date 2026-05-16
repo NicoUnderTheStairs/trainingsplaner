@@ -11,6 +11,7 @@ import ExerciseDetail from "./ui/pages/ExerciseDetail";
 import TrainingDetail from "./ui/pages/TrainingDetail";
 import TrainingOverview from "./ui/pages/TrainingOverview";
 import ExerciseOverview from "./ui/pages/ExerciseOverview";
+import Profile from "./ui/components/user/Profile";
 
 const App: React.FC = () => {
   const { userLoggedIn, currentUser } = useAuth() || {
@@ -31,6 +32,7 @@ const App: React.FC = () => {
             <Route path="/training-overview" element={<TrainingOverview />} />
             <Route path="/create-exercise" element={<CreateExcercise />} />
             <Route path="/create-training" element={<CreateTraining />} />
+            <Route path="/profile" element={<Profile />} />
             <Route
               path="/exercise-detail/:exerciseId"
               element={<ExerciseDetail />}

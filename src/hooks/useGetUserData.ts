@@ -1,27 +1,30 @@
-import { doc, getDoc } from "firebase/firestore";
-import db from "../firebase"; // Ensure the path is correct
 import { useEffect, useState } from "react";
+import { doc, getDoc } from "firebase/firestore";
+import db from "../firebase";
+import type { UserProfile } from "../services/upload/registerUser";
 
-export function useGetUserData(uid: string) {
-  const [userData, setUserData] = useState<Record<string, unknown>>({});
+export function useGetUserData(uid: string): UserProfile | null {
+  const [userData, setUserData] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    const fetchUsers = async () => {
+    // Don't fetch if uid hasn't resolved yet
+    if (!uid) return;
+
+    const fetchUser = async () => {
       try {
-        const userDocRef = doc(db, "Users", uid);
-        const userDoc = await getDoc(userDocRef);
-        if (!userDoc.exists()) {
-          return new Error("User not found");
+        const snap = await getDoc(doc(db, "users", uid));
+        if (snap.exists()) {
+          setUserData({ id: snap.id, ...snap.data() } as UserProfile);
+        } else {
+          console.warn(`No user document found for uid: ${uid}`);
         }
-        const userData = { id: userDoc.id, ...userDoc.data() };
-        setUserData(userData);
       } catch (err) {
-        return new Error(err as string);
+        console.error("Error fetching user data:", err);
       }
     };
 
-    fetchUsers();
-  }, [uid]);
+    fetchUser();
+  }, [uid]); // re-runs once auth resolves and uid becomes available
 
   return userData;
 }

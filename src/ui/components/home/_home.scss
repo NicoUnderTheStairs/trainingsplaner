@@ -1,0 +1,604 @@
+// ─── Home Page ────────────────────────────────────────────────────────────────
+// Uses project design system: $secondary background, $black borders (0.3rem solid),
+// white widget backgrounds, rem-based spacing, Roboto Condensed font.
+
+.home {
+  margin: 4.4rem 0;
+
+  &__inner {
+    padding: 0 11.2rem;
+  }
+
+  // ── Hero ──────────────────────────────────────────────────────────────────
+
+  &__hero {
+    padding: 0 11.2rem 5.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 2.4rem;
+    position: relative;
+    overflow: hidden;
+
+    &__text {
+      position: relative;
+      z-index: 1;
+    }
+
+    &__greeting {
+      font-size: 1.6rem;
+      font-weight: 500;
+      font-family: $font-family;
+      color: $black;
+      letter-spacing: 0.2rem;
+      text-transform: uppercase;
+      margin: 0 0 0.8rem 0;
+    }
+
+    &__name {
+      font-size: 6.4rem;
+      font-weight: 900;
+      font-family: $font-family;
+      color: $black;
+      letter-spacing: -0.2rem;
+      line-height: 1;
+      margin: 0 0 1.2rem 0;
+      text-transform: uppercase;
+    }
+
+    &__dot {
+      color: $primary-5;
+    }
+
+    &__sub {
+      font-size: 1.6rem;
+      color: $black;
+      margin: 0;
+      font-family: $font-family;
+    }
+
+    // Decorative stripe bar — same visual language as the logo
+    &__stripes {
+      display: flex;
+      align-items: stretch;
+      height: 8rem;
+      gap: 0;
+      transform: skewX(-12deg);
+      flex-shrink: 0;
+      border: 0.3rem solid $black;
+      border-radius: 1rem;
+      overflow: hidden;
+    }
+
+    &__stripe {
+      width: 2.4rem;
+
+      &--1 {
+        background: $primary-5;
+      }
+      &--2 {
+        background: $primary-4;
+      }
+      &--3 {
+        background: $primary-1;
+      }
+      &--4 {
+        background: $primary-2;
+      }
+      &--5 {
+        background: $primary-3;
+      }
+    }
+
+    // Quick action buttons in hero
+    &__actions {
+      display: flex;
+      align-items: center;
+      gap: 1.6rem;
+    }
+  }
+
+  // ── Dashboard grid ─────────────────────────────────────────────────────────
+
+  &__grid {
+    padding: 0 11.2rem;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.4rem;
+  }
+
+  // ── Widget base ────────────────────────────────────────────────────────────
+
+  &__widget {
+    background-color: $white;
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    padding: 2.4rem;
+
+    // Exercises spans full width
+    &--exercises {
+      grid-column: 1 / -1;
+    }
+
+    // Shared spans full width
+    &--shared {
+      grid-column: 1 / -1;
+      position: relative;
+      overflow: hidden;
+
+      // Coloured stripe accent along top edge
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 0.6rem;
+        background: linear-gradient(
+          to right,
+          $primary-5 0%,
+          $primary-4 20%,
+          $primary-1 40%,
+          $primary-2 60%,
+          $primary-3 100%
+        );
+      }
+
+      // Push content below the stripe
+      > * {
+        &:first-child {
+          margin-top: 1.2rem;
+        }
+      }
+    }
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+
+    &__title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.2rem;
+      color: $black;
+      font-family: $font-family;
+      margin: 0;
+    }
+
+    &__link {
+      background: transparent;
+      border: none;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      cursor: pointer;
+      padding: 0;
+      transition: color $ease;
+
+      &:hover {
+        color: $black;
+        text-decoration: underline;
+      }
+    }
+
+    &__badge {
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15rem;
+      padding: 0.4rem 1.2rem;
+      border-radius: 5.2rem;
+      background-color: rgba($primary-5, 0.2);
+      border: 0.1rem solid $primary-5;
+      color: darken($primary-5, 20%);
+      font-family: $font-family;
+    }
+
+    &__desc {
+      font-size: 1.6rem;
+      color: $black;
+      margin: -1.2rem 0 2rem 0;
+      font-family: $font-family;
+    }
+
+    &__empty {
+      padding: 2.4rem 0 0.8rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.2rem;
+
+      p {
+        font-size: 1.6rem;
+        color: $black;
+        margin: 0;
+        font-family: $font-family;
+      }
+    }
+
+    &__empty__hint {
+      font-size: 1.6rem !important;
+      color: $black !important;
+    }
+
+    &__cta {
+      padding: 0.6rem 1.6rem;
+      cursor: pointer;
+      border: 0.2rem solid $black;
+      border-radius: 1rem;
+      background-color: $secondary-2;
+      color: $white;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      transition: all $ease;
+
+      &:hover {
+        background-color: lighten($secondary-2, 10%);
+      }
+    }
+  }
+
+  // ── Exercise cards ─────────────────────────────────────────────────────────
+
+  &__exercises__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.6rem;
+  }
+
+  &__exercise__card {
+    cursor: pointer;
+    min-width: 24rem;
+    max-width: 24rem;
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    position: relative;
+    background-color: $white;
+    transition:
+      transform $ease,
+      box-shadow $ease;
+
+    &:hover {
+      transform: translateY(-0.4rem);
+      box-shadow: 0.4rem 0.4rem 0 $black;
+    }
+
+    &__sketch {
+      min-width: 24rem;
+      max-height: 18rem;
+      height: 18rem;
+      border: 0.3rem solid $black;
+      border-radius: 2rem;
+      position: absolute;
+      left: -0.3rem;
+      top: -0.3rem;
+      overflow: hidden;
+      background-color: $secondary;
+
+      svg {
+        width: 100%;
+        height: 100%;
+      }
+    }
+
+    &__sketch__empty {
+      width: 100%;
+      height: 100%;
+      background-color: $secondary;
+    }
+
+    &__body {
+      margin-top: 17rem;
+      padding: 1.6rem;
+    }
+
+    &__name {
+      font-size: 2rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      margin: 0 0 0.8rem 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &__tags {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  // ── Training list rows ─────────────────────────────────────────────────────
+
+  &__trainings__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  &__training__row {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 1.2rem 1rem;
+    border-radius: 1rem;
+    cursor: pointer;
+    border: 0.2rem solid transparent;
+    transition: all $ease;
+
+    &:hover {
+      background-color: $secondary;
+      border-color: $black;
+    }
+
+    &__accent {
+      width: 0.4rem;
+      height: 3.6rem;
+      border-radius: 0.4rem;
+      background: $black;
+      flex-shrink: 0;
+    }
+
+    &__info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    &__title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &__meta {
+      font-size: 1.6rem;
+      color: $black;
+      font-family: $font-family;
+    }
+
+    &__tags {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    &__arrow {
+      color: $black;
+      flex-shrink: 0;
+      transition:
+        transform $ease,
+        color $ease;
+
+      .home__training__row:hover & {
+        transform: translateX(0.4rem);
+        color: $black;
+      }
+    }
+  }
+
+  &__trainings__new {
+    margin-top: 1.2rem;
+    background: transparent;
+    border: 0.2rem dashed $black;
+    border-radius: 1rem;
+    padding: 1rem;
+    width: 100%;
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $black;
+    cursor: pointer;
+    text-align: center;
+    transition: all $ease;
+
+    &:hover {
+      border-color: $black;
+      color: $black;
+      background-color: $secondary;
+    }
+  }
+
+  // ── Shared training cards ──────────────────────────────────────────────────
+
+  &__shared__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.6rem;
+  }
+
+  &__shared__card {
+    flex: 1;
+    min-width: 24rem;
+    max-width: 28rem;
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    padding: 1.8rem;
+    background-color: $white;
+    transition:
+      transform $ease,
+      box-shadow $ease;
+
+    &:hover {
+      transform: translateY(-0.4rem);
+      box-shadow: 0.4rem 0.4rem 0 $black;
+    }
+
+    &__top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.2rem;
+    }
+
+    &__author {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    &__avatar {
+      width: 3.2rem;
+      height: 3.2rem;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 0.2rem solid $black;
+      flex-shrink: 0;
+
+      &--initials {
+        background-color: $secondary-2;
+        color: $white;
+        font-size: 1.6rem;
+        font-weight: 900;
+        font-family: $font-family;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    &__author__name {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+    }
+
+    &__date {
+      font-size: 1.6rem;
+      color: $black;
+      font-family: $font-family;
+    }
+
+    &__title {
+      font-size: 2rem;
+      font-weight: 900;
+      font-family: $font-family;
+      color: $black;
+      margin: 0 0 0.8rem 0;
+      text-transform: uppercase;
+    }
+
+    &__meta {
+      display: flex;
+      gap: 0.8rem;
+      font-size: 1.6rem;
+      color: $black;
+      font-family: $font-family;
+      margin-bottom: 1.2rem;
+    }
+
+    &__tags {
+      display: flex;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  // ── Skeleton loader ────────────────────────────────────────────────────────
+
+  &__skeleton {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    padding: 0.8rem 0;
+  }
+
+  &__skeleton__line {
+    height: 1.4rem;
+    border-radius: 0.6rem;
+    background: linear-gradient(
+      90deg,
+      $gray-200 25%,
+      $gray-100 50%,
+      $gray-200 75%
+    );
+    background-size: 80rem 100%;
+    animation: home-shimmer 1.4s infinite linear;
+    width: 100%;
+
+    &--short {
+      width: 40%;
+    }
+    &--medium {
+      width: 65%;
+    }
+  }
+
+  // ── Responsive ────────────────────────────────────────────────────────────
+
+  @media (max-width: #{$screen-xl-min}) {
+    &__hero,
+    &__grid {
+      padding-left: 4.8rem;
+      padding-right: 4.8rem;
+    }
+
+    &__exercises__grid {
+      flex-wrap: wrap;
+    }
+  }
+
+  @media (max-width: #{$screen-lg-min}) {
+    &__hero,
+    &__grid {
+      padding-left: 2.4rem;
+      padding-right: 2.4rem;
+    }
+
+    &__grid {
+      grid-template-columns: 1fr;
+    }
+
+    &__widget--exercises,
+    &__widget--shared {
+      grid-column: 1;
+    }
+
+    &__hero {
+      &__name {
+        font-size: 4.8rem;
+      }
+
+      &__stripes {
+        display: none;
+      }
+    }
+  }
+
+  @media (max-width: #{$screen-md-min}) {
+    &__exercise__card {
+      min-width: 100%;
+      max-width: 100%;
+    }
+
+    &__shared__card {
+      min-width: 100%;
+      max-width: 100%;
+    }
+  }
+}
+
+// ─── Shimmer animation ────────────────────────────────────────────────────────
+
+@keyframes home-shimmer {
+  0% {
+    background-position: -80rem 0;
+  }
+  100% {
+    background-position: 80rem 0;
+  }
+}

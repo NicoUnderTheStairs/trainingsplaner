@@ -1,11 +1,8 @@
 .section {
   position: relative;
-  max-width: 845px;
-  margin: 2.4rem;
-
-  @include lg-up {
-    margin: 2.4rem auto;
-  }
+  max-width: 144rem;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .text-right {
@@ -62,7 +59,7 @@
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    font-family: 'Roboto Condensed';
+    font-family: "Roboto Condensed";
   }
 
   &__primary {
@@ -76,7 +73,7 @@
     transition: all $ease;
     border: 0.2rem solid $black;
     background-color: $secondary-2;
-    font-family: 'Roboto Condensed';
+    font-family: "Roboto Condensed";
   }
 }
 

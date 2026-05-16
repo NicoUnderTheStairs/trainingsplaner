@@ -1,33 +1,54 @@
 .navigation {
   margin: 0;
   width: 100%;
-  border-bottom: 2px solid $black;
-  height: 83px;
+  border-bottom: 0.3rem solid $black;
+  height: 8.3rem;
   background-color: $white;
+  position: sticky;
+  top: 0;
+  z-index: 100;
 
   &__inner {
     display: flex;
     align-items: center;
     position: relative;
     justify-content: space-between;
-    padding-right: 80px;
+    padding-right: 8rem;
+    height: 100%;
   }
 
+  // ── Logo ──────────────────────────────────────────────────────────────────
+
   &__logo {
-    & svg {
-      width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+
+    & a {
+      display: flex;
+      align-items: center;
       height: 100%;
+    }
+
+    & svg {
+      height: 100%;
+      width: auto;
+      display: block;
     }
   }
 
+  // ── Menu ──────────────────────────────────────────────────────────────────
+
   &__menu {
     display: flex;
-    gap: 20px;
-    padding: 14px 80px;
+    gap: 1.2rem;
+    padding: 1.4rem 4rem;
 
     &__item {
       font-size: 1.8rem;
-      font-weight: 500;
+      font-weight: 700;
+      font-family: $font-family;
       color: $secondary;
       cursor: pointer;
       padding: 0.8rem 2.2rem;
@@ -36,40 +57,261 @@
       transition: all $ease;
       border: 0.2rem solid $black;
       background-color: $secondary-2;
+      text-decoration: none;
+      white-space: nowrap;
 
       &:hover {
         color: $primary-1;
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 $black;
+      }
+
+      &:active {
+        transform: translate(0.1rem, 0.1rem);
+        box-shadow: none;
+      }
+
+      // Active / current page state
+      &--active {
+        background-color: $primary-1;
+        color: $black;
+        border-color: $black;
+
+        &:hover {
+          color: $black;
+        }
       }
     }
   }
 
+  // ── Actions ───────────────────────────────────────────────────────────────
+
   &__actions {
     display: flex;
     align-items: center;
-    gap: 32px;
+    gap: 2rem;
+    flex-shrink: 0;
 
-    &__settings {
-      width: 25px;
-      height: 25px;
+    &__notifications {
+      background: transparent;
+      border: 0.2rem solid $black;
+      border-radius: 1rem;
+      cursor: pointer;
       display: flex;
       align-items: center;
       justify-content: center;
-      cursor: pointer;
+      width: 4rem;
+      height: 4rem;
+      transition: all $ease;
+      padding: 0;
+      flex-shrink: 0;
+
+      & svg {
+        width: 2rem;
+        height: 2rem;
+        fill: $black;
+      }
+
+      &:hover {
+        background-color: $secondary-2;
+        border-color: $black;
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 $black;
+
+        & svg {
+          fill: $primary-1;
+        }
+      }
+
+      &:active {
+        transform: translate(0.1rem, 0.1rem);
+        box-shadow: none;
+      }
     }
 
     &__profile {
-      width: 40px;
-      height: 40px;
+      width: 4rem;
+      height: 4rem;
       border-radius: 50%;
-      background-color: $primary-1;
+      background-color: $secondary-2;
       display: flex;
       align-items: center;
       justify-content: center;
-      color: $white;
-      font-size: 1.8rem;
-      font-weight: 500;
       cursor: pointer;
       border: 0.3rem solid $black;
+      text-decoration: none;
+      overflow: hidden;
+      flex-shrink: 0;
+      transition: all $ease;
+
+      &:hover {
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 $black;
+      }
+
+      &:active {
+        transform: translate(0.1rem, 0.1rem);
+        box-shadow: none;
+      }
+
+      &__img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+        display: block;
+      }
+
+      &__initials {
+        width: 100%;
+        height: 100%;
+        border-radius: 50%;
+        background-color: $secondary-2;
+        color: $primary-1;
+        font-size: 1.4rem;
+        font-weight: 900;
+        font-family: $font-family;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+  }
+
+  // ── Mobile hamburger toggle (hidden on desktop) ────────────────────────────
+
+  &__hamburger {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 4rem;
+    height: 4rem;
+    border: 0.2rem solid $black;
+    border-radius: 1rem;
+    background: transparent;
+    cursor: pointer;
+    padding: 0.8rem;
+    transition: all $ease;
+    flex-shrink: 0;
+
+    &:hover {
+      background-color: $secondary-2;
+      transform: translate(-0.2rem, -0.2rem);
+      box-shadow: 0.3rem 0.3rem 0 $black;
+    }
+
+    &__line {
+      display: block;
+      width: 100%;
+      height: 0.2rem;
+      background-color: $black;
+      border-radius: 0.2rem;
+      transition: all $ease;
+    }
+
+    // Animate to X when open
+    &--open {
+      .navigation__hamburger__line:nth-child(1) {
+        transform: translateY(0.7rem) rotate(45deg);
+      }
+      .navigation__hamburger__line:nth-child(2) {
+        opacity: 0;
+        transform: scaleX(0);
+      }
+      .navigation__hamburger__line:nth-child(3) {
+        transform: translateY(-0.7rem) rotate(-45deg);
+      }
+    }
+  }
+
+  // ── Mobile drawer ─────────────────────────────────────────────────────────
+
+  &__drawer {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: $white;
+    border-bottom: 0.3rem solid $black;
+    border-top: 0.1rem solid $black;
+    padding: 2rem 2.4rem;
+    flex-direction: column;
+    gap: 1.2rem;
+    z-index: 99;
+
+    &--open {
+      display: flex;
+    }
+
+    .navigation__menu__item {
+      width: 100%;
+      text-align: center;
+      display: block;
+    }
+  }
+
+  // ── Responsive ────────────────────────────────────────────────────────────
+
+  // Large tablets — reduce padding
+  @media (max-width: #{$screen-xl-min}) {
+    &__inner {
+      padding-right: 4rem;
+    }
+
+    &__menu {
+      padding: 1.4rem 2rem;
+      gap: 0.8rem;
+
+      &__item {
+        font-size: 1.6rem;
+        padding: 0.6rem 1.6rem;
+      }
+    }
+  }
+
+  // Tablets — hide menu, show hamburger
+  @media (max-width: #{$screen-lg-min}) {
+    position: relative; // drawer needs relative parent
+
+    &__menu {
+      display: none; // hidden — shown in drawer instead
+    }
+
+    &__hamburger {
+      display: flex;
+    }
+
+    &__actions {
+      gap: 1.2rem;
+    }
+  }
+
+  // Phones
+  @media (max-width: #{$screen-sm-min}) {
+    height: 7rem;
+
+    &__inner {
+      padding: 0 1.6rem;
+    }
+
+    &__logo svg {
+      height: 5.5rem;
+    }
+
+    &__actions {
+      gap: 0.8rem;
+
+      &__notifications,
+      &__profile {
+        width: 3.6rem;
+        height: 3.6rem;
+      }
+    }
+
+    &__drawer {
+      padding: 1.6rem;
     }
   }
 }

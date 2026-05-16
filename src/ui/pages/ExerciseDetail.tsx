@@ -114,7 +114,7 @@ const ExerciseDetail = () => {
   return (
     <>
       <Navigation />
-      <div className="exercisedetail">
+      <div className="exercisedetail section">
         <div className="exercisedetail__inner">
           <div className="exercisedetail__back">
             <button className="btn__wired" onClick={() => navigate(-1)}>

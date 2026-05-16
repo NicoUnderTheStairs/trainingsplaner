@@ -1,0 +1,746 @@
+// ─── Variables ────────────────────────────────────────────────────────────────
+
+$black: #1e1e1e;
+$white: #ffffff;
+$off-white: #fffaf0;
+$border: #1e1e1e;
+$border-dark: #d1d5db;
+$text: #1e1e1e;
+$text-muted: #1e1e1e;
+$text-light: #1e1e1e;
+
+// Stripes (from the nav / brand)
+$stripe-red: #e63c2f;
+$stripe-orange: #f5a623;
+$stripe-yellow: #ffee52;
+$stripe-green: #4db87a;
+$stripe-teal: #3ec6d4;
+
+// Role colors
+$role-coach-bg: #e8f2fd;
+$role-coach-fg: #1251a3;
+$role-player-bg: #edf5e8;
+$role-player-fg: #2d6e1a;
+$role-admin-bg: #fdecea;
+$role-admin-fg: #b82020;
+
+// Spacing
+$space-xs: 4px;
+$space-sm: 8px;
+$space-md: 16px;
+$space-lg: 24px;
+$space-xl: 32px;
+$space-2xl: 48px;
+$space-3xl: 64px;
+
+// Radii
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 16px;
+
+// Shadows
+$shadow-sm:
+  0 1px 3px rgba(0, 0, 0, 0.06),
+  0 1px 2px rgba(0, 0, 0, 0.04);
+$shadow-md:
+  0 4px 12px rgba(0, 0, 0, 0.08),
+  0 2px 4px rgba(0, 0, 0, 0.04);
+$shadow-lg:
+  0 12px 32px rgba(0, 0, 0, 0.12),
+  0 4px 8px rgba(0, 0, 0, 0.06);
+
+// Transitions
+$transition: 150ms ease;
+$transition-slow: 250ms ease;
+
+// ─── Page layout ──────────────────────────────────────────────────────────────
+
+.profile {
+  background: $off-white;
+  min-height: calc(100vh - 81px); // subtract nav height
+  padding: $space-2xl;
+
+  &__inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: $space-xl;
+  }
+}
+
+// ─── Hero section ─────────────────────────────────────────────────────────────
+
+.profile__hero {
+  background: $white;
+  border: 0.3rem solid $border;
+  border-radius: $radius-lg;
+  padding: $space-xl $space-2xl;
+  display: flex;
+  align-items: center;
+  gap: $space-xl;
+  box-shadow: $shadow-sm;
+  position: relative;
+  overflow: hidden;
+
+  // Decorative stripe bar at top
+  &::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(
+      to right,
+      $stripe-red 0%,
+      $stripe-red 20%,
+      $stripe-orange 20%,
+      $stripe-orange 40%,
+      $stripe-yellow 40%,
+      $stripe-yellow 60%,
+      $stripe-green 60%,
+      $stripe-green 80%,
+      $stripe-teal 80%,
+      $stripe-teal 100%
+    );
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+    margin-top: $space-sm;
+    flex-wrap: wrap;
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+    flex-shrink: 0;
+  }
+}
+
+.profile__name {
+  font-size: 28px;
+  font-weight: 700;
+  color: $text;
+  letter-spacing: -0.5px;
+  margin: 0;
+  line-height: 1.1;
+}
+
+.profile__joined {
+  font-size: 1.8rem;
+  color: $text-light;
+}
+
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+
+.profile__avatar__wrapper {
+  position: relative;
+  flex-shrink: 0;
+  width: 96px;
+  height: 96px;
+}
+
+.profile__avatar {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid $white;
+  box-shadow: $shadow-md;
+  display: block;
+}
+
+.profile__avatar__placeholder {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: $black;
+  border: 3px solid $white;
+  box-shadow: $shadow-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  span {
+    font-size: 28px;
+    font-weight: 700;
+    color: $white;
+    letter-spacing: -0.5px;
+    font-family: inherit;
+  }
+}
+
+.profile__avatar__change__btn {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: $black;
+  color: $white;
+  border: 2px solid $white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition:
+    background $transition,
+    transform $transition;
+  padding: 0;
+
+  svg {
+    width: 12px;
+    height: 12px;
+    flex-shrink: 0;
+  }
+
+  &:hover {
+    background: $stripe-teal;
+    transform: scale(1.1);
+  }
+}
+
+// ─── Role badge ───────────────────────────────────────────────────────────────
+
+.profile__role {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+
+  &--coach {
+    background: $role-coach-bg;
+    color: $role-coach-fg;
+  }
+
+  &--player {
+    background: $role-player-bg;
+    color: $role-player-fg;
+  }
+
+  &--admin {
+    background: $role-admin-bg;
+    color: $role-admin-fg;
+  }
+}
+
+// ─── Info card grid ───────────────────────────────────────────────────────────
+
+.profile__grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: $space-md;
+
+  // Wide card spans both columns
+  .profile__card--wide {
+    grid-column: 1 / -1;
+  }
+}
+
+// ─── Card ─────────────────────────────────────────────────────────────────────
+
+.profile__card {
+  background: $white;
+  border: 0.3rem solid $border;
+  border-radius: $radius-lg;
+  padding: $space-lg;
+  box-shadow: $shadow-sm;
+  transition: box-shadow $transition-slow;
+
+  &:hover {
+    box-shadow: $shadow-md;
+  }
+
+  &__title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: $text-light;
+    margin: 0 0 $space-md 0;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-md;
+    padding: $space-sm 0;
+    border-bottom: 1px solid $border;
+
+    &:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    &:first-of-type {
+      padding-top: 0;
+    }
+  }
+
+  &__label {
+    font-size: 1.8rem;
+    color: $text-muted;
+    flex-shrink: 0;
+  }
+
+  &__value {
+    font-size: 13.5px;
+    color: $text;
+    font-weight: 500;
+    text-align: right;
+
+    &--accent {
+      font-size: 20px;
+      font-weight: 700;
+      color: $text;
+    }
+  }
+
+  &__empty {
+    color: $text-light;
+    font-style: italic;
+    font-weight: 400;
+  }
+}
+
+// ─── Quick links ──────────────────────────────────────────────────────────────
+
+.profile__quicklink {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: $space-sm + 2px $space-sm;
+  border: none;
+  background: transparent;
+  border-bottom: 1px solid $border;
+  font-size: 13.5px;
+  font-family: inherit;
+  font-weight: 500;
+  color: $text;
+  cursor: pointer;
+  border-radius: 0;
+  transition:
+    background $transition,
+    color $transition,
+    padding-left $transition;
+  text-align: left;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  svg {
+    color: $text-light;
+    flex-shrink: 0;
+    transition:
+      transform $transition,
+      color $transition;
+  }
+
+  &:hover {
+    background: $off-white;
+    padding-left: $space-md;
+    color: $black;
+    border-radius: $radius-sm;
+
+    svg {
+      transform: translateX(3px);
+      color: $text;
+    }
+  }
+}
+
+// ─── Edit inputs ──────────────────────────────────────────────────────────────
+
+.profile__edit__input {
+  width: 100%;
+  border: 1px solid $border-dark;
+  border-radius: $radius-sm;
+  padding: $space-sm $space-md;
+  font-size: 14px;
+  font-family: inherit;
+  color: $text;
+  background: $white;
+  outline: none;
+  transition:
+    border-color $transition,
+    box-shadow $transition;
+
+  &:focus {
+    border-color: $black;
+    box-shadow: 0 0 0 3px rgba(30, 30, 30, 0.08);
+  }
+
+  &::placeholder {
+    color: $text-light;
+  }
+
+  &--name {
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    padding: $space-sm $space-md;
+    margin-bottom: $space-sm;
+  }
+
+  &--bio {
+    resize: vertical;
+    min-height: 100px;
+    line-height: 1.6;
+  }
+
+  &--inline {
+    padding: 4px $space-sm;
+    font-size: 1.8rem;
+    width: auto;
+    min-width: 140px;
+    text-align: right;
+  }
+}
+
+.profile__edit__select {
+  border: 1px solid $border-dark;
+  border-radius: $radius-sm;
+  padding: 4px $space-sm;
+  font-size: 1.8rem;
+  font-family: inherit;
+  color: $text;
+  background: $white;
+  outline: none;
+  cursor: pointer;
+  transition: border-color $transition;
+
+  &:focus {
+    border-color: $black;
+  }
+}
+
+// ─── Buttons (shared with rest of app, defined here for completeness) ─────────
+
+.btn__primary {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-sm;
+  background: $black;
+  color: $white;
+  border: none;
+  padding: $space-sm + 2px $space-lg;
+  border-radius: $radius-sm;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background $transition,
+    transform $transition;
+
+  &:hover {
+    background: lighten($black, 15%);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+}
+
+.btn__wired {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-sm;
+  background: transparent;
+  color: $text;
+  border: 1.5px solid $border-dark;
+  padding: $space-sm + 2px $space-lg;
+  border-radius: $radius-sm;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    border-color $transition,
+    background $transition;
+
+  &:hover {
+    border-color: $black;
+    background: $off-white;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.btn__danger {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-sm;
+  background: $role-admin-bg;
+  color: $role-admin-fg;
+  border: 1.5px solid lighten($role-admin-fg, 35%);
+  padding: $space-sm + 2px $space-lg;
+  border-radius: $radius-sm;
+  font-size: 13.5px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition:
+    background $transition,
+    color $transition;
+
+  &:hover {
+    background: $role-admin-fg;
+    color: $white;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+// ─── Avatar picker dialog ─────────────────────────────────────────────────────
+
+.dialog__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  backdrop-filter: blur(2px);
+  animation: overlay-in $transition-slow both;
+}
+
+.dialog {
+  background: $white;
+  border-radius: $radius-lg;
+  padding: $space-xl;
+  width: 420px;
+  max-width: 90vw;
+  box-shadow: $shadow-lg;
+  animation: dialog-in $transition-slow both;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: $space-lg;
+  }
+
+  &__title {
+    font-size: 16px;
+    font-weight: 700;
+    color: $text;
+    margin: 0;
+  }
+
+  &__body {
+    font-size: 14px;
+    color: $text-muted;
+    line-height: 1.6;
+    margin-bottom: $space-lg;
+
+    strong {
+      color: $text;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: $space-sm;
+    justify-content: flex-end;
+  }
+}
+
+// ─── Avatar picker specifics ──────────────────────────────────────────────────
+
+.profile__avatar__picker {
+  width: 540px;
+  max-width: 95vw;
+
+  &__close {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 0.3rem solid $border;
+    background: transparent;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $text-muted;
+    transition:
+      background $transition,
+      color $transition;
+
+    &:hover {
+      background: $off-white;
+      color: $text;
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $space-sm;
+  }
+
+  &__option {
+    aspect-ratio: 1;
+    border-radius: $radius-md;
+    border: 2px solid $border;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    background: $off-white;
+    padding: 0;
+    transition:
+      border-color $transition,
+      transform $transition,
+      box-shadow $transition;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform $transition-slow;
+    }
+
+    &:hover {
+      border-color: $black;
+      transform: translateY(-2px);
+      box-shadow: $shadow-md;
+
+      img {
+        transform: scale(1.04);
+      }
+    }
+
+    &--selected {
+      border-color: $black;
+      box-shadow: 0 0 0 3px rgba(30, 30, 30, 0.15);
+    }
+  }
+
+  &__check {
+    position: absolute;
+    bottom: 6px;
+    right: 6px;
+    background: $black;
+    color: $white;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    box-shadow: $shadow-sm;
+  }
+}
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
+
+@media (max-width: 768px) {
+  .profile {
+    padding: $space-md;
+  }
+
+  .profile__hero {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: $space-lg;
+    gap: $space-md;
+
+    &__actions {
+      width: 100%;
+
+      .btn__primary,
+      .btn__wired,
+      .btn__danger {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  }
+
+  .profile__grid {
+    grid-template-columns: 1fr;
+
+    .profile__card--wide {
+      grid-column: 1;
+    }
+  }
+
+  .profile__avatar__picker__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .profile__name {
+    font-size: 22px;
+  }
+
+  .profile__avatar,
+  .profile__avatar__placeholder {
+    width: 72px;
+    height: 72px;
+  }
+
+  .profile__hero {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+}

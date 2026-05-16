@@ -123,7 +123,7 @@ const ExcerciseList = () => {
   }, []);
 
   return (
-    <div className="excerciselist">
+    <div className="excerciselist section">
       <div className="excerciselist__inner">
         <div className="excerciselist__menu">
           <h2>
