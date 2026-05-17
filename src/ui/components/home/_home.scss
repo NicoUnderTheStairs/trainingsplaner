@@ -287,7 +287,7 @@
     }
 
     &__sketch {
-      min-width: 24rem;
+      min-width: calc(100% + 0.6rem);
       max-height: 18rem;
       height: 18rem;
       border: 0.3rem solid $black;
@@ -296,7 +296,7 @@
       left: -0.3rem;
       top: -0.3rem;
       overflow: hidden;
-      background-color: $secondary;
+      background-color: $white;
 
       svg {
         width: 100%;

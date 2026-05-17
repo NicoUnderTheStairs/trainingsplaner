@@ -107,6 +107,7 @@
 
       @media (max-width: #{$screen-lg-min}) {
         padding: 0 2.4rem;
+        gap: 1rem;
       }
 
       &--right {
