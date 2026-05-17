@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, Link } from "react-router-dom";
 import { doc, getDoc, deleteDoc, updateDoc } from "firebase/firestore";
 import Navigation from "../components/navigation/Navigation";
 import SketchThumbnail from "../components/sketch/Sketchthumbnail";
 import type { Exercise } from "../../types/Exercise";
 import type { SketchData } from "../../types/Sketch";
 import db from "../../firebase";
+import { fetchVariants } from "../../services/excercisewizard/exerciseVariants";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -54,12 +55,10 @@ interface Arrow {
 }
 
 const uid = () => Math.random().toString(36).slice(2, 9);
-
 const toSketchData = (players: Player[], arrows: Arrow[]): SketchData => ({
   players: Object.fromEntries(players.map(({ id, ...r }) => [id, r])),
   arrows: Object.fromEntries(arrows.map(({ id, ...r }) => [id, r])),
 });
-
 const fromSketchData = (
   sketch?: SketchData,
 ): { players: Player[]; arrows: Arrow[] } => {
@@ -76,7 +75,7 @@ const fromSketchData = (
   };
 };
 
-// ─── Embedded sketch editor ───────────────────────────────────────────────────
+// ─── Sketch editor (same as before) ──────────────────────────────────────────
 
 const SketchEditor = ({
   sketch,
@@ -97,7 +96,6 @@ const SketchEditor = ({
     x2: number;
     y2: number;
   } | null>(null);
-
   const dragRef = useRef<{
     playerId: string;
     offsetX: number;
@@ -106,7 +104,6 @@ const SketchEditor = ({
   const arrowRef = useRef<{ x1: number; y1: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Emit up whenever canvas changes
   useEffect(() => {
     onChange(toSketchData(players, arrows));
   }, [players, arrows]);
@@ -164,7 +161,6 @@ const SketchEditor = ({
   const handleSVGMouseUp = useCallback(
     (e: React.MouseEvent) => {
       console.log(e);
-
       dragRef.current = null;
       if (arrowRef.current && draftArrow) {
         const dx = draftArrow.x2 - draftArrow.x1,
@@ -232,7 +228,6 @@ const SketchEditor = ({
 
   return (
     <div className="sketch__editor">
-      {/* Toolbar */}
       <div className="sketch__toolbar">
         <div className="sketch__toolbar__group">
           <span className="sketch__toolbar__label">Players</span>
@@ -249,7 +244,6 @@ const SketchEditor = ({
             </div>
           ))}
         </div>
-
         <div className="sketch__toolbar__group">
           <span className="sketch__toolbar__label">Tool</span>
           <button
@@ -265,7 +259,6 @@ const SketchEditor = ({
             → Arrow
           </button>
         </div>
-
         {tool === "arrow" && (
           <div className="sketch__toolbar__group">
             <span className="sketch__toolbar__label">Style</span>
@@ -283,13 +276,11 @@ const SketchEditor = ({
             </button>
           </div>
         )}
-
         <div className="sketch__toolbar__group sketch__toolbar__group--right">
           {selectedId && (
             <button
               className="sketch__tool__btn sketch__tool__btn--danger"
               onClick={handleDelete}
-              title="Delete selected (Del)"
             >
               × Delete
             </button>
@@ -306,8 +297,6 @@ const SketchEditor = ({
           </button>
         </div>
       </div>
-
-      {/* SVG canvas */}
       <svg
         ref={svgRef}
         width={SVG_W}
@@ -344,8 +333,6 @@ const SketchEditor = ({
             <path d="M0,0 L0,8 L8,4 Z" fill="#aaa" />
           </marker>
         </defs>
-
-        {/* Court */}
         <path d="M560 0H0V440H560V0Z" fill="white" />
         <path
           d="M363.814 77H496.261V365H279.5L280 77H363.814ZM280 77L279.5 365H194.203V77H280ZM194.203 77V365H62.9062V77H194.203Z"
@@ -355,8 +342,6 @@ const SketchEditor = ({
           d="M363.814 77V365M363.814 77H496.261V365H279.5M363.814 77H280M279.5 365L280 77M279.5 365H194.203M280 77H194.203M194.203 365V77M194.203 365H62.9062V77H194.203"
           stroke="black"
         />
-
-        {/* Arrows */}
         {arrows.map((a) => (
           <g
             key={a.id}
@@ -376,7 +361,6 @@ const SketchEditor = ({
               markerEnd="url(#ed-arrow)"
               style={{ cursor: "pointer" }}
             />
-            {/* Fat invisible hit area */}
             <line
               x1={a.x1}
               y1={a.y1}
@@ -388,8 +372,6 @@ const SketchEditor = ({
             />
           </g>
         ))}
-
-        {/* Draft arrow */}
         {draftArrow && (
           <line
             x1={draftArrow.x1}
@@ -403,8 +385,6 @@ const SketchEditor = ({
             pointerEvents="none"
           />
         )}
-
-        {/* Players */}
         {players.map((p) => (
           <g
             key={p.id}
@@ -440,7 +420,6 @@ const SketchEditor = ({
           </g>
         ))}
       </svg>
-
       <p className="sketch__hint">
         {tool === "select"
           ? "Drag players onto the court · Click to select · Del to remove"
@@ -450,6 +429,15 @@ const SketchEditor = ({
   );
 };
 
+// ─── Variant types ────────────────────────────────────────────────────────────
+
+interface VariantExercise {
+  id: string;
+  title: string;
+  difficulty: number;
+  tags: string[];
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const ExerciseDetail = () => {
@@ -458,23 +446,25 @@ const ExerciseDetail = () => {
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
   const [loading, setLoading] = useState(true);
+  const [variants, setVariants] = useState<VariantExercise[]>([]);
+  const [loadingVariants, setLoadingVariants] = useState(false);
 
-  // Edit info state
+  // Edit info
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editData, setEditData] = useState<Partial<Exercise>>({});
 
-  // Edit sketch state
+  // Edit sketch
   const [editingSketch, setEditingSketch] = useState(false);
   const [editSketch, setEditSketch] = useState<SketchData | undefined>(
     undefined,
   );
 
-  // Delete state
+  // Delete
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  // ── Fetch exercise ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!exerciseId) return;
     const fetch = async () => {
@@ -485,6 +475,18 @@ const ExerciseDetail = () => {
     };
     fetch();
   }, [exerciseId]);
+
+  // ── Fetch variants whenever exercise loads ─────────────────────────────────
+  useEffect(() => {
+    if (!exerciseId || !exercise) return;
+    // Only fetch if exercise belongs to a variant group
+    if (!(exercise as any).variantGroupId) return;
+    setLoadingVariants(true);
+    fetchVariants(exerciseId)
+      .then(setVariants)
+      .catch(() => setVariants([]))
+      .finally(() => setLoadingVariants(false));
+  }, [exerciseId, exercise]);
 
   // ── Edit info ──────────────────────────────────────────────────────────────
   const handleEditStart = () => {
@@ -587,6 +589,8 @@ const ExerciseDetail = () => {
       </>
     );
 
+  const hasVariants = variants.length > 0;
+
   return (
     <>
       <Navigation />
@@ -594,14 +598,11 @@ const ExerciseDetail = () => {
         <div className="exercisedetail__inner">
           {/* Back */}
           <div className="btn__back">
-            <button className="btn__wired" onClick={() => navigate(-1)}>
-              <svg
-                width="23"
-                height="12"
-                viewBox="0 0 23 12"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+            <button
+              className="btn__wired"
+              onClick={() => (window.location.href = "/exercise-overview")}
+            >
+              <svg width="23" height="12" viewBox="0 0 23 12" fill="none">
                 <path
                   d="M22 6.75H22.75V5.25H22V6.75ZM0.46967 5.46967C0.176777 5.76256 0.176777 6.23744 0.46967 6.53033L5.24264 11.3033C5.53553 11.5962 6.01041 11.5962 6.3033 11.3033C6.59619 11.0104 6.59619 10.5355 6.3033 10.2426L2.06066 6L6.3033 1.75736C6.59619 1.46447 6.59619 0.989593 6.3033 0.696699C6.01041 0.403806 5.53553 0.403806 5.24264 0.696699L0.46967 5.46967ZM22 5.25H1V6.75H22V5.25Z"
                   fill="black"
@@ -615,6 +616,76 @@ const ExerciseDetail = () => {
           <div className="exercisedetail__layout">
             {/* Left: info */}
             <div className="exercisedetail__info">
+              {/* Action buttons */}
+              <div className="exercisedetail__actions">
+                {editing ? (
+                  <>
+                    <button
+                      className="btn__wired"
+                      onClick={handleEditCancel}
+                      disabled={saving}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      className="btn__primary"
+                      onClick={handleSave}
+                      disabled={saving}
+                    >
+                      {saving ? "Saving..." : "Save"}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className="exercisedetail__btn"
+                      title="Add to favourites"
+                    >
+                      <svg
+                        width="22"
+                        height="20"
+                        viewBox="0 0 26 24"
+                        fill="none"
+                      >
+                        <path
+                          d="M19.2754 1.5C22.2429 1.5 24.4998 3.75726 24.5 6.79199C24.5 8.52207 24.2672 9.79464 23.8379 10.8643C23.4088 11.9333 22.7465 12.892 21.7627 13.9512C20.7617 15.0288 19.4807 16.1562 17.8262 17.6025C16.4436 18.8112 14.8339 20.216 13 21.9346C11.1661 20.216 9.55644 18.8112 8.17383 17.6025C6.51934 16.1562 5.2383 15.0288 4.2373 13.9512C3.25348 12.892 2.59124 11.9333 2.16211 10.8643C1.73284 9.79464 1.5 8.52207 1.5 6.79199C1.50023 3.75726 3.7571 1.5 6.72461 1.5C8.77382 1.50018 10.5736 2.70206 11.71 4.61523L13 6.78613L14.29 4.61523C15.4264 2.70206 17.2262 1.50018 19.2754 1.5Z"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                        />
+                      </svg>
+                      Favourite
+                    </button>
+                    <button
+                      className="exercisedetail__btn"
+                      onClick={handleEditStart}
+                    >
+                      <svg
+                        width="16"
+                        height="18"
+                        viewBox="0 0 18 24"
+                        fill="none"
+                      >
+                        <path
+                          d="M16.8756 21.5929H1.12977C0.831474 21.5929 0.545402 21.7198 0.334478 21.9454C0.123556 22.1711 0.00506036 22.4772 0.00506036 22.7964C0.00506036 23.1156 0.123556 23.4217 0.334478 23.6474C0.545402 23.873 0.831474 23.9999 1.12977 23.9999H16.8756C17.1739 23.9999 17.46 23.873 17.671 23.6474C17.8818 23.4217 18.0004 23.1156 18.0004 22.7964C18.0004 22.4772 17.8818 22.1711 17.671 21.9454C17.46 21.7198 17.1739 21.5929 16.8756 21.5929Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M1.12943 19.1861H1.23066L5.92067 18.7288C6.43444 18.674 6.91495 18.4318 7.28156 18.0428L17.404 7.21152C17.7968 6.76739 18.0091 6.17473 17.9944 5.5634C17.9796 4.95206 17.739 4.37192 17.3251 3.9501L14.2435 0.652573C13.8413 0.248321 13.3142 0.0163667 12.7626 0.000833716C12.211 -0.0146993 11.6733 0.187273 11.2518 0.568331L1.12943 11.3996C0.765888 11.7919 0.53953 12.3061 0.48835 12.8558L0.00472708 17.8744C-0.0104239 18.0505 0.0109516 18.2282 0.0673295 18.3947C0.123707 18.5611 0.2137 18.7122 0.330892 18.8371C0.435984 18.9486 0.56062 19.0369 0.69765 19.0968C0.834682 19.1567 0.981413 19.187 1.12943 19.1861ZM12.6802 2.33744L15.7506 5.62292L13.5012 7.9697L10.487 4.74439L12.6802 2.33744ZM2.67028 13.0604L9.00236 6.33298L12.0391 9.58236L5.74072 16.3218L2.3666 16.6588L2.67028 13.0604Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      Edit
+                    </button>
+                    <button
+                      className="exercisedetail__btn exercisedetail__btn--danger"
+                      onClick={() => setDeleteConfirm(true)}
+                    >
+                      Delete
+                    </button>
+                  </>
+                )}
+              </div>
+
               <div className="exercisedetail__header">
                 <div className="exercisedetail__header__accent" />
                 <div className="exercisedetail__header__body">
@@ -751,76 +822,92 @@ const ExerciseDetail = () => {
                 </div>
               </div>
 
-              {/* Action buttons */}
-              <div className="exercisedetail__actions">
-                {editing ? (
-                  <>
-                    <button
-                      className="btn__wired"
-                      onClick={handleEditCancel}
-                      disabled={saving}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      className="btn__primary"
-                      onClick={handleSave}
-                      disabled={saving}
-                    >
-                      {saving ? "Saving..." : "Save"}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <button
-                      className="exercisedetail__btn"
-                      title="Add to favourites"
-                    >
-                      <svg
-                        width="22"
-                        height="20"
-                        viewBox="0 0 26 24"
-                        fill="none"
-                      >
-                        <path
-                          d="M19.2754 1.5C22.2429 1.5 24.4998 3.75726 24.5 6.79199C24.5 8.52207 24.2672 9.79464 23.8379 10.8643C23.4088 11.9333 22.7465 12.892 21.7627 13.9512C20.7617 15.0288 19.4807 16.1562 17.8262 17.6025C16.4436 18.8112 14.8339 20.216 13 21.9346C11.1661 20.216 9.55644 18.8112 8.17383 17.6025C6.51934 16.1562 5.2383 15.0288 4.2373 13.9512C3.25348 12.892 2.59124 11.9333 2.16211 10.8643C1.73284 9.79464 1.5 8.52207 1.5 6.79199C1.50023 3.75726 3.7571 1.5 6.72461 1.5C8.77382 1.50018 10.5736 2.70206 11.71 4.61523L13 6.78613L14.29 4.61523C15.4264 2.70206 17.2262 1.50018 19.2754 1.5Z"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                        />
-                      </svg>
-                      Favourite
-                    </button>
-                    <button
-                      className="exercisedetail__btn"
-                      onClick={handleEditStart}
-                      title="Edit info"
-                    >
-                      <svg
-                        width="16"
-                        height="18"
-                        viewBox="0 0 18 24"
-                        fill="none"
-                      >
-                        <path
-                          d="M16.8756 21.5929H1.12977C0.831474 21.5929 0.545402 21.7198 0.334478 21.9454C0.123556 22.1711 0.00506036 22.4772 0.00506036 22.7964C0.00506036 23.1156 0.123556 23.4217 0.334478 23.6474C0.545402 23.873 0.831474 23.9999 1.12977 23.9999H16.8756C17.1739 23.9999 17.46 23.873 17.671 23.6474C17.8818 23.4217 18.0004 23.1156 18.0004 22.7964C18.0004 22.4772 17.8818 22.1711 17.671 21.9454C17.46 21.7198 17.1739 21.5929 16.8756 21.5929Z"
-                          fill="currentColor"
-                        />
-                        <path
-                          d="M1.12943 19.1861H1.23066L5.92067 18.7288C6.43444 18.674 6.91495 18.4318 7.28156 18.0428L17.404 7.21152C17.7968 6.76739 18.0091 6.17473 17.9944 5.5634C17.9796 4.95206 17.739 4.37192 17.3251 3.9501L14.2435 0.652573C13.8413 0.248321 13.3142 0.0163667 12.7626 0.000833716C12.211 -0.0146993 11.6733 0.187273 11.2518 0.568331L1.12943 11.3996C0.765888 11.7919 0.53953 12.3061 0.48835 12.8558L0.00472708 17.8744C-0.0104239 18.0505 0.0109516 18.2282 0.0673295 18.3947C0.123707 18.5611 0.2137 18.7122 0.330892 18.8371C0.435984 18.9486 0.56062 19.0369 0.69765 19.0968C0.834682 19.1567 0.981413 19.187 1.12943 19.1861ZM12.6802 2.33744L15.7506 5.62292L13.5012 7.9697L10.487 4.74439L12.6802 2.33744ZM2.67028 13.0604L9.00236 6.33298L12.0391 9.58236L5.74072 16.3218L2.3666 16.6588L2.67028 13.0604Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                      Edit
-                    </button>
-                    <button
-                      className="exercisedetail__btn exercisedetail__btn--danger"
-                      onClick={() => setDeleteConfirm(true)}
-                    >
-                      Delete
-                    </button>
-                  </>
-                )}
-              </div>
+              {/* ── Variants section ── */}
+              {(hasVariants || loadingVariants) && (
+                <div className="exercisedetail__variants">
+                  <h3 className="exercisedetail__variants__title">
+                    Variants
+                    <span className="exercisedetail__variants__count">
+                      {variants.length}
+                    </span>
+                  </h3>
+                  <p className="exercisedetail__variants__hint">
+                    These exercises are variations of the same base exercise.
+                  </p>
+
+                  {loadingVariants ? (
+                    <div className="exercisedetail__variants__loading">
+                      Loading variants...
+                    </div>
+                  ) : (
+                    <div className="exercisedetail__variants__list">
+                      {variants.map((v) => (
+                        <Link
+                          key={v.id}
+                          to={`/exercise-detail/${v.id}`}
+                          className="exercisedetail__variants__item"
+                        >
+                          <div className="exercisedetail__variants__item__info">
+                            <span className="exercisedetail__variants__item__title">
+                              {v.title}
+                            </span>
+                            <div className="exercisedetail__variants__item__tags">
+                              {v.tags.slice(0, 2).map((tag) => (
+                                <span
+                                  key={tag}
+                                  className={`tags tags--${tag.toLowerCase()}`}
+                                >
+                                  {tag}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="exercisedetail__variants__item__right">
+                            <div
+                              className={`difficulty difficulty--${v.difficulty}`}
+                            >
+                              <svg
+                                width="14"
+                                height="16"
+                                viewBox="0 0 21 24"
+                                fill="none"
+                              >
+                                <path
+                                  className={`difficulty--${v.difficulty}__path1`}
+                                  d="M0 17.5238H6V24H0V17.5238Z"
+                                  fill="#1E1E1E"
+                                />
+                                <path
+                                  className={`difficulty--${v.difficulty}__path2`}
+                                  d="M7.5 8.7619H13.5V24H7.5V8.7619Z"
+                                  fill="#1E1E1E"
+                                />
+                                <path
+                                  className={`difficulty--${v.difficulty}__path3`}
+                                  d="M15 0H21V24H15V0Z"
+                                  fill="#1E1E1E"
+                                />
+                              </svg>
+                            </div>
+                            <svg
+                              width="14"
+                              height="10"
+                              viewBox="0 0 23 12"
+                              fill="none"
+                            >
+                              <path
+                                d="M1 5.25004H0.25V6.75004H1V5.25004ZM22.5303 6.53037C22.8232 6.23748 22.8232 5.7626 22.5303 5.46971L17.7574 0.696739C17.4645 0.403839 16.9896 0.403839 16.6967 0.696739C16.4038 0.989639 16.4038 1.46454 16.6967 1.75744L20.9393 6.00004L16.6967 10.2427C16.4038 10.5356 16.4038 11.0104 16.6967 11.3033C16.9896 11.5962 17.4645 11.5962 17.7574 11.3033L22.5303 6.53037ZM1 6.75004L22 6.75004V5.25004L1 5.25004V6.75004Z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Right: sketch panel */}
@@ -850,15 +937,6 @@ const ExerciseDetail = () => {
                 </>
               ) : (
                 <>
-                  <div className="exercisedetail__sketch">
-                    {exercise.sketch ? (
-                      <SketchThumbnail sketch={exercise.sketch} />
-                    ) : (
-                      <div className="exercisedetail__sketch__empty">
-                        <p>No sketch yet.</p>
-                      </div>
-                    )}
-                  </div>
                   <button
                     className="exercisedetail__btn exercisedetail__btn--sketch"
                     onClick={handleEditSketchStart}
@@ -875,6 +953,15 @@ const ExerciseDetail = () => {
                     </svg>
                     {exercise.sketch ? "Edit sketch" : "Create sketch"}
                   </button>
+                  <div className="exercisedetail__sketch">
+                    {exercise.sketch ? (
+                      <SketchThumbnail sketch={exercise.sketch} />
+                    ) : (
+                      <div className="exercisedetail__sketch__empty">
+                        <p>No sketch yet.</p>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
             </div>

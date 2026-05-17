@@ -466,62 +466,6 @@ $transition-slow: 250ms ease;
   }
 }
 
-.btn__wired {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-sm;
-  background: transparent;
-  color: $text;
-  border: 1.5px solid $border-dark;
-  padding: $space-sm + 2px $space-lg;
-  border-radius: $radius-sm;
-  font-size: 13.5px;
-  font-weight: 500;
-  font-family: inherit;
-  cursor: pointer;
-  transition:
-    border-color $transition,
-    background $transition;
-
-  &:hover {
-    border-color: $black;
-    background: $off-white;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
-.btn__danger {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-sm;
-  background: $role-admin-bg;
-  color: $role-admin-fg;
-  border: 1.5px solid lighten($role-admin-fg, 35%);
-  padding: $space-sm + 2px $space-lg;
-  border-radius: $radius-sm;
-  font-size: 13.5px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition:
-    background $transition,
-    color $transition;
-
-  &:hover {
-    background: $role-admin-fg;
-    color: $white;
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-}
-
 // ─── Avatar picker dialog ─────────────────────────────────────────────────────
 
 .dialog__overlay {

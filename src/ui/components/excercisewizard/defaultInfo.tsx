@@ -45,6 +45,8 @@ const DefaultInfo: React.FC<Props> = ({
 
   const navigate = useNavigate();
 
+  console.log(author);
+
   return (
     <>
       <div className="excercisewizard">

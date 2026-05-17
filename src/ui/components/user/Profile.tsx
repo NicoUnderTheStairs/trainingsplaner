@@ -37,7 +37,7 @@ const AVATAR_OPTIONS = [
   },
   {
     id: "tiger",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Adrian",
+    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Liam",
   },
   {
     id: "panther",

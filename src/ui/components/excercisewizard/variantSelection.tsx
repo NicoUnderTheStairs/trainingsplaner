@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+// import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import withNavigation from "../../../hoc/withNavigation";
 import db from "../../../firebase";
 import type { Exercise } from "../../../types/Exercise";

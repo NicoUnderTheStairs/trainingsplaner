@@ -60,6 +60,49 @@
     align-items: center;
     gap: 0.4rem;
     font-family: "Roboto Condensed";
+    transition: all $ease;
+
+    & svg path {
+      transition: all $ease;
+    }
+
+    &:hover {
+      border-color: $black;
+      background: $secondary-2;
+      color: $secondary;
+
+      & svg path {
+        fill: $secondary !important;
+      }
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  &__danger {
+    display: inline-flex;
+    align-items: center;
+    gap: 1.2rem;
+    background: $secondary;
+    color: $warning;
+    border: 1.5px solid lighten($secondary, 35%);
+    padding: 1.2rem 2.2rem;
+    border-radius: 2rem;
+    font-size: 13.5px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition:
+      background $ease,
+      color $ease;
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
   }
 
   &__primary {

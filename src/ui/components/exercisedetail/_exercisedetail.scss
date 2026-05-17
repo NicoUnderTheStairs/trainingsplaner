@@ -74,7 +74,7 @@
 
   &__info {
     display: flex;
-    flex-direction: column-reverse;
+    flex-direction: column;
     gap: 2rem;
   }
 
@@ -120,7 +120,7 @@
     }
 
     &__sep {
-      color: $gray-400;
+      color: $black;
       font-size: 1.4rem;
     }
 
@@ -155,7 +155,7 @@
   &__description {
     font-size: 2rem;
     font-family: $font-family;
-    color: $gray-700;
+    color: $black;
     margin: 0;
     line-height: 1.6;
   }
@@ -188,7 +188,7 @@
   &__edit {
     &__input {
       width: 100%;
-      border: 0.2rem solid $gray-300;
+      border: 0.2rem solid $black;
       border-radius: 1rem;
       padding: 1rem 1.4rem;
       font-family: $font-family;
@@ -207,7 +207,7 @@
       }
 
       &::placeholder {
-        color: $gray-400;
+        color: $black;
       }
 
       &--title {
@@ -236,7 +236,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.15rem;
-        color: $gray-600;
+        color: $black;
         font-family: $font-family;
       }
 
@@ -298,8 +298,8 @@
     position: sticky;
     top: calc(8.3rem + 2.4rem);
     display: flex;
-    flex-direction: column-reverse;
-    gap: 1.2rem;
+    flex-direction: column;
+    gap: 2rem;
   }
 
   &__sketch {
@@ -333,7 +333,7 @@
 
       & p {
         font-size: 1.8rem;
-        color: $gray-400;
+        color: $black;
         font-family: $font-family;
       }
     }
@@ -370,7 +370,7 @@
     gap: 1.6rem;
     flex-wrap: wrap;
     padding: 1.2rem 1.6rem;
-    background-color: $secondary;
+    background-color: $white;
     border-bottom: 0.2rem solid $black;
 
     &__group {
@@ -388,7 +388,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.15rem;
-      color: $gray-600;
+      color: $black;
       font-family: $font-family;
       white-space: nowrap;
     }
@@ -402,7 +402,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.3rem;
+    font-size: 1.6rem;
     font-weight: 900;
     font-family: $font-family;
     color: $white;
@@ -475,11 +475,12 @@
 
   .sketch__hint {
     padding: 0.8rem 1.6rem;
-    font-size: 1.3rem;
-    color: $gray-500;
+    font-size: 1.6rem;
+    color: $black;
     font-family: $font-family;
-    background-color: $secondary;
-    border-top: 0.1rem solid $gray-200;
+    background-color: $white;
+    text-align: center;
+    // border-top: 0.1rem solid $black;
     margin: 0;
   }
 
@@ -498,8 +499,6 @@
 
     &__layout {
       grid-template-columns: 1fr;
-
-      // Todo, swap two divs in grid in responsive
     }
 
     // On mobile, sketch comes first visually
@@ -525,6 +524,10 @@
   }
 
   @media (max-width: #{$screen-md-min}) {
+    &__inner {
+      padding: 0 1.6rem;
+    }
+
     &__title {
       font-size: 2.8rem;
     }
@@ -535,8 +538,137 @@
   }
 
   @media (max-width: #{$screen-sm-min}) {
+    &__inner {
+      padding: 0 1.2rem;
+    }
     &__title {
       font-size: 2.4rem;
+    }
+  }
+
+  // ── Variants section ──────────────────────────────────────────────────────
+
+  &__variants {
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    background-color: $white;
+    overflow: hidden;
+
+    &__title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15rem;
+      color: $black;
+      font-family: $font-family;
+      margin: 0;
+      padding: 1.6rem 2rem 0;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    &__count {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 2rem;
+      height: 2rem;
+      border-radius: 5.2rem;
+      background-color: $secondary-2;
+      color: $primary-1;
+      font-size: 1.2rem;
+      font-weight: 900;
+      font-family: $font-family;
+      padding: 0 0.5rem;
+    }
+
+    &__hint {
+      font-size: 1.6rem;
+      color: $black;
+      font-family: $font-family;
+      margin: 0.4rem 0 0;
+      padding: 0 2rem 1.6rem;
+      border-bottom: 0.2rem solid $black;
+    }
+
+    &__loading {
+      padding: 1.6rem 2rem;
+      font-size: 1.4rem;
+      color: $black;
+      font-family: $font-family;
+    }
+
+    &__list {
+      display: flex;
+      flex-direction: column;
+    }
+
+    &__item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.6rem;
+      padding: 1.4rem 2rem;
+      border-bottom: 0.1rem solid $black;
+      text-decoration: none;
+      color: $black;
+      transition: all $ease;
+
+      &:last-child {
+        border-bottom: none;
+      }
+
+      &:hover {
+        background-color: $secondary;
+        padding-left: 2.4rem;
+      }
+
+      &__info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+      }
+
+      &__title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        font-family: $font-family;
+        color: $black;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      &__tags {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      &__right {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        flex-shrink: 0;
+        color: $black;
+
+        .difficulty {
+          display: flex;
+          align-items: center;
+        }
+
+        svg {
+          transition: transform $ease;
+        }
+      }
+
+      &:hover &__right svg {
+        transform: translateX(0.3rem);
+        color: $black;
+      }
     }
   }
 }

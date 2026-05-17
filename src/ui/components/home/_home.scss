@@ -26,7 +26,7 @@
     }
 
     &__greeting {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 500;
       font-family: $font-family;
       color: $black;
@@ -51,7 +51,7 @@
     }
 
     &__sub {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       color: $black;
       margin: 0;
       font-family: $font-family;
@@ -115,11 +115,6 @@
     border-radius: 2rem;
     padding: 2.4rem;
 
-    // Exercises spans full width
-    // &--exercises {
-    //   grid-column: 1 / -1;
-    // }
-
     // Shared spans full width
     &--shared {
       grid-column: 1 / -1;
@@ -160,7 +155,7 @@
     }
 
     &__title {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.2rem;
@@ -172,7 +167,7 @@
     &__link {
       background: transparent;
       border: none;
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 700;
       font-family: $font-family;
       color: $black;
@@ -187,7 +182,7 @@
     }
 
     &__badge {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.15rem;
@@ -200,7 +195,7 @@
     }
 
     &__desc {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       color: $black;
       margin: -1.2rem 0 2rem 0;
       font-family: $font-family;
@@ -214,7 +209,7 @@
       gap: 1.2rem;
 
       p {
-        font-size: 1.6rem;
+        font-size: 1.8rem;
         color: $black;
         margin: 0;
         font-family: $font-family;
@@ -222,7 +217,7 @@
     }
 
     &__empty__hint {
-      font-size: 1.6rem !important;
+      font-size: 1.8rem !important;
       color: $black !important;
     }
 
@@ -233,7 +228,7 @@
       border-radius: 1rem;
       background-color: $secondary-2;
       color: $white;
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 700;
       font-family: $font-family;
       transition: all $ease;
@@ -269,6 +264,28 @@
       box-shadow: 0.4rem 0.4rem 0 $black;
     }
 
+    // ── Variant count badge ──
+    &__variants {
+      position: absolute;
+      top: 0.8rem;
+      right: 0.8rem;
+      z-index: 4;
+      min-width: 2.4rem;
+      height: 2.4rem;
+      border: 0.2rem solid $black;
+      border-radius: 5.2rem;
+      background-color: $secondary-2;
+      color: $primary-1;
+      font-size: 1.8rem;
+      font-weight: 900;
+      font-style: italic;
+      font-family: $font-family;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 0.5rem;
+    }
+
     &__sketch {
       min-width: 24rem;
       max-height: 18rem;
@@ -279,11 +296,7 @@
       left: -0.3rem;
       top: -0.3rem;
       overflow: hidden;
-      background-color: $white;
-
-      @media (max-width: #{$screen-md-min}) {
-        width: calc(100% + 0.6rem);
-      }
+      background-color: $secondary;
 
       svg {
         width: 100%;
@@ -300,9 +313,6 @@
     &__body {
       margin-top: 17rem;
       padding: 1.6rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
     }
 
     &__name {
@@ -310,7 +320,7 @@
       font-weight: 700;
       font-family: $font-family;
       color: $black;
-      margin: 0;
+      margin: 0 0 0.8rem 0;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -344,8 +354,6 @@
     &:hover {
       background-color: $secondary;
       border-color: $black;
-      transform: translateY(-0.4rem);
-      box-shadow: 0.4rem 0.4rem 0 $black;
     }
 
     &__accent {
@@ -375,7 +383,7 @@
     }
 
     &__meta {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       color: $black;
       font-family: $font-family;
     }
@@ -383,6 +391,19 @@
     &__tags {
       display: flex;
       gap: 0.4rem;
+    }
+
+    &__arrow {
+      color: $black;
+      flex-shrink: 0;
+      transition:
+        transform $ease,
+        color $ease;
+
+      .home__training__row:hover & {
+        transform: translateX(0.4rem);
+        color: $black;
+      }
     }
   }
 
@@ -393,7 +414,7 @@
     border-radius: 1rem;
     padding: 1rem;
     width: 100%;
-    font-size: 1.6rem;
+    font-size: 1.8rem;
     font-weight: 700;
     font-family: $font-family;
     color: $black;
@@ -418,6 +439,7 @@
 
   &__shared__card {
     flex: 1;
+    cursor: pointer;
     min-width: 24rem;
     max-width: 28rem;
     border: 0.3rem solid $black;
@@ -457,7 +479,7 @@
       &--initials {
         background-color: $secondary-2;
         color: $white;
-        font-size: 1.6rem;
+        font-size: 1.8rem;
         font-weight: 900;
         font-family: $font-family;
         display: flex;
@@ -467,14 +489,14 @@
     }
 
     &__author__name {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 700;
       font-family: $font-family;
       color: $black;
     }
 
     &__date {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       color: $black;
       font-family: $font-family;
     }
@@ -491,7 +513,7 @@
     &__meta {
       display: flex;
       gap: 0.8rem;
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       color: $black;
       font-family: $font-family;
       margin-bottom: 1.2rem;

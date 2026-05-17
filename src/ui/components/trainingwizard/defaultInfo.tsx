@@ -39,6 +39,8 @@ const DefaultInfo: React.FC<Props> = ({
     });
   }, []);
 
+  console.log(author);
+
   const handleTagToggle = (tag: string) => {
     const updatedTags = tags.includes(tag)
       ? tags.filter((t) => t !== tag)

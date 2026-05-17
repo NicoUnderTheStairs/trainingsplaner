@@ -124,7 +124,10 @@ const TrainingList = () => {
       <div className="traininglist__inner">
         {/* Back */}
         <div className="btn__back">
-          <button className="btn__wired" onClick={() => navigate(-1)}>
+          <button
+            className="btn__wired"
+            onClick={() => (window.location.href = "/")}
+          >
             <svg
               width="23"
               height="12"

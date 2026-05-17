@@ -20,8 +20,8 @@ import type { Training } from "../../types/Training";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SharedTraining extends Training {
-  sharedBy: string; // uid of the sender
-  sharedByName?: string; // resolved display name
+  sharedBy: string;
+  sharedByName?: string;
   sharedAt?: any;
 }
 
@@ -44,8 +44,6 @@ const getGreeting = (): string => {
   return "Good evening";
 };
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
 const Skeleton = () => (
   <div className="home__skeleton">
     <div className="home__skeleton__line home__skeleton__line--short" />
@@ -65,25 +63,59 @@ export default function Home() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [sharedTrainings, setSharedTrainings] = useState<SharedTraining[]>([]);
+  const [variantCounts, setVariantCounts] = useState<Record<string, number>>(
+    {},
+  );
   const [loadingEx, setLoadingEx] = useState(true);
   const [loadingTr, setLoadingTr] = useState(true);
   const [loadingSh, setLoadingSh] = useState(true);
 
-  // ── Fetch recent exercises ─────────────────────────────────────────────────
+  // ── Fetch recent exercises + their variant counts ──────────────────────────
   useEffect(() => {
     const fetch = async () => {
       try {
         const q = query(
           collection(db, "Excercises"),
           orderBy("createdAt", "desc"),
-          limit(4),
+          limit(2),
         );
         const snap = await getDocs(q);
-        setExercises(
-          snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Exercise),
+        const data = snap.docs.map(
+          (d) => ({ id: d.id, ...d.data() }) as Exercise,
         );
+        setExercises(data);
+
+        // Batch-fetch variant groups
+        const groupIds = [
+          ...new Set(
+            data
+              .map((ex) => (ex as any).variantGroupId as string | undefined)
+              .filter(Boolean) as string[],
+          ),
+        ];
+        if (groupIds.length > 0) {
+          const chunks: string[][] = [];
+          for (let i = 0; i < groupIds.length; i += 30)
+            chunks.push(groupIds.slice(i, i + 30));
+          const counts: Record<string, number> = {};
+          await Promise.all(
+            chunks.map(async (chunk) => {
+              const vq = query(
+                collection(db, "ExerciseVariants"),
+                where("__name__", "in", chunk),
+              );
+              const vsnap = await getDocs(vq);
+              vsnap.docs.forEach((d) => {
+                const ids: string[] = d.data().exerciseIds ?? [];
+                ids.forEach((eid) => {
+                  counts[eid] = ids.length - 1;
+                });
+              });
+            }),
+          );
+          setVariantCounts(counts);
+        }
       } catch {
-        // Index may not exist yet — fall back to unordered
         const snap = await getDocs(
           query(collection(db, "Excercises"), limit(4)),
         );
@@ -97,17 +129,15 @@ export default function Home() {
     fetch();
   }, []);
 
-  // ── Fetch user's own recent trainings (NOT shared ones) ────────────────────
+  // ── Fetch user's own trainings ─────────────────────────────────────────────
   useEffect(() => {
     const userId = getAuth().currentUser?.uid;
     if (!userId) {
       setLoadingTr(false);
       return;
     }
-
     const fetch = async () => {
       try {
-        // Only trainings the user created themselves (no sharedBy field)
         const q = query(
           collection(db, "users", userId, "trainings"),
           where("sharedBy", "==", null),
@@ -119,18 +149,18 @@ export default function Home() {
           snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Training),
         );
       } catch {
-        // Fallback: fetch all and filter client-side (no index required)
         const snap = await getDocs(
           query(collection(db, "users", userId, "trainings"), limit(20)),
         );
-        const own = snap.docs
-          .map(
-            (d) =>
-              ({ id: d.id, ...d.data() }) as Training & { sharedBy?: string },
-          )
-          .filter((t) => !t.sharedBy)
-          .slice(0, 3);
-        setTrainings(own);
+        setTrainings(
+          snap.docs
+            .map(
+              (d) =>
+                ({ id: d.id, ...d.data() }) as Training & { sharedBy?: string },
+            )
+            .filter((t) => !t.sharedBy)
+            .slice(0, 3),
+        );
       } finally {
         setLoadingTr(false);
       }
@@ -138,22 +168,19 @@ export default function Home() {
     fetch();
   }, []);
 
-  // ── Fetch trainings shared WITH the current user ───────────────────────────
-  // These live in the user's own trainings subcollection with a `sharedBy` field set.
+  // ── Fetch trainings shared with the user ───────────────────────────────────
   useEffect(() => {
     const userId = getAuth().currentUser?.uid;
     if (!userId) {
       setLoadingSh(false);
       return;
     }
-
     const fetch = async () => {
       try {
-        // Query for docs that have a sharedBy field (shared by someone else)
         const q = query(
           collection(db, "users", userId, "trainings"),
           where("sharedBy", "!=", null),
-          orderBy("sharedBy"), // required when using != filter
+          orderBy("sharedBy"),
           orderBy("sharedAt", "desc"),
           limit(4),
         );
@@ -161,31 +188,22 @@ export default function Home() {
         const raw = snap.docs.map(
           (d) => ({ id: d.id, ...d.data() }) as SharedTraining,
         );
-
-        // Resolve sender display names from the users collection
         const senderIds = [
           ...new Set(raw.map((t) => t.sharedBy).filter(Boolean)),
         ];
         const senderMap: Record<string, string> = {};
-
         await Promise.all(
           senderIds.map(async (uid) => {
             try {
-              const userSnap = await getDocs(
-                query(collection(db, "users"), limit(1)),
-              );
-              // Fetch the specific sender doc
               const { getDoc, doc } = await import("firebase/firestore");
               const senderDoc = await getDoc(doc(db, "users", uid));
-              if (senderDoc.exists()) {
+              if (senderDoc.exists())
                 senderMap[uid] = (senderDoc.data() as any).userName ?? uid;
-              }
             } catch {
               senderMap[uid] = uid;
             }
           }),
         );
-
         setSharedTrainings(
           raw.map((t) => ({
             ...t,
@@ -193,16 +211,19 @@ export default function Home() {
           })),
         );
       } catch {
-        // Fallback: fetch all trainings and filter client-side
         try {
           const snap = await getDocs(
-            query(collection(db, "users", userId, "trainings"), limit(30)),
+            query(
+              collection(db, "users", getAuth().currentUser!.uid, "trainings"),
+              limit(30),
+            ),
           );
-          const shared = snap.docs
-            .map((d) => ({ id: d.id, ...d.data() }) as SharedTraining)
-            .filter((t) => !!t.sharedBy)
-            .slice(0, 4);
-          setSharedTrainings(shared);
+          setSharedTrainings(
+            snap.docs
+              .map((d) => ({ id: d.id, ...d.data() }) as SharedTraining)
+              .filter((t) => !!t.sharedBy)
+              .slice(0, 4),
+          );
         } catch {
           setSharedTrainings([]);
         }
@@ -219,7 +240,7 @@ export default function Home() {
     <>
       <Navigation />
       <div className="home">
-        {/* ── Hero ── */}
+        {/* Hero */}
         <div className="home__hero">
           <div className="home__hero__text">
             <p className="home__hero__greeting">{getGreeting()}</p>
@@ -238,9 +259,9 @@ export default function Home() {
           </div>
         </div>
 
-        {/* ── Dashboard grid ── */}
+        {/* Grid */}
         <div className="home__grid">
-          {/* ── My trainings ── */}
+          {/* My trainings */}
           <section className="home__widget home__widget--trainings">
             <div className="home__widget__header">
               <h2 className="home__widget__title">My Trainings</h2>
@@ -251,7 +272,6 @@ export default function Home() {
                 View all →
               </button>
             </div>
-
             {loadingTr ? (
               <Skeleton />
             ) : trainings.length === 0 ? (
@@ -303,7 +323,7 @@ export default function Home() {
             )}
           </section>
 
-          {/* ── Recent exercises ── */}
+          {/* Recent exercises */}
           <section className="home__widget home__widget--exercises">
             <div className="home__widget__header">
               <h2 className="home__widget__title">Recent Exercises</h2>
@@ -314,7 +334,6 @@ export default function Home() {
                 View all →
               </button>
             </div>
-
             {loadingEx ? (
               <Skeleton />
             ) : exercises.length === 0 ? (
@@ -329,39 +348,53 @@ export default function Home() {
               </div>
             ) : (
               <div className="home__exercises__grid">
-                {exercises.map((ex) => (
-                  <div
-                    key={ex.id}
-                    className="home__exercise__card"
-                    onClick={() => navigate(`/exercise-detail/${ex.id}`)}
-                  >
-                    <div className="home__exercise__card__sketch">
-                      {ex.sketch ? (
-                        <SketchThumbnail sketch={ex.sketch} />
-                      ) : (
-                        <div className="home__exercise__card__sketch__empty" />
+                {exercises.map((ex) => {
+                  const vc = variantCounts[ex.id!] ?? 0;
+                  return (
+                    <div
+                      key={ex.id}
+                      className="home__exercise__card"
+                      onClick={() => navigate(`/exercise-detail/${ex.id}`)}
+                    >
+                      {/* Variant badge */}
+                      {vc > 0 && (
+                        <div
+                          className="home__exercise__card__variants"
+                          title={`${vc} variant${vc !== 1 ? "s" : ""}`}
+                        >
+                          {vc}
+                        </div>
                       )}
-                    </div>
-                    <div className="home__exercise__card__body">
-                      <h4 className="home__exercise__card__name">{ex.title}</h4>
-                      <div className="home__exercise__card__tags">
-                        {(ex.tags ?? []).slice(0, 2).map((tag) => (
-                          <span
-                            key={tag}
-                            className={`tags tags--${tag.toLowerCase()}`}
-                          >
-                            {tag}
-                          </span>
-                        ))}
+                      <div className="home__exercise__card__sketch">
+                        {ex.sketch ? (
+                          <SketchThumbnail sketch={ex.sketch} />
+                        ) : (
+                          <div className="home__exercise__card__sketch__empty" />
+                        )}
+                      </div>
+                      <div className="home__exercise__card__body">
+                        <h4 className="home__exercise__card__name">
+                          {ex.title}
+                        </h4>
+                        <div className="home__exercise__card__tags">
+                          {(ex.tags ?? []).slice(0, 2).map((tag) => (
+                            <span
+                              key={tag}
+                              className={`tags tags--${tag.toLowerCase()}`}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </section>
 
-          {/* ── Shared by the team ── */}
+          {/* Shared with me */}
           <section className="home__widget home__widget--shared">
             <div className="home__widget__header">
               <h2 className="home__widget__title">Shared with me</h2>
@@ -370,7 +403,6 @@ export default function Home() {
             <p className="home__widget__desc">
               Trainings your teammates have shared with you.
             </p>
-
             {loadingSh ? (
               <Skeleton />
             ) : sharedTrainings.length === 0 ? (

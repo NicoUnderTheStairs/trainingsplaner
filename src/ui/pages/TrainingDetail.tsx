@@ -469,7 +469,10 @@ const TrainingDetail = () => {
         <div className="trainingdetail__inner">
           {/* Back */}
           <div className="btn__back">
-            <button className="btn__wired" onClick={() => navigate(-1)}>
+            <button
+              className="btn__wired"
+              onClick={() => (window.location.href = "/training-overview")}
+            >
               <svg
                 width="23"
                 height="12"
