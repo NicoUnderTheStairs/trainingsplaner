@@ -47,7 +47,7 @@ const DefaultInfo: React.FC<Props> = ({
   return (
     <>
       <div className="trainingwizard">
-        <div className="exercisedetail__back">
+        <div className="btn__back">
           <button className="btn__wired" onClick={() => navigate(-1)}>
             <svg
               width="23"

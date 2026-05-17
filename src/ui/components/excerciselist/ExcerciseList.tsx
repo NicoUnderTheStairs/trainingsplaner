@@ -304,9 +304,9 @@ const ExcerciseList = () => {
 
             <button
               onClick={() => navigate("/create-exercise")}
-              className="excerciselist__menu__buttons--newexercise"
+              className="btn__primary"
             >
-              New Exercise
+              + New Exercise
             </button>
           </div>
         </div>

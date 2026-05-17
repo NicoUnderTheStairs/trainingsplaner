@@ -64,7 +64,8 @@
 
   &__primary {
     font-size: 1.8rem;
-    font-weight: 500;
+    font-weight: 700;
+    font-family: $font-family;
     color: $secondary;
     cursor: pointer;
     padding: 0.8rem 2.2rem;
@@ -73,7 +74,38 @@
     transition: all $ease;
     border: 0.2rem solid $black;
     background-color: $secondary-2;
-    font-family: "Roboto Condensed";
+    text-decoration: none;
+    white-space: nowrap;
+
+    &:hover {
+      color: $primary-1 !important;
+      transform: translate(-0.2rem, -0.2rem) !important;
+      box-shadow: 0.3rem 0.3rem 0 $black !important;
+      background-color: rgb(68.25, 68.25, 68.25) !important;
+    }
+
+    &:active {
+      transform: translate(0.1rem, 0.1rem);
+      box-shadow: none;
+    }
+  }
+
+  &__back {
+    margin-bottom: 5rem;
+
+    & button {
+      padding: 0.6rem 1.6rem;
+      cursor: pointer;
+      border: 0.2rem solid $black;
+      border-radius: 1rem;
+      background-color: $secondary;
+      font-size: 1.8rem;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-family: "Roboto Condensed";
+    }
   }
 }
 

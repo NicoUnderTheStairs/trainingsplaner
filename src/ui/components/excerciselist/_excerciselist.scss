@@ -43,6 +43,7 @@
         font-weight: 700;
         font-family: $font-family;
         transition: all $ease;
+        color: $black;
 
         &:hover {
           background-color: darken($secondary, 4%);
@@ -63,18 +64,6 @@
 
       &--filter {
         // same wired style, inherits button base above
-      }
-
-      &--newexercise {
-        background-color: $secondary-2 !important;
-        color: $white !important;
-        border-color: $black !important;
-
-        &:hover {
-          background-color: lighten($secondary-2, 10%) !important;
-          box-shadow: 0.3rem 0.3rem 0 $black;
-          transform: translate(-0.1rem, -0.1rem);
-        }
       }
     }
   }
@@ -172,7 +161,7 @@
       & p {
         font-size: 1.6rem;
         min-height: 6.5rem;
-        color: $gray-600;
+        color: $black;
         line-height: 1.5;
         margin: 0 0 1.6rem 0;
       }
@@ -334,7 +323,6 @@
     }
   }
 
-
   // ── Search wrapper ───────────────────────────────────────────────────────
 
   &__search__wrapper {
@@ -365,7 +353,7 @@
       }
 
       &::placeholder {
-        color: $gray-500;
+        color: $black;
         font-weight: 700;
       }
     }
@@ -444,7 +432,7 @@
 
     // Triangle pointer
     &::before {
-      content: '';
+      content: "";
       position: absolute;
       top: -1rem;
       right: 2.4rem;
@@ -470,7 +458,7 @@
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.15rem;
-    color: $gray-600;
+    color: $black;
     font-family: $font-family;
     margin: 0 0 0.8rem 0;
   }
@@ -534,7 +522,7 @@
     gap: 1.2rem;
     margin-top: 1.6rem;
     padding-top: 1.6rem;
-    border-top: 0.2rem solid $gray-200;
+    border-top: 0.2rem solid $black;
   }
 
   &__filter__clear {
@@ -543,7 +531,7 @@
     font-size: 1.4rem;
     font-weight: 700;
     font-family: $font-family;
-    color: $gray-600;
+    color: $black;
     cursor: pointer;
     padding: 0;
     text-decoration: underline;
@@ -554,7 +542,8 @@
     }
 
     &:disabled {
-      color: $gray-300;
+      color: $black;
+      opacity: 0.7;
       cursor: not-allowed;
       text-decoration: none;
     }
@@ -621,7 +610,7 @@
     font-size: 1.4rem;
     font-weight: 700;
     font-family: $font-family;
-    color: $gray-600;
+    color: $black;
     cursor: pointer;
     padding: 0.4rem 0.8rem;
     text-decoration: underline;
@@ -647,7 +636,7 @@
       font-size: 2rem;
       font-weight: 700;
       font-family: $font-family;
-      color: $gray-500;
+      color: $black;
       margin: 0;
     }
   }
