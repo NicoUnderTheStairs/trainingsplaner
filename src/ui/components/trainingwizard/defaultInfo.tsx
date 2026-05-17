@@ -13,9 +13,14 @@ type Props = {
   onChange: (data: unknown) => void;
 };
 
-const AVAILABLE_TAGS = ["Defense", "Attack", "Block", "Reception", "Service"];
-
-const DEFAULT_AUTHOR = "Default Author";
+const AVAILABLE_TAGS = [
+  "Warmup",
+  "Defense",
+  "Attack",
+  "Block",
+  "Reception",
+  "Service",
+];
 
 const DefaultInfo: React.FC<Props> = ({
   title,
@@ -23,15 +28,14 @@ const DefaultInfo: React.FC<Props> = ({
   difficulty,
   duration,
   date,
+  author,
   tags = [],
   onChange,
 }) => {
-  // Push date and author into wizard state on mount so they
-  // are available in subsequent steps and can be uploaded to Firestore.
+  // Push today's date into wizard state on mount (only if not already set)
   useEffect(() => {
     onChange({
       date: new Date().toISOString().slice(0, 10),
-      author: DEFAULT_AUTHOR,
     });
   }, []);
 
@@ -114,8 +118,10 @@ const DefaultInfo: React.FC<Props> = ({
             className="trainingwizard__input"
             type="number"
             placeholder=" "
-            value={duration}
-            onChange={(e) => onChange({ duration: e.target.value })}
+            value={duration ?? ""}
+            onChange={(e) =>
+              onChange({ duration: parseInt(e.target.value) || undefined })
+            }
           />
           <label className="trainingwizard__label" htmlFor="Duration">
             Duration of training (in minutes)

@@ -244,16 +244,19 @@
   &__drawer {
     display: none;
     position: absolute;
-    top: 100%;
+    top: 103%;
     left: 0;
     right: 0;
-    background-color: $white;
-    border-bottom: 0.3rem solid $black;
-    border-top: 0.1rem solid $black;
+    background-color: #ffffff;
+    border-bottom: 0.3rem solid #1e1e1e;
+    border-top: 0.1rem solid #1e1e1e;
     padding: 2rem 2.4rem;
     flex-direction: column;
     gap: 1.2rem;
     z-index: 99;
+    min-height: 20vh;
+    align-items: center;
+    justify-content: center;
 
     &--open {
       display: flex;

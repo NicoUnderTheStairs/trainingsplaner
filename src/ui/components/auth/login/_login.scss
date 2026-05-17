@@ -2,8 +2,28 @@
   margin-top: 5.4rem;
   max-width: 60rem;
 
+  @media (max-width: #{$screen-lg-min}) {
+    padding: 0 2.4rem;
+  }
+
   &__title {
-    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    & svg {
+      width: 35rem;
+    }
+
+    & h2 {
+      font-weight: 900;
+      font-style: italic;
+      font-size: 4rem;
+      margin-bottom: 0;
+      font-family: $font-family;
+      letter-spacing: -1.4px;
+    }
   }
 
   &__select {
@@ -24,10 +44,12 @@
       height: 3.2rem;
       font-size: 2.1rem;
       margin-right: 1.2rem;
-      border: 2rem solid $black;
+      border: 0.2rem solid $black; // was 2rem — that was a typo
       cursor: text;
     }
   }
+
+  // ── Input field ────────────────────────────────────────────────────────
 
   &__input {
     width: 100%;
@@ -36,17 +58,31 @@
     border: 0.3rem solid $black;
     padding: 1.2rem 2rem;
     border-radius: 1rem;
-    transition: all 0.3s ease;
+    transition: all $ease;
     background-color: $white;
-    margin-bottom: 2.1rem;
+    margin-bottom: 1.1rem;
     font-weight: 500;
+    font-family: $font-family;
+    outline: none;
+    box-shadow: 0.3rem 0.3rem 0 $black;
+    transform: translate(-0.1rem, -0.1rem);
 
-    // if placeholder is not empty
+    &:hover {
+      border-color: $black;
+      background-color: $secondary;
+    }
+
+    &:focus {
+      background-color: $secondary;
+      box-shadow: 0.3rem 0.3rem 0 $black;
+      transform: translate(-0.1rem, -0.1rem);
+    }
+
+    // label hides when field has content or is focused
     &:not(:placeholder-shown) + .login__label {
       opacity: 0;
     }
 
-    // if selected
     &:focus + .login__label {
       opacity: 0;
     }
@@ -67,18 +103,30 @@
         bottom: 0;
         right: 0;
         cursor: pointer;
+        color: $gray-500;
+        transition: color $ease;
+
+        &:hover {
+          color: $black;
+        }
       }
     }
   }
 
+  // ── Label ──────────────────────────────────────────────────────────────
+
   &__label {
     position: absolute;
     font-size: 2.1rem;
+    font-family: $font-family;
     left: 2rem;
     top: 1.2rem;
     transition: all 0.3s ease;
     pointer-events: none;
+    color: $gray-500;
   }
+
+  // ── Submit button ──────────────────────────────────────────────────────
 
   &__btn {
     width: 19rem;
@@ -91,8 +139,20 @@
     cursor: pointer;
     transition: all $ease;
     margin-top: 2.1rem;
-    font-family: "Roboto Condensed";
+    font-family: $font-family;
+    font-weight: 700;
     border-radius: 1rem;
+
+    &:hover:not(&--disabled) {
+      transform: translate(-0.3rem, -0.3rem);
+      box-shadow: 0.6rem 0.6rem 0 $black;
+      background-color: lighten($secondary-2, 8%);
+    }
+
+    &:active:not(&--disabled) {
+      transform: translate(0.1rem, 0.1rem);
+      box-shadow: 0.1rem 0.1rem 0 $black;
+    }
 
     &__wrapper {
       display: flex;
@@ -108,25 +168,36 @@
 
     &--disabled {
       background-color: $gray-400;
-      color: $gray-900;
+      color: $gray-700;
+      border-color: $gray-400;
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
 
       & svg path {
-        fill: $gray-900;
+        fill: $gray-700;
       }
     }
   }
+
+  // ── Sign up / reset links ──────────────────────────────────────────────
 
   &__signup {
     margin-top: 2.1rem;
     font-size: 1.6rem;
     color: $gray-800;
     text-align: center;
+    font-family: $font-family;
 
     & a {
       color: $black;
       text-decoration: underline;
       font-weight: 700;
+      transition: color $ease;
+
+      &:hover {
+        color: $secondary-2;
+      }
     }
   }
 
@@ -135,17 +206,27 @@
     font-size: 1.4rem;
     color: $gray-800;
     text-align: left;
+    font-family: $font-family;
 
     & a {
       color: $black;
       text-decoration: underline;
       font-weight: 700;
+      transition: color $ease;
+
+      &:hover {
+        color: $secondary-2;
+      }
     }
   }
 }
 
+// ── Error toast ────────────────────────────────────────────────────────────────
+
 .itemlist__link--error {
   font-size: 2rem;
+  font-family: $font-family;
+  font-weight: 700;
   text-align: center;
   background: $white;
   border: 0.3rem solid $black;
@@ -158,4 +239,19 @@
   color: $warning;
   left: 50%;
   transform: translate(-50%, 100%);
+  box-shadow: 0.4rem 0.4rem 0 $black;
+
+  // Animated entrance
+  animation: error-toast-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes error-toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 80%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 100%);
+  }
 }

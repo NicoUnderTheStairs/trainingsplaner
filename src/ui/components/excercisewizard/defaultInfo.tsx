@@ -21,21 +21,18 @@ const AVAILABLE_TAGS = [
   "Service",
 ];
 
-const DEFAULT_AUTHOR = "Default Author";
-
 const DefaultInfo: React.FC<Props> = ({
   title,
   description,
   difficulty,
+  author,
   tags = [],
   onChange,
 }) => {
-  // Push date and author into wizard state on mount so they
-  // are available in subsequent steps and can be uploaded to Firestore.
+  // Push today's date into wizard state on mount (author comes from parent prop)
   useEffect(() => {
     onChange({
       date: new Date().toISOString().slice(0, 10),
-      author: DEFAULT_AUTHOR,
     });
   }, []);
 

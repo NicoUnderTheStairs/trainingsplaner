@@ -201,6 +201,155 @@
       font-size: 1.8rem;
     }
   }
+
+  &__variant {
+    &__desc {
+      font-size: 1.6rem;
+      font-family: $font-family;
+      color: $gray-600;
+      line-height: 1.6;
+      margin: 0 0 2.4rem 0;
+    }
+
+    &__search__wrapper {
+      margin-bottom: 1.6rem;
+    }
+
+    &__search {
+      // Inherits .excercisewizard__input base styles — just override margin
+      margin-bottom: 0 !important;
+
+      &::placeholder {
+        color: $gray-500;
+        font-weight: 400;
+      }
+    }
+
+    &__loading,
+    &__empty {
+      font-size: 1.6rem;
+      font-family: $font-family;
+      color: $gray-500;
+      padding: 2.4rem 0;
+      text-align: center;
+    }
+
+    // Scrollable list of exercises to pick from
+    &__list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      max-height: 40rem;
+      overflow-y: auto;
+      margin-bottom: 2rem;
+      padding: 0.4rem;
+
+      // Thin brand scrollbar
+      &::-webkit-scrollbar {
+        width: 0.4rem;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: $primary-1;
+        border-radius: 1rem;
+      }
+    }
+
+    &__item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.6rem;
+      padding: 1.4rem 1.6rem;
+      border: 0.2rem solid $gray-300;
+      border-radius: 1.4rem;
+      background: $white;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      font-family: $font-family;
+      transition: all $ease;
+
+      &:hover {
+        border-color: $black;
+        background: $secondary;
+        transform: translate(-0.1rem, -0.1rem);
+        box-shadow: 0.2rem 0.2rem 0 $black;
+      }
+
+      &--selected {
+        border-color: $black;
+        background: $secondary;
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 $black;
+      }
+
+      &__info {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+      }
+
+      &__title {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: $black;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      &__tags {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      &__check {
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 50%;
+        border: 0.2rem solid $gray-300;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all $ease;
+
+        &--active {
+          background-color: $secondary-2;
+          border-color: $black;
+          color: $primary-1;
+        }
+      }
+    }
+
+    &__skip__hint {
+      font-size: 1.4rem;
+      font-family: $font-family;
+      color: $gray-600;
+      text-align: center;
+      margin-top: 0.8rem;
+    }
+
+    &__skip__btn {
+      background: transparent;
+      border: none;
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      cursor: pointer;
+      padding: 0;
+      text-decoration: underline;
+      transition: color $ease;
+
+      &:hover {
+        color: $secondary-2;
+      }
+    }
+  }
 }
 
 .sketch {
