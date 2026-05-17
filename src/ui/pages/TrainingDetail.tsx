@@ -1,10 +1,19 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { doc, getDoc, deleteDoc, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+  updateDoc,
+  setDoc,
+  collection,
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import Navigation from "../components/navigation/Navigation";
 import type { Training } from "../../types/Training";
 import type { SelectedExercise } from "../components/trainingwizard/exerciseSelection";
+import type { UserProfile } from "../../services/upload/registerUser";
 import db from "../../firebase";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -66,11 +75,203 @@ const DurationBar = ({
   );
 };
 
-// ─── Component ────────────────────────────────────────────────────────────────
+// ─── Share dialog ─────────────────────────────────────────────────────────────
+
+interface ShareDialogProps {
+  training: Training;
+  currentUserId: string;
+  onClose: () => void;
+}
+
+const ShareDialog = ({
+  training,
+  currentUserId,
+  onClose,
+}: ShareDialogProps) => {
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [loadingUsers, setLoadingUsers] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sharing, setSharing] = useState(false);
+  const [shared, setShared] = useState(false);
+
+  // Fetch all users except self
+  useEffect(() => {
+    const fetch = async () => {
+      const snap = await getDocs(collection(db, "users"));
+      const all = snap.docs
+        .map((d) => ({ uid: d.id, ...d.data() }) as UserProfile)
+        .filter((u) => u.uid !== currentUserId);
+      setUsers(all);
+      setLoadingUsers(false);
+    };
+    fetch();
+  }, [currentUserId]);
+
+  const toggleUser = (uid: string) =>
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.has(uid) ? next.delete(uid) : next.add(uid);
+      return next;
+    });
+
+  const handleShare = async () => {
+    if (selected.size === 0) return;
+    setSharing(true);
+    try {
+      // Write the training to each recipient's subcollection
+      await Promise.all(
+        Array.from(selected).map((recipientId) =>
+          setDoc(doc(collection(db, "users", recipientId, "trainings")), {
+            // Spread all training fields — preserving original author, date, etc.
+            title: training.title,
+            description: training.description,
+            duration: training.duration,
+            difficulty: training.difficulty,
+            tags: training.tags ?? [],
+            exercises: training.exercises ?? [],
+            author: training.author,
+            date: training.date,
+            sharedBy: currentUserId,
+            sharedAt: new Date(),
+          }),
+        ),
+      );
+      setShared(true);
+      setTimeout(onClose, 1600);
+    } catch (e) {
+      console.error("Error sharing training:", e);
+    } finally {
+      setSharing(false);
+    }
+  };
+
+  return (
+    <div className="dialog__overlay" onClick={onClose}>
+      <div
+        className="dialog dialog--share"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="dialog__header">
+          <h3 className="dialog__title">Share training</h3>
+          <button
+            className="dialog__close"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        <p className="dialog__body">
+          Select teammates to share <strong>{training.title}</strong> with. It
+          will appear in their training list with you as the author.
+        </p>
+
+        {loadingUsers ? (
+          <div className="share__loading">Loading teammates...</div>
+        ) : users.length === 0 ? (
+          <div className="share__empty">No other users found.</div>
+        ) : (
+          <div className="share__user__list">
+            {users.map((user) => {
+              const isSelected = selected.has(user.uid);
+              return (
+                <button
+                  key={user.uid}
+                  className={`share__user ${isSelected ? "share__user--selected" : ""}`}
+                  onClick={() => toggleUser(user.uid)}
+                >
+                  {/* Avatar */}
+                  {user.profileImageUrl ? (
+                    <img
+                      src={user.profileImageUrl}
+                      alt={user.userName}
+                      className="share__user__avatar"
+                    />
+                  ) : (
+                    <div className="share__user__avatar share__user__avatar--initials">
+                      {user.userName?.slice(0, 2).toUpperCase() ?? "?"}
+                    </div>
+                  )}
+
+                  {/* Info */}
+                  <div className="share__user__info">
+                    <span className="share__user__name">{user.userName}</span>
+                    {user.team && (
+                      <span className="share__user__team">{user.team}</span>
+                    )}
+                  </div>
+
+                  {/* Checkmark */}
+                  <div
+                    className={`share__user__check ${isSelected ? "share__user__check--active" : ""}`}
+                  >
+                    {isSelected && (
+                      <svg
+                        width="12"
+                        height="10"
+                        viewBox="0 0 14 11"
+                        fill="none"
+                      >
+                        <path
+                          d="M1 5L5 9L13 1"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    )}
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="dialog__actions">
+          <button className="btn__wired" onClick={onClose} disabled={sharing}>
+            Cancel
+          </button>
+          <button
+            className={`btn__primary ${shared ? "btn__primary--success" : ""}`}
+            onClick={handleShare}
+            disabled={sharing || selected.size === 0 || shared}
+          >
+            {shared ? (
+              <>
+                <svg width="14" height="12" viewBox="0 0 14 11" fill="none">
+                  <path
+                    d="M1 5L5 9L13 1"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Shared!
+              </>
+            ) : sharing ? (
+              "Sharing..."
+            ) : (
+              <>
+                Share with {selected.size > 0 ? `${selected.size} ` : ""}
+                {selected.size === 1 ? "person" : "people"}
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
 
 const TrainingDetail = () => {
   const { trainingId } = useParams<{ trainingId: string }>();
   const navigate = useNavigate();
+  const currentUserId = getAuth().currentUser?.uid ?? "";
 
   const [training, setTraining] = useState<Training | null>(null);
   const [loading, setLoading] = useState(true);
@@ -88,10 +289,10 @@ const TrainingDetail = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
-  // Share state
-  const [shareCopied, setShareCopied] = useState(false);
+  // Share dialog
+  const [shareOpen, setShareOpen] = useState(false);
 
-  // Drag & drop for exercise reorder
+  // Drag & drop
   const dragIndex = useRef<number | null>(null);
   const dragOverIndex = useRef<number | null>(null);
   const [draggingIdx, setDraggingIdx] = useState<number | null>(null);
@@ -124,15 +325,12 @@ const TrainingDetail = () => {
     });
     setEditing(true);
   };
-
   const handleEditCancel = () => {
     setEditing(false);
     setEditData({});
   };
-
   const handleEditChange = (field: keyof Training, value: unknown) =>
     setEditData((prev) => ({ ...prev, [field]: value }));
-
   const handleTagToggle = (tag: string) => {
     const current = editData.tags ?? [];
     handleEditChange(
@@ -142,7 +340,6 @@ const TrainingDetail = () => {
         : [...current, tag],
     );
   };
-
   const handleSave = async () => {
     if (!trainingId || !training) return;
     setSaving(true);
@@ -170,23 +367,18 @@ const TrainingDetail = () => {
     setEditExercises([...(training?.exercises ?? [])]);
     setEditingExercises(true);
   };
-
   const handleEditExercisesCancel = () => {
     setEditingExercises(false);
     setEditExercises([]);
   };
-
-  const handleExerciseDurationChange = (idx: number, val: string) => {
+  const handleExerciseDurationChange = (idx: number, val: string) =>
     setEditExercises((prev) =>
       prev.map((e, i) =>
         i === idx ? { ...e, duration: Math.max(0, parseInt(val) || 0) } : e,
       ),
     );
-  };
-
   const handleRemoveExercise = (idx: number) =>
     setEditExercises((prev) => prev.filter((_, i) => i !== idx));
-
   const handleSaveExercises = async () => {
     if (!trainingId || !training) return;
     setSaving(true);
@@ -218,8 +410,8 @@ const TrainingDetail = () => {
     setDragOverIdx(idx);
   };
   const handleDragEnd = () => {
-    const from = dragIndex.current;
-    const to = dragOverIndex.current;
+    const from = dragIndex.current,
+      to = dragOverIndex.current;
     if (from !== null && to !== null && from !== to) {
       const arr = [...editExercises];
       const [moved] = arr.splice(from, 1);
@@ -246,15 +438,6 @@ const TrainingDetail = () => {
       setDeleting(false);
       setDeleteConfirm(false);
     }
-  };
-
-  // ── Share ──────────────────────────────────────────────────────────────────
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      setShareCopied(true);
-      setTimeout(() => setShareCopied(false), 2500);
-    });
-    // TODO: write to SharedTrainings Firestore collection
   };
 
   if (loading)
@@ -285,7 +468,7 @@ const TrainingDetail = () => {
       <div className="trainingdetail section">
         <div className="trainingdetail__inner">
           {/* Back */}
-          <div className="btn__back">
+          <div className="trainingdetail__back">
             <button className="btn__wired" onClick={() => navigate(-1)}>
               <svg
                 width="23"
@@ -303,13 +486,12 @@ const TrainingDetail = () => {
             </button>
           </div>
 
-          {/* ── Header card ──────────────────────────────────────────────────── */}
+          {/* ── Header card ── */}
           <div className="trainingdetail__header">
             <div className="trainingdetail__header__accent" />
-
             <div className="trainingdetail__header__body">
               <div className="trainingdetail__header__main">
-                {/* Left: meta + title + desc + tags */}
+                {/* Left: info */}
                 <div className="trainingdetail__header__text">
                   <div className="trainingdetail__meta">
                     <span className="trainingdetail__meta__date">
@@ -417,7 +599,7 @@ const TrainingDetail = () => {
                   )}
                 </div>
 
-                {/* Right: action buttons */}
+                {/* Right: actions */}
                 <div className="trainingdetail__header__actions">
                   {editing ? (
                     <>
@@ -440,58 +622,35 @@ const TrainingDetail = () => {
                     <>
                       {/* Share */}
                       <button
-                        className={`trainingdetail__btn${shareCopied ? " trainingdetail__btn--copied" : ""}`}
-                        onClick={handleShare}
-                        title="Share training"
+                        className="trainingdetail__btn"
+                        onClick={() => setShareOpen(true)}
+                        title="Share with teammates"
                       >
-                        {shareCopied ? (
-                          <>
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M20 6L9 17L4 12"
-                                stroke="currentColor"
-                                strokeWidth="2.5"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                            Copied!
-                          </>
-                        ) : (
-                          <>
-                            <svg
-                              width="16"
-                              height="16"
-                              viewBox="0 0 24 24"
-                              fill="none"
-                              xmlns="http://www.w3.org/2000/svg"
-                            >
-                              <path
-                                d="M4 12V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V12"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                              />
-                              <path
-                                d="M12 2V15M12 2L8 6M12 2L16 6"
-                                stroke="currentColor"
-                                strokeWidth="2"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                              />
-                            </svg>
-                            Share
-                          </>
-                        )}
+                        <svg
+                          width="16"
+                          height="16"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M4 12V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V12"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                          />
+                          <path
+                            d="M12 2V15M12 2L8 6M12 2L16 6"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                        Share
                       </button>
 
-                      {/* Edit info */}
+                      {/* Edit */}
                       <button
                         className="trainingdetail__btn"
                         onClick={handleEditStart}
@@ -530,9 +689,8 @@ const TrainingDetail = () => {
             </div>
           </div>
 
-          {/* ── Exercise section ──────────────────────────────────────────────── */}
+          {/* ── Exercises section ── */}
           <div className="trainingdetail__exercises">
-            {/* Section header */}
             <div className="trainingdetail__exercises__header">
               <div className="trainingdetail__exercises__header__left">
                 <h2>
@@ -548,7 +706,6 @@ const TrainingDetail = () => {
                   total={training.duration}
                 />
               </div>
-
               <div className="trainingdetail__exercises__header__actions">
                 {editingExercises ? (
                   <>
@@ -594,7 +751,6 @@ const TrainingDetail = () => {
               </div>
             </div>
 
-            {/* Exercise list */}
             {exercises.length === 0 ? (
               <p className="trainingdetail__exercises__empty">
                 No exercises added yet.
@@ -604,7 +760,6 @@ const TrainingDetail = () => {
                 {(editingExercises ? editExercises : exercises).map(
                   (ex: SelectedExercise, index: number) =>
                     editingExercises ? (
-                      // ── Edit mode ──
                       <div
                         key={`${ex.exerciseId}-${index}`}
                         className={[
@@ -634,7 +789,6 @@ const TrainingDetail = () => {
                             height="12"
                             viewBox="0 0 14 12"
                             fill="none"
-                            xmlns="http://www.w3.org/2000/svg"
                           >
                             <path
                               d="M1 1H13"
@@ -682,13 +836,11 @@ const TrainingDetail = () => {
                           className="trainingdetail__exercises__item__remove"
                           onClick={() => handleRemoveExercise(index)}
                           aria-label="Remove exercise"
-                          title="Remove"
                         >
                           ×
                         </button>
                       </div>
                     ) : (
-                      // ── View mode ──
                       <Link
                         key={ex.exerciseId}
                         to={`/exercise-detail/${ex.exerciseId}`}
@@ -709,7 +861,6 @@ const TrainingDetail = () => {
                           height="10"
                           viewBox="0 0 23 12"
                           fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
                         >
                           <path
                             d="M1 5.25004H0.25V6.75004H1V5.25004ZM22.5303 6.53037C22.8232 6.23748 22.8232 5.7626 22.5303 5.46971L17.7574 0.696739C17.4645 0.403839 16.9896 0.403839 16.6967 0.696739C16.4038 0.989639 16.4038 1.46454 16.6967 1.75744L20.9393 6.00004L16.6967 10.2427C16.4038 10.5356 16.4038 11.0104 16.6967 11.3033C16.9896 11.5962 17.4645 11.5962 17.7574 11.3033L22.5303 6.53037ZM1 6.75004L22 6.75004V5.25004L1 5.25004V6.75004Z"
@@ -724,6 +875,15 @@ const TrainingDetail = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Share dialog ── */}
+      {shareOpen && training && (
+        <ShareDialog
+          training={training}
+          currentUserId={currentUserId}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
 
       {/* ── Delete dialog ── */}
       {deleteConfirm && (

@@ -56,17 +56,8 @@
       }
     }
 
-    &--copied {
-      background-color: $primary-4;
-      border-color: darken($primary-4, 10%);
-      color: $white;
-      transform: translate(-0.2rem, -0.2rem);
-      box-shadow: 0.3rem 0.3rem 0 darken($primary-4, 15%);
-    }
-
     & svg {
       flex-shrink: 0;
-      transition: transform $ease;
     }
   }
 
@@ -81,7 +72,7 @@
     margin-bottom: 4rem;
 
     &__accent {
-      width: 0;
+      width: 1rem;
       flex-shrink: 0;
       background-color: $primary-5;
     }
@@ -112,7 +103,7 @@
       gap: 1.2rem;
       flex-shrink: 0;
       align-items: stretch;
-      min-width: 14rem;
+      min-width: 15rem;
 
       .btn__wired,
       .btn__primary {
@@ -280,7 +271,7 @@
     }
   }
 
-  // ── Duration progress bar ─────────────────────────────────────────────────
+  // ── Duration bar ──────────────────────────────────────────────────────────
 
   &__durationbar {
     margin-top: 0.8rem;
@@ -375,8 +366,6 @@
       gap: 1.2rem;
     }
 
-    // ── Exercise item (both modes) ──────────────────────────────────────────
-
     &__item {
       background-color: $white;
       border: 0.3rem solid $black;
@@ -393,7 +382,6 @@
         transform $ease,
         box-shadow $ease;
 
-      // View mode: entire row is a link — hover lifts it
       &:not(&--edit):hover {
         transform: translate(-0.4rem, -0.4rem);
         box-shadow: 0.8rem 0.8rem 0 $black;
@@ -408,12 +396,10 @@
         box-shadow: 0.2rem 0.2rem 0 $black;
       }
 
-      // ── Edit mode ──────────────────────────────────────────────────────
-
       &--edit {
         border-style: dashed;
         cursor: default;
-        padding-right: 5.6rem; // space for remove button
+        padding-right: 5.6rem;
       }
 
       &--dragging {
@@ -442,7 +428,6 @@
           color: $black;
           background-color: $secondary;
         }
-
         &:active {
           cursor: grabbing;
         }
@@ -467,7 +452,6 @@
         margin: 0;
       }
 
-      // View mode: duration pill
       &__duration__pill {
         font-size: 1.4rem;
         font-weight: 700;
@@ -480,7 +464,6 @@
         flex-shrink: 0;
       }
 
-      // Edit mode: duration input
       &__duration {
         display: flex;
         align-items: center;
@@ -505,7 +488,6 @@
             border-bottom-color: $primary-5;
           }
 
-          // Remove number arrows
           &::-webkit-outer-spin-button,
           &::-webkit-inner-spin-button {
             -webkit-appearance: none;
@@ -612,7 +594,6 @@
     &__inner {
       padding: 0 1.6rem;
     }
-
     &__title {
       font-size: 2.8rem;
     }
@@ -622,7 +603,6 @@
         transform: translate(-0.2rem, -0.2rem);
         box-shadow: 0.4rem 0.4rem 0 $black;
       }
-
       &__title {
         font-size: 1.8rem;
       }
@@ -632,9 +612,8 @@
       &__body {
         padding: 2rem 1.6rem;
       }
-
       &__accent {
-        width: 0rem;
+        width: 0.6rem;
       }
     }
   }
@@ -646,13 +625,11 @@
 
     &__exercises__item {
       flex-wrap: wrap;
-
       &__title {
         order: 2;
         flex-basis: 100%;
         font-size: 1.8rem;
       }
-
       &__index {
         order: 1;
       }
@@ -667,8 +644,144 @@
   }
 }
 
-// ── Delete / confirm dialog ────────────────────────────────────────────────────
-// (shared with other pages — safe to define here if not globally)
+// ── Share dialog ──────────────────────────────────────────────────────────────
+
+.dialog--share {
+  width: 48rem;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.share__loading,
+.share__empty {
+  padding: 2.4rem 0;
+  font-size: 1.6rem;
+  font-family: $font-family;
+  color: $gray-500;
+  text-align: center;
+}
+
+.share__user__list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: 2.4rem;
+  max-height: 36rem;
+  padding-right: 0.4rem;
+
+  // Thin scrollbar
+  &::-webkit-scrollbar {
+    width: 0.4rem;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $primary-1;
+    border-radius: 1rem;
+  }
+}
+
+.share__user {
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+  padding: 1.2rem 1.4rem;
+  border: 0.2rem solid $gray-300;
+  border-radius: 1.4rem;
+  background: $white;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  font-family: $font-family;
+  transition: all $ease;
+
+  &:hover {
+    border-color: $black;
+    background: $secondary;
+    transform: translate(-0.1rem, -0.1rem);
+    box-shadow: 0.2rem 0.2rem 0 $black;
+  }
+
+  &--selected {
+    border-color: $black;
+    background: $secondary;
+    transform: translate(-0.2rem, -0.2rem);
+    box-shadow: 0.3rem 0.3rem 0 $black;
+  }
+
+  &__avatar {
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 0.2rem solid $black;
+    flex-shrink: 0;
+
+    &--initials {
+      background-color: $secondary-2;
+      color: $primary-1;
+      font-size: 1.4rem;
+      font-weight: 900;
+      font-family: $font-family;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  &__info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  &__name {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: $black;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__team {
+    font-size: 1.3rem;
+    color: $gray-600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__check {
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 50%;
+    border: 0.2rem solid $gray-300;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all $ease;
+
+    &--active {
+      background-color: $secondary-2;
+      border-color: $black;
+      color: $primary-1;
+    }
+  }
+}
+
+// ── Shared dialog / button states ─────────────────────────────────────────────
+
+.btn__primary--success {
+  background-color: $primary-4 !important;
+  border-color: darken($primary-4, 10%) !important;
+}
+
+// ── Shared dialog base ────────────────────────────────────────────────────────
 
 .dialog__overlay {
   position: fixed;
@@ -692,13 +805,46 @@
   box-shadow: 0.6rem 0.6rem 0 $black;
   animation: dialog-in 0.2s ease both;
 
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.6rem;
+  }
+
   &__title {
     font-size: 2.8rem;
     font-weight: 900;
     font-family: $font-family;
     text-transform: uppercase;
     color: $black;
-    margin: 0 0 1.6rem 0;
+    margin: 0;
+  }
+
+  &__close {
+    width: 3.6rem;
+    height: 3.6rem;
+    border: 0.2rem solid $black;
+    border-radius: 50%;
+    background: transparent;
+    font-size: 2.2rem;
+    font-weight: 700;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $black;
+    transition: all $ease;
+    padding: 0;
+    flex-shrink: 0;
+
+    &:hover {
+      background-color: $secondary-2;
+      color: $primary-1;
+      transform: translate(-0.1rem, -0.1rem);
+      box-shadow: 0.2rem 0.2rem 0 $black;
+    }
   }
 
   &__body {
