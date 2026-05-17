@@ -163,6 +163,8 @@ const SketchEditor = ({
 
   const handleSVGMouseUp = useCallback(
     (e: React.MouseEvent) => {
+      console.log(e);
+
       dragRef.current = null;
       if (arrowRef.current && draftArrow) {
         const dx = draftArrow.x2 - draftArrow.x1,

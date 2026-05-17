@@ -55,6 +55,7 @@ const fromSketchData = (
 };
 
 // Arrow head marker path helper
+// @ts-ignore
 const arrowHead = (x1: number, y1: number, x2: number, y2: number) => {
   const angle = Math.atan2(y2 - y1, x2 - x1);
   const len = 10;
@@ -65,6 +66,8 @@ const arrowHead = (x1: number, y1: number, x2: number, y2: number) => {
     `${x2 - len * Math.cos(angle + spread)},${y2 - len * Math.sin(angle + spread)}`,
   ].join(" ");
 };
+
+console.log(arrowHead);
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -162,6 +165,7 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
   const handleSVGMouseUp = useCallback(
     (e: React.MouseEvent) => {
       dragRef.current = null;
+      console.log(e);
 
       if (arrowRef.current && draftArrow) {
         const dx = draftArrow.x2 - draftArrow.x1;

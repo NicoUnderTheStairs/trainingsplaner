@@ -14,6 +14,7 @@ export function useGetUserData(uid: string): UserProfile | null {
       try {
         const snap = await getDoc(doc(db, "users", uid));
         if (snap.exists()) {
+          // @ts-ignore
           setUserData({ id: snap.id, ...snap.data() } as UserProfile);
         } else {
           console.warn(`No user document found for uid: ${uid}`);

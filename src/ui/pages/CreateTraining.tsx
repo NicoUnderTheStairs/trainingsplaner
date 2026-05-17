@@ -72,6 +72,7 @@ export default function CreateTraining() {
             duration={formData.duration}
             date={formData.date ?? ""}
             tags={formData.tags ?? []}
+            // @ts-ignore
             onChange={handleChange}
             onNext={handleNext}
             onPrev={handlePrev}

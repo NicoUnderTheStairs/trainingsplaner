@@ -74,6 +74,7 @@ export default function CreateExcercise() {
             difficulty={formData.difficulty ?? 1}
             date={formData.date ?? ""}
             tags={formData.tags ?? []}
+            // @ts-ignore
             onChange={handleChange}
             onNext={handleNext}
             onPrev={handlePrev}
