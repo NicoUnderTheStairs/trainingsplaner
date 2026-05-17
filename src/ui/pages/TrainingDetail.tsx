@@ -285,7 +285,7 @@ const TrainingDetail = () => {
       <div className="trainingdetail section">
         <div className="trainingdetail__inner">
           {/* Back */}
-          <div className="trainingdetail__back">
+          <div className="btn__back">
             <button className="btn__wired" onClick={() => navigate(-1)}>
               <svg
                 width="23"

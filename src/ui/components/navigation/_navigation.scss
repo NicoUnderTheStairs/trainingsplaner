@@ -209,6 +209,10 @@
       background-color: $secondary-2;
       transform: translate(-0.2rem, -0.2rem);
       box-shadow: 0.3rem 0.3rem 0 $black;
+
+      & .navigation__hamburger__line {
+        background-color: $secondary;
+      }
     }
 
     &__line {
@@ -311,7 +315,7 @@
     }
 
     &__logo {
-      transform: translateX(-24px);
+      margin-left: -3.4rem;
     }
 
     &__actions {

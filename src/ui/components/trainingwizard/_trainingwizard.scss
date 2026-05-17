@@ -2,6 +2,10 @@
   margin: 44px auto 0 auto;
   max-width: 56rem;
 
+  @media (max-width: #{$screen-lg-min}) {
+    padding: 0 2.4rem;
+  }
+
   & h2 {
     margin: 0 0 1.2rem 0;
   }

@@ -255,10 +255,6 @@
 
   // Small tablets / large phones — single column
   @media (max-width: #{$screen-md-min}) {
-    &__inner {
-      padding: 0 1.6rem;
-    }
-
     &__exercise {
       min-width: 100%;
       max-width: 100%;
@@ -266,15 +262,11 @@
 
       &__img {
         min-width: calc(100% + 1rem);
-        max-height: 20rem;
+        max-height: 30rem;
       }
 
       &__content {
-        margin-top: 19rem;
-
-        & h3 {
-          font-size: 2.2rem;
-        }
+        margin-top: 30rem;
       }
 
       // Slightly reduce the hover offset on mobile to avoid layout jank
@@ -299,10 +291,6 @@
   // Phones — tighten spacing further
   @media (max-width: #{$screen-sm-min}) {
     margin: 2.4rem 0;
-
-    &__inner {
-      padding: 0 1.2rem;
-    }
 
     &__menu {
       margin-bottom: 2.4rem;
