@@ -239,7 +239,7 @@ export default function Home() {
   return (
     <>
       <Navigation />
-      <div className="home">
+      <div className="home section">
         {/* Hero */}
         <div className="home__hero">
           <div className="home__hero__text">

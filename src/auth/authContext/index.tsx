@@ -5,6 +5,7 @@ import { auth } from "../../firebase";
 export interface CurrentUser {
   displayName: string | null;
   email: string | null;
+  uid: string;
 }
 
 const AuthContext = React.createContext<{

@@ -1,29 +1,99 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/authContext";
 import { useGetUserData } from "../../../hooks/useGetUserData";
+import {
+  subscribeToNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  type AppNotification,
+} from "../../../services/notifications/notifications";
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const timeAgo = (timestamp: any): string => {
+  if (!timestamp) return "";
+  const d = typeof timestamp.toDate === "function" ? timestamp.toDate() : new Date(timestamp);
+  const diff = Math.floor((Date.now() - d.getTime()) / 1000);
+  if (diff < 60)  return "just now";
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
+};
+
+const ICON_MAP: Record<string, string> = {
+  training_shared:  "↗",
+  exercise_created: "✦",
+};
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const Navigation = () => {
+  const navigate = useNavigate();
+
   const { currentUser } = useAuth() || {
     currentUser: null,
     userLoggedIn: false,
     loading: false,
   };
 
-  // @ts-ignore
   const userData = useGetUserData(currentUser?.uid ?? "");
 
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuOpen,  setMenuOpen]  = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
+  const notifRef = useRef<HTMLDivElement>(null);
   const closeMenu = () => setMenuOpen(false);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  // ── Subscribe to real-time notifications ──────────────────────────────────
+  useEffect(() => {
+    const uid = currentUser?.uid;
+    if (!uid) return;
+    const unsub = subscribeToNotifications(uid, setNotifications);
+    return () => unsub();
+  }, [currentUser?.uid]);
+
+  // ── Close notification panel on outside click ─────────────────────────────
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
+        setNotifOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // ── Mark all read when panel opens ────────────────────────────────────────
+  const handleOpenNotifications = () => {
+    setNotifOpen((prev) => !prev);
+    if (!notifOpen && unreadCount > 0 && currentUser?.uid) {
+      const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
+      markAllNotificationsRead(currentUser.uid, unreadIds).catch(console.error);
+    }
+  };
+
+  // ── Click a single notification ───────────────────────────────────────────
+  const handleNotifClick = (notif: AppNotification) => {
+    if (!notif.read && currentUser?.uid) {
+      markNotificationRead(currentUser.uid, notif.id).catch(console.error);
+    }
+    setNotifOpen(false);
+    if (notif.link) navigate(notif.link);
+  };
 
   return (
     <>
       <div className="navigation">
-        <div className="navigation__inner">
+        <div className="navigation__inner section">
+
           {/* ── Logo ── */}
           <div className="navigation__logo">
             <a href="/" onClick={closeMenu}>
-              <svg
+                            <svg
                 width="356"
                 height="81"
                 viewBox="0 0 356 81"
@@ -296,66 +366,89 @@ const Navigation = () => {
 
           {/* ── Desktop menu ── */}
           <div className="navigation__menu">
-            <a href="/exercise-overview" className="navigation__menu__item">
-              Exercises
-            </a>
-            <a href="/training-overview" className="navigation__menu__item">
-              My Trainings
-            </a>
+            <a href="/exercise-overview" className="navigation__menu__item">Exercises</a>
+            <a href="/training-overview" className="navigation__menu__item">My Trainings</a>
           </div>
 
           {/* ── Actions ── */}
           <div className="navigation__actions">
+
             {/* Notification bell */}
-            <button
-              className="navigation__actions__notifications"
-              aria-label="Notifications"
-            >
-              <svg
-                width="26"
-                height="28"
-                viewBox="0 0 26 28"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
+            <div className="navigation__notif" ref={notifRef}>
+              <button
+                className={`navigation__actions__notifications ${notifOpen ? "navigation__actions__notifications--open" : ""}`}
+                aria-label="Notifications"
+                onClick={handleOpenNotifications}
               >
-                <g clip-path="url(#clip0_45_2)">
-                  <path
-                    d="M13 1.5C13.2716 1.5 13.5 1.72843 13.5 2V4.2959L14.6895 4.54785C17.9439 5.23647 20.5 8.28593 20.5 12V20.6211L22.8789 23H3.12109L5.5 20.6211V12C5.5 8.28593 8.05608 5.23647 11.3105 4.54785L12.5 4.2959V2C12.5 1.72843 12.7284 1.5 13 1.5Z"
-                    fill="#fff"
-                    stroke="#1E1E1E"
-                    stroke-width="3"
-                  />
-                  <path
-                    d="M10.5 25.5C10.5 26.88 11.62 28 13 28C14.38 28 15.5 26.88 15.5 25.5H10.5Z"
-                    fill="#1E1E1E"
-                  />
-                </g>
-                <defs>
-                  <clipPath id="clip0_45_2">
-                    <rect width="26" height="28" fill="white" />
-                  </clipPath>
-                </defs>
-              </svg>
-            </button>
+                <svg width="26" height="28" viewBox="0 0 26 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <g clipPath="url(#clip0_45_2)">
+                    <path d="M13 1.5C13.2716 1.5 13.5 1.72843 13.5 2V4.2959L14.6895 4.54785C17.9439 5.23647 20.5 8.28593 20.5 12V20.6211L22.8789 23H3.12109L5.5 20.6211V12C5.5 8.28593 8.05608 5.23647 11.3105 4.54785L12.5 4.2959V2C12.5 1.72843 12.7284 1.5 13 1.5Z" fill="#fff" stroke="#1E1E1E" strokeWidth="3" />
+                    <path d="M10.5 25.5C10.5 26.88 11.62 28 13 28C14.38 28 15.5 26.88 15.5 25.5H10.5Z" fill="#1E1E1E" />
+                  </g>
+                  <defs>
+                    <clipPath id="clip0_45_2"><rect width="26" height="28" fill="white" /></clipPath>
+                  </defs>
+                </svg>
+
+                {/* Unread dot */}
+                {unreadCount > 0 && (
+                  <span className="navigation__notif__dot">{unreadCount > 9 ? "9+" : unreadCount}</span>
+                )}
+              </button>
+
+              {/* Dropdown panel */}
+              {notifOpen && (
+                <div className="navigation__notif__panel">
+                  <div className="navigation__notif__panel__header">
+                    <h3>Notifications</h3>
+                    {notifications.length > 0 && (
+                      <span className="navigation__notif__panel__count">
+                        {notifications.length}
+                      </span>
+                    )}
+                  </div>
+
+                  {notifications.length === 0 ? (
+                    <div className="navigation__notif__empty">
+                      <p>No notifications yet.</p>
+                    </div>
+                  ) : (
+                    <div className="navigation__notif__list">
+                      {notifications.map((notif) => (
+                        <button
+                          key={notif.id}
+                          className={`navigation__notif__item ${!notif.read ? "navigation__notif__item--unread" : ""}`}
+                          onClick={() => handleNotifClick(notif)}
+                        >
+                          <div className="navigation__notif__item__icon navigation__notif__item__icon--${notif.type}">
+                            {ICON_MAP[notif.type] ?? "●"}
+                          </div>
+                          <div className="navigation__notif__item__body">
+                            <p className="navigation__notif__item__title">{notif.title}</p>
+                            <p className="navigation__notif__item__text">{notif.body}</p>
+                            <span className="navigation__notif__item__time">{timeAgo(notif.createdAt)}</span>
+                          </div>
+                          {!notif.read && <div className="navigation__notif__item__dot" />}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Profile avatar */}
             <a href="/profile" className="navigation__actions__profile">
               {userData?.profileImageUrl ? (
-                <img
-                  src={userData.profileImageUrl}
-                  alt={userData.userName ?? "Profile"}
-                  className="navigation__actions__profile__img"
-                />
+                <img src={userData.profileImageUrl} alt={userData.userName ?? "Profile"} className="navigation__actions__profile__img" />
               ) : (
                 <div className="navigation__actions__profile__initials">
-                  {userData?.userName
-                    ? userData.userName.slice(0, 2).toUpperCase()
-                    : "?"}
+                  {userData?.userName ? userData.userName.slice(0, 2).toUpperCase() : "?"}
                 </div>
               )}
             </a>
 
-            {/* Hamburger — visible on mobile only */}
+            {/* Hamburger */}
             <button
               className={`navigation__hamburger ${menuOpen ? "navigation__hamburger--open" : ""}`}
               onClick={() => setMenuOpen((prev) => !prev)}
@@ -369,25 +462,10 @@ const Navigation = () => {
           </div>
         </div>
 
-        {/* ── Mobile drawer ── */}
-        <div
-          className={`navigation__drawer ${menuOpen ? "navigation__drawer--open" : ""}`}
-          aria-hidden={!menuOpen}
-        >
-          <a
-            href="/exercise-overview"
-            className="navigation__menu__item"
-            onClick={closeMenu}
-          >
-            Exercises
-          </a>
-          <a
-            href="/training-overview"
-            className="navigation__menu__item"
-            onClick={closeMenu}
-          >
-            My Trainings
-          </a>
+        {/* Mobile drawer */}
+        <div className={`navigation__drawer ${menuOpen ? "navigation__drawer--open" : ""}`} aria-hidden={!menuOpen}>
+          <a href="/exercise-overview" className="navigation__menu__item" onClick={closeMenu}>Exercises</a>
+          <a href="/training-overview" className="navigation__menu__item" onClick={closeMenu}>My Trainings</a>
         </div>
       </div>
     </>

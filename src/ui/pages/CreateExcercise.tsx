@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { collection, getDocs } from "firebase/firestore";
 import Navigation from "../components/navigation/Navigation";
 import Step1 from "../components/excercisewizard/defaultInfo";
 import Step2 from "../components/excercisewizard/sketchcreation";
 import Step3 from "../components/excercisewizard/variantSelection";
 import { createExcercise } from "../../services/excercisewizard/createExcercise";
 import { linkVariants } from "../../services/excercisewizard/exerciseVariants";
+import { notifyExerciseCreated } from "../../services/notifications/notifications";
 import { useAuth } from "../../auth/authContext";
 import { useGetUserData } from "../../hooks/useGetUserData";
+import db from "../../firebase";
 
 interface FormData {
   date?: string;
@@ -20,7 +23,7 @@ interface FormData {
     players: Record<string, any>;
     arrows: Record<string, any>;
   };
-  variantOfId?: string; // ID of exercise this is a variant of
+  variantOfId?: string;
 }
 
 export default function CreateExcercise() {
@@ -52,7 +55,7 @@ export default function CreateExcercise() {
     setFormData((prev) => ({ ...prev, ...data }));
   };
 
-  // Step 2 → Step 3: create the exercise in Firestore, then continue to variant step
+  // ── Step 2 → 3: save exercise then notify all other users ─────────────────
   const handleStep2Next = async () => {
     const resolvedAuthor =
       formData.author?.trim() ||
@@ -61,26 +64,51 @@ export default function CreateExcercise() {
       "Unknown";
 
     try {
+      // 1. Save the exercise to Firestore
       const id = await createExcercise({
-        date: formData.date ? new Date(formData.date) : new Date(),
-        author: resolvedAuthor,
-        title: formData.title ?? "",
+        date:        formData.date ? new Date(formData.date) : new Date(),
+        author:      resolvedAuthor,
+        title:       formData.title ?? "",
         description: formData.description ?? "",
-        difficulty: formData.difficulty ?? 1,
-        tags: formData.tags ?? [],
+        difficulty:  formData.difficulty ?? 1,
+        tags:        formData.tags ?? [],
         sketch: {
           players: formData.sketch?.players ?? {},
-          arrows: formData.sketch?.arrows ?? {},
+          arrows:  formData.sketch?.arrows  ?? {},
         },
       });
+
       setCreatedId(id);
+
+      // 2. Notify all other users (non-blocking — don't let it stop the wizard)
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        const recipientIds = usersSnap.docs
+          .map((d) => d.id)
+          .filter((uid) => uid !== currentUser?.uid);
+
+        if (recipientIds.length > 0) {
+          await notifyExerciseCreated(
+            recipientIds,
+            id,
+            formData.title ?? "New exercise",
+            resolvedAuthor,
+            currentUser?.uid ?? "",
+          );
+        }
+      } catch (notifError) {
+        // Notification failure is non-critical — log and continue
+        console.warn("Could not send exercise notifications:", notifError);
+      }
+
+      // 3. Proceed to variant step
       setCurrentStep(3);
     } catch (error) {
       console.error("Error creating exercise:", error);
     }
   };
 
-  // Step 3 → finish: optionally link variants then navigate to detail page
+  // ── Step 3 → done: optionally link variants then navigate ────────────────
   const handleFinish = async () => {
     const id = createdId;
     if (!id) return;
@@ -123,7 +151,6 @@ export default function CreateExcercise() {
           <Step2
             sketch={formData.sketch}
             onChange={handleChange}
-            // Override onNext to save the exercise before proceeding
             onNext={handleStep2Next}
             onPrev={handlePrev}
             isLastStep={false}
@@ -137,8 +164,7 @@ export default function CreateExcercise() {
             onChange={handleChange}
             onNext={handleFinish}
             onPrev={() => {
-              // Can't go back to step 2 after saving — go to detail page instead
-              // (exercise is already created)
+              // Exercise already saved — go straight to detail page
               if (createdId) navigate(`/exercise-detail/${createdId}`);
             }}
             isLastStep={true}
