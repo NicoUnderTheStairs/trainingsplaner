@@ -1,5 +1,6 @@
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -8,13 +9,14 @@ import {
   updateDoc,
   where,
   arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
 import db from "../../firebase";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface ExerciseVariantGroup {
-  id: string; // doc ID in ExerciseVariants collection
+  id: string;            // doc ID in ExerciseVariants collection
   exerciseIds: string[]; // all exercise IDs in this group
   createdAt: Date;
   updatedAt: Date;
@@ -36,10 +38,7 @@ export const findVariantGroup = async (
   );
   const snap = await getDocs(q);
   if (snap.empty) return null;
-  return {
-    id: snap.docs[0].id,
-    ...snap.docs[0].data(),
-  } as ExerciseVariantGroup;
+  return { id: snap.docs[0].id, ...snap.docs[0].data() } as ExerciseVariantGroup;
 };
 
 /**
@@ -100,9 +99,7 @@ export const linkVariants = async (
  */
 export const fetchVariants = async (
   exerciseId: string,
-): Promise<
-  { id: string; title: string; difficulty: number; tags: string[] }[]
-> => {
+): Promise<{ id: string; title: string; difficulty: number; tags: string[] }[]> => {
   const group = await findVariantGroup(exerciseId);
   if (!group) return [];
 
@@ -127,4 +124,43 @@ export const fetchVariants = async (
     difficulty: number;
     tags: string[];
   }[];
+};
+
+/**
+ * Remove an exercise from its variant group when it is deleted.
+ *
+ * - If the group will still have ≥ 2 members after removal → pull the ID out
+ *   with arrayRemove and clear variantGroupId on the deleted exercise is a no-op
+ *   (doc is being deleted anyway).
+ * - If the group drops to exactly 1 member → delete the group doc entirely and
+ *   clear variantGroupId on the sole remaining exercise (it's no longer a variant).
+ * - If the group is somehow empty after removal → delete the group doc.
+ */
+export const removeFromVariantGroup = async (
+  exerciseId: string,
+): Promise<void> => {
+  const group = await findVariantGroup(exerciseId);
+  if (!group) return; // exercise wasn't in any group — nothing to do
+
+  const remaining = group.exerciseIds.filter((id) => id !== exerciseId);
+
+  if (remaining.length >= 2) {
+    // Group still valid — just remove this exercise from the array
+    await updateDoc(doc(db, "ExerciseVariants", group.id), {
+      exerciseIds: arrayRemove(exerciseId),
+      updatedAt: new Date(),
+    });
+  } else if (remaining.length === 1) {
+    // Only one exercise left — group no longer makes sense, delete it
+    // and clear the variantGroupId on the last remaining exercise
+    await Promise.all([
+      deleteDoc(doc(db, "ExerciseVariants", group.id)),
+      updateDoc(doc(db, "Excercises", remaining[0]), {
+        variantGroupId: null,
+      }),
+    ]);
+  } else {
+    // Group is now empty — just delete the group doc
+    await deleteDoc(doc(db, "ExerciseVariants", group.id));
+  }
 };

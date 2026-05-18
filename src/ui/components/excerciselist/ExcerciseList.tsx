@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { collection, getDocs, query, where } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import db from "../../../firebase";
 import type { SketchData } from "../../../types/Sketch";
@@ -49,24 +50,30 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
   );
 };
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── Component ────────────────────────────────────────────────────────────────
 
 const ExcerciseList = () => {
   const navigate = useNavigate();
+  const uid = getAuth().currentUser?.uid;
 
-  const [exercises,    setExercises]    = useState<Exercise[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [error,        setError]        = useState<string | null>(null);
-  // Map of exerciseId → variant count (number of siblings in its group)
+  const [exercises,     setExercises]     = useState<Exercise[]>([]);
+  const [loading,       setLoading]       = useState(true);
+  const [error,         setError]         = useState<string | null>(null);
   const [variantCounts, setVariantCounts] = useState<Record<string, number>>({});
 
+  // Favourite IDs for the current user
+  const [favouriteIds,     setFavouriteIds]     = useState<Set<string>>(new Set());
+  const [loadingFavourites, setLoadingFavourites] = useState(true);
+
+  // Filter state
   const [search,             setSearch]             = useState("");
   const [filterOpen,         setFilterOpen]         = useState(false);
   const [activeTags,         setActiveTags]         = useState<string[]>([]);
   const [activeDifficulties, setActiveDifficulties] = useState<number[]>([]);
+  const [showFavourites,     setShowFavourites]     = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
 
-  // ── Fetch exercises ─────────────────────────────────────────────────────────
+  // ── Fetch exercises + variant counts ───────────────────────────────────────
   useEffect(() => {
     const fetchExercises = async () => {
       try {
@@ -77,36 +84,23 @@ const ExcerciseList = () => {
         }));
         setExercises(data);
 
-        // ── Fetch variant counts in one batch ─────────────────────────────
-        // Collect all unique variantGroupIds from the exercises
+        // Batch-fetch variant counts
         const groupIds = [...new Set(
-          data
-            .map((ex) => (ex as any).variantGroupId as string | undefined)
-            .filter(Boolean) as string[]
+          data.map((ex) => (ex as any).variantGroupId as string | undefined).filter(Boolean) as string[]
         )];
 
         if (groupIds.length > 0) {
-          // Firestore "in" queries support max 30 items; chunk if needed
           const chunks: string[][] = [];
           for (let i = 0; i < groupIds.length; i += 30) chunks.push(groupIds.slice(i, i + 30));
-
           const counts: Record<string, number> = {};
-
           await Promise.all(chunks.map(async (chunk) => {
-            const q = query(
-              collection(db, "ExerciseVariants"),
-              where("__name__", "in", chunk),
-            );
+            const q = query(collection(db, "ExerciseVariants"), where("__name__", "in", chunk));
             const snap = await getDocs(q);
             snap.docs.forEach((d) => {
-              const exerciseIds: string[] = d.data().exerciseIds ?? [];
-              // For each exercise in this group, its variant count = group size - 1 (exclude itself)
-              exerciseIds.forEach((eid) => {
-                counts[eid] = exerciseIds.length - 1;
-              });
+              const ids: string[] = d.data().exerciseIds ?? [];
+              ids.forEach((eid) => { counts[eid] = ids.length - 1; });
             });
           }));
-
           setVariantCounts(counts);
         }
       } catch (e) {
@@ -119,30 +113,51 @@ const ExcerciseList = () => {
     fetchExercises();
   }, []);
 
-  // ── Close filter on outside click ───────────────────────────────────────────
+  // ── Fetch user's favourite exercise IDs ───────────────────────────────────
   useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
+    if (!uid) { setLoadingFavourites(false); return; }
+    const fetchFavourites = async () => {
+      try {
+        const snap = await getDocs(collection(db, "users", uid, "favouriteExercises"));
+        setFavouriteIds(new Set(snap.docs.map((d) => d.id)));
+      } catch (e) {
+        console.error("Error fetching favourites:", e);
+      } finally {
+        setLoadingFavourites(false);
+      }
+    };
+    fetchFavourites();
+  }, [uid]);
+
+  // ── Close filter on outside click ─────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
       if (filterRef.current && !filterRef.current.contains(e.target as Node)) setFilterOpen(false);
     };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // ── Filter helpers ──────────────────────────────────────────────────────────
+  // ── Filter helpers ─────────────────────────────────────────────────────────
   const toggleTag        = (tag: string) => setActiveTags((p) => p.includes(tag) ? p.filter((t) => t !== tag) : [...p, tag]);
   const toggleDifficulty = (d: number)   => setActiveDifficulties((p) => p.includes(d) ? p.filter((x) => x !== d) : [...p, d]);
-  const clearFilters     = () => { setActiveTags([]); setActiveDifficulties([]); setSearch(""); };
+  const clearFilters     = () => { setActiveTags([]); setActiveDifficulties([]); setSearch(""); setShowFavourites(false); };
 
-  const hasActiveFilters  = activeTags.length > 0 || activeDifficulties.length > 0 || search.trim() !== "";
-  const activeFilterCount = activeTags.length + activeDifficulties.length;
+  const hasActiveFilters  = activeTags.length > 0 || activeDifficulties.length > 0 || search.trim() !== "" || showFavourites;
+  const activeFilterCount = activeTags.length + activeDifficulties.length + (showFavourites ? 1 : 0);
+
+  console.log(activeFilterCount)
 
   const filtered = exercises.filter((ex) => {
     const q             = search.trim().toLowerCase();
     const matchesSearch = q === "" || ex.title.toLowerCase().includes(q) || ex.description?.toLowerCase().includes(q);
     const matchesTags   = activeTags.length === 0 || activeTags.every((tag) => (ex.tags ?? []).includes(tag));
     const matchesDiff   = activeDifficulties.length === 0 || activeDifficulties.includes(ex.difficulty);
-    return matchesSearch && matchesTags && matchesDiff;
+    const matchesFav    = !showFavourites || favouriteIds.has(ex.id!);
+    return matchesSearch && matchesTags && matchesDiff && matchesFav;
   });
+
+  const favouriteCount = exercises.filter((ex) => favouriteIds.has(ex.id!)).length;
 
   return (
     <div className="excerciselist section">
@@ -156,6 +171,7 @@ const ExcerciseList = () => {
           </h2>
 
           <div className="excerciselist__menu__buttons">
+            {/* Search */}
             <div className="excerciselist__search__wrapper">
               <input
                 type="text"
@@ -169,13 +185,38 @@ const ExcerciseList = () => {
               )}
             </div>
 
+            {/* Favourites toggle */}
+            <button
+              className={`excerciselist__menu__buttons--favourites ${showFavourites ? "excerciselist__menu__buttons--favourites--active" : ""}`}
+              onClick={() => setShowFavourites((p) => !p)}
+              title={showFavourites ? "Show all exercises" : "Show favourites only"}
+              disabled={loadingFavourites}
+            >
+              <svg width="16" height="15" viewBox="0 0 26 24" fill="none">
+                <path
+                  d="M19.2754 1.5C22.2429 1.5 24.4998 3.75726 24.5 6.79199C24.5 8.52207 24.2672 9.79464 23.8379 10.8643C23.4088 11.9333 22.7465 12.892 21.7627 13.9512C20.7617 15.0288 19.4807 16.1562 17.8262 17.6025C16.4436 18.8112 14.8339 20.216 13 21.9346C11.1661 20.216 9.55644 18.8112 8.17383 17.6025C6.51934 16.1562 5.2383 15.0288 4.2373 13.9512C3.25348 12.892 2.59124 11.9333 2.16211 10.8643C1.73284 9.79464 1.5 8.52207 1.5 6.79199C1.50023 3.75726 3.7571 1.5 6.72461 1.5C8.77382 1.50018 10.5736 2.70206 11.71 4.61523L13 6.78613L14.29 4.61523C15.4264 2.70206 17.2262 1.50018 19.2754 1.5Z"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  fill={showFavourites ? "currentColor" : "none"}
+                />
+              </svg>
+              Favourites
+              {!loadingFavourites && favouriteCount > 0 && (
+                <span className="excerciselist__filter__badge">{favouriteCount}</span>
+              )}
+            </button>
+
+            {/* Filter dropdown */}
             <div className="excerciselist__filter__wrapper" ref={filterRef}>
               <button
                 className={`excerciselist__menu__buttons--filter ${filterOpen ? "excerciselist__menu__buttons--filter--open" : ""}`}
                 onClick={() => setFilterOpen((p) => !p)}
               >
                 Filter
-                {activeFilterCount > 0 && <span className="excerciselist__filter__badge">{activeFilterCount}</span>}
+                {/* Only count tags + difficulty in the filter badge — favourites has its own button */}
+                {(activeTags.length + activeDifficulties.length) > 0 && (
+                  <span className="excerciselist__filter__badge">{activeTags.length + activeDifficulties.length}</span>
+                )}
               </button>
 
               {filterOpen && (
@@ -216,9 +257,18 @@ const ExcerciseList = () => {
           </div>
         </div>
 
-        {/* Active chips */}
+        {/* Active filter chips */}
         {hasActiveFilters && (
           <div className="excerciselist__filter__chips">
+            {showFavourites && (
+              <span className="excerciselist__filter__chip excerciselist__filter__chip--favourite">
+                <svg width="12" height="11" viewBox="0 0 26 24" fill="none">
+                  <path d="M19.2754 1.5C22.2429 1.5 24.4998 3.75726 24.5 6.79199C24.5 8.52207 24.2672 9.79464 23.8379 10.8643C23.4088 11.9333 22.7465 12.892 21.7627 13.9512C20.7617 15.0288 19.4807 16.1562 17.8262 17.6025C16.4436 18.8112 14.8339 20.216 13 21.9346C11.1661 20.216 9.55644 18.8112 8.17383 17.6025C6.51934 16.1562 5.2383 15.0288 4.2373 13.9512C3.25348 12.892 2.59124 11.9333 2.16211 10.8643C1.73284 9.79464 1.5 8.52207 1.5 6.79199C1.50023 3.75726 3.7571 1.5 6.72461 1.5C8.77382 1.50018 10.5736 2.70206 11.71 4.61523L13 6.78613L14.29 4.61523C15.4264 2.70206 17.2262 1.50018 19.2754 1.5Z" stroke="currentColor" strokeWidth="3" fill="currentColor" />
+                </svg>
+                Favourites
+                <button onClick={() => setShowFavourites(false)} aria-label="Remove favourites filter">×</button>
+              </span>
+            )}
             {search && (
               <span className="excerciselist__filter__chip">
                 "{search}"
@@ -246,16 +296,26 @@ const ExcerciseList = () => {
           <div className="excerciselist__exercise__wrapper">
             {filtered.map((exercise) => {
               const variantCount = variantCounts[exercise.id!] ?? 0;
+              const isFav = favouriteIds.has(exercise.id!);
               return (
                 <div
                   key={exercise.id}
                   className="excerciselist__exercise"
                   onClick={() => navigate(`/exercise-detail/${exercise.id}`)}
                 >
-                  {/* ── Variant badge ── */}
+                  {/* Variant badge */}
                   {variantCount > 0 && (
                     <div className="excerciselist__exercise__variants" title={`${variantCount} variant${variantCount !== 1 ? "s" : ""}`}>
                       {variantCount}
+                    </div>
+                  )}
+
+                  {/* Favourite heart badge */}
+                  {isFav && (
+                    <div className="excerciselist__exercise__favourite" title="Favourited">
+                      <svg width="12" height="11" viewBox="0 0 26 24" fill="none">
+                        <path d="M19.2754 1.5C22.2429 1.5 24.4998 3.75726 24.5 6.79199C24.5 8.52207 24.2672 9.79464 23.8379 10.8643C23.4088 11.9333 22.7465 12.892 21.7627 13.9512C20.7617 15.0288 19.4807 16.1562 17.8262 17.6025C16.4436 18.8112 14.8339 20.216 13 21.9346C11.1661 20.216 9.55644 18.8112 8.17383 17.6025C6.51934 16.1562 5.2383 15.0288 4.2373 13.9512C3.25348 12.892 2.59124 11.9333 2.16211 10.8643C1.73284 9.79464 1.5 8.52207 1.5 6.79199C1.50023 3.75726 3.7571 1.5 6.72461 1.5C8.77382 1.50018 10.5736 2.70206 11.71 4.61523L13 6.78613L14.29 4.61523C15.4264 2.70206 17.2262 1.50018 19.2754 1.5Z" stroke="currentColor" strokeWidth="3" fill="currentColor" />
+                      </svg>
                     </div>
                   )}
 
@@ -270,9 +330,8 @@ const ExcerciseList = () => {
                         ? exercise.description.substring(0, 100) + "..."
                         : exercise.description}
                     </p>
-
                     <div className="excerciselist__exercise__content--detail">
-                      <div>
+                      <div className="excerciselist__exercise__content--tags">
                         {(exercise.tags ?? []).map((tag) => (
                           <div key={tag} className={`excerciselist__exercise__content__tags tags tags--${tag.toLowerCase()}`}>
                             <span className="excerciselist__exercise__content__tags--tag">{tag}</span>
@@ -295,7 +354,11 @@ const ExcerciseList = () => {
 
             {filtered.length === 0 && exercises.length > 0 && (
               <div className="excerciselist__no__results">
-                <p>No exercises match your filters.</p>
+                <p>
+                  {showFavourites && favouriteCount === 0
+                    ? "You haven't favourited any exercises yet."
+                    : "No exercises match your filters."}
+                </p>
                 <button className="btn__wired" onClick={clearFilters}>Clear filters</button>
               </div>
             )}

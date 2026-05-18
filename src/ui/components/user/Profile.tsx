@@ -393,7 +393,7 @@ const Profile = () => {
             </div>
 
             {/* Activity */}
-            <div className="profile__card">
+            {/* <div className="profile__card">
               <h3 className="profile__card__title">Activity</h3>
               <div className="profile__card__row">
                 <span className="profile__card__label">
@@ -411,7 +411,7 @@ const Profile = () => {
                   {profile.favoriteTrainings?.length ?? 0}
                 </span>
               </div>
-            </div>
+            </div> */}
 
             {/* Quick links */}
             <div className="profile__card">

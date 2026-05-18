@@ -44,11 +44,13 @@
         font-family: $font-family;
         transition: all $ease;
         color: $black;
+        max-width: fit-content;
 
         &:hover {
           background-color: darken($secondary, 4%);
           box-shadow: 0.3rem 0.3rem 0 $black;
           transform: translate(-0.1rem, -0.1rem);
+          color: $black;
         }
 
         &:active {
@@ -64,6 +66,29 @@
 
       &--filter {
         // same wired style, inherits button base above
+      }
+
+            &--favourites {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+ 
+        & svg {
+          flex-shrink: 0;
+          transition: all $ease;
+        }
+ 
+        &--active {
+          background-color: rgba($primary-3, 0.08) !important;
+          border-color: $primary-3 !important;
+          color: $primary-3 !important;
+          transform: translate(-0.1rem, -0.1rem);
+          box-shadow: 0.3rem 0.3rem 0 darken($primary-3, 10%) !important;
+ 
+          &:hover {
+            background-color: rgba($primary-3, 0.15) !important;
+          }
+        }
       }
     }
   }
@@ -143,6 +168,23 @@
       font-family: $font-family;
     }
 
+    // Favourite heart badge on the card image (top-left)
+    &__favourite {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.4rem;
+      height: 2.4rem;
+      position: absolute;
+      top: 0.5rem;
+      left: 0.5rem;
+      border: 0.2rem solid $primary-3;
+      border-radius: 50%;
+      z-index: 3;
+      background-color: rgba($primary-3, 0.1);
+      color: $primary-3;
+    }
+
     &__content {
       margin-top: 21rem;
       padding: 1.8rem;
@@ -177,6 +219,13 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+      }
+      
+      &--tags {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.4rem;
       }
     }
 
@@ -223,12 +272,8 @@
         flex-wrap: wrap;
         gap: 1.2rem;
 
-        & button {
-          font-size: 1.6rem;
-        }
-
         &--search {
-          min-width: 100%;
+          min-width: 100% !important;
         }
       }
     }
@@ -316,6 +361,7 @@
   &__search__wrapper {
     position: relative;
     display: flex;
+    width: 100%;
     align-items: center;
 
     // Override the button styles since it's now an input
@@ -367,7 +413,7 @@
     transition: all $ease;
 
     &:hover {
-      background-color: $primary-1;
+      background-color: $primary-5;
     }
   }
 
@@ -398,7 +444,7 @@
     width: 2rem;
     height: 2rem;
     border-radius: 50%;
-    background-color: $primary-1;
+    background-color: $primary-5;
     color: $black;
     font-size: 1.2rem;
     font-weight: 900;
@@ -497,7 +543,7 @@
 
     &--active {
       background-color: $secondary-2;
-      color: $primary-1;
+      color: $primary-5;
       transform: translate(-0.2rem, -0.2rem);
       box-shadow: 0.3rem 0.3rem 0 $black;
     }
@@ -572,7 +618,7 @@
     & button {
       background: transparent;
       border: none;
-      font-size: 1.6rem;
+      font-size: 1.8rem;
       font-weight: 700;
       cursor: pointer;
       line-height: 1;
@@ -627,6 +673,15 @@
       color: $black;
       margin: 0;
     }
+  }
+
+  &__filter__chip--favourite {
+    background-color: rgba($primary-3, 0.08);
+    border-color: $primary-3;
+    color: $primary-3;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
   }
 
   // ── Responsive additions ─────────────────────────────────────────────────

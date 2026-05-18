@@ -56,6 +56,19 @@
       }
     }
 
+    &--favourite {
+      &--active {
+        color: $primary-3; // red
+        border-color: $primary-3;
+        background-color: rgba($primary-3, 0.08);
+ 
+        &:hover {
+          background-color: rgba($primary-3, 0.15);
+          box-shadow: 0.3rem 0.3rem 0 darken($primary-3, 10%);
+        }
+      }
+    }
+
     & svg {
       flex-shrink: 0;
     }

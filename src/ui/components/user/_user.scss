@@ -434,37 +434,37 @@ $transition-slow: 250ms ease;
 
 // ─── Buttons (shared with rest of app, defined here for completeness) ─────────
 
-.btn__primary {
-  display: inline-flex;
-  align-items: center;
-  gap: $space-sm;
-  background: $black;
-  color: $white;
-  border: none;
-  padding: $space-sm + 2px $space-lg;
-  border-radius: $radius-sm;
-  font-size: 13.5px;
-  font-weight: 600;
-  font-family: inherit;
-  cursor: pointer;
-  transition:
-    background $transition,
-    transform $transition;
+// .btn__primary {
+//   display: inline-flex;
+//   align-items: center;
+//   gap: $space-sm;
+//   background: $black;
+//   color: $white;
+//   border: none;
+//   padding: $space-sm + 2px $space-lg;
+//   border-radius: $radius-sm;
+//   font-size: 13.5px;
+//   font-weight: 600;
+//   font-family: inherit;
+//   cursor: pointer;
+//   transition:
+//     background $transition,
+//     transform $transition;
 
-  &:hover {
-    background: lighten($black, 15%);
-  }
+//   &:hover {
+//     background: lighten($black, 15%);
+//   }
 
-  &:active {
-    transform: scale(0.98);
-  }
+//   &:active {
+//     transform: scale(0.98);
+//   }
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-  }
-}
+//   &:disabled {
+//     opacity: 0.5;
+//     cursor: not-allowed;
+//     transform: none;
+//   }
+// }
 
 // ─── Avatar picker dialog ─────────────────────────────────────────────────────
 
