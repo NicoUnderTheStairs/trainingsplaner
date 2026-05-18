@@ -13,6 +13,7 @@ import { registerUser } from "../services/upload/registerUser";
 const ALLOWED_PHONE_NUMBERS: string[] = [
   "+41796167045",
   "+41767256001",
+  "+41762397502",
   // add more numbers here
 ];
 

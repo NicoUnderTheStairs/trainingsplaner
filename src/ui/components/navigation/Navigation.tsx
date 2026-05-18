@@ -5,6 +5,7 @@ import { useGetUserData } from "../../../hooks/useGetUserData";
 import {
   subscribeToNotifications,
   markNotificationRead,
+  deleteNotification,
   markAllNotificationsRead,
   type AppNotification,
 } from "../../../services/notifications/notifications";
@@ -83,6 +84,51 @@ const Navigation = () => {
     }
     setNotifOpen(false);
     if (notif.link) navigate(notif.link);
+  };
+
+  const [draggedId, setDraggedId] = useState<string | null>(null);
+  const [dragX, setDragX] = useState(0);
+
+  const startX = useRef(0);
+
+  const SWIPE_THRESHOLD = 120;
+
+  const handleSwipeStart = (
+    clientX: number,
+    notifId: string
+  ) => {
+    startX.current = clientX;
+    setDraggedId(notifId);
+  };
+
+  const handleSwipeMove = (clientX: number) => {
+    if (!draggedId) return;
+
+    const delta = clientX - startX.current;
+
+    // only allow left swipe
+    if (delta < 0) {
+      setDragX(delta);
+    }
+  };
+
+  const handleSwipeEnd = async (notif: AppNotification) => {
+    if (!draggedId || !currentUser?.uid) {
+      setDraggedId(null);
+      setDragX(0);
+      return;
+    }
+
+    if (Math.abs(dragX) > SWIPE_THRESHOLD) {
+      try {
+        await deleteNotification(currentUser.uid, notif.id);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    setDraggedId(null);
+    setDragX(0);
   };
 
   return (
@@ -415,11 +461,61 @@ const Navigation = () => {
                   ) : (
                     <div className="navigation__notif__list">
                       {notifications.map((notif) => (
-                        <button
+                        <div
                           key={notif.id}
-                          className={`navigation__notif__item ${!notif.read ? "navigation__notif__item--unread" : ""}`}
-                          onClick={() => handleNotifClick(notif)}
+                          className="navigation__notif__swipe"
                         >
+                          <div className="navigation__notif__delete">
+                            Delete
+                          </div>
+
+                          <button
+                            className={`navigation__notif__item ${
+                              !notif.read ? "navigation__notif__item--unread" : ""
+                            } ${
+                              draggedId === notif.id ? "navigation__notif__item--dragging" : ""
+                            }`}
+                            style={{
+                              transform:
+                                draggedId === notif.id
+                                  ? `translateX(${dragX}px)`
+                                  : undefined,
+                            }}
+
+                            onClick={() => {
+                              if (Math.abs(dragX) < 10) {
+                                handleNotifClick(notif);
+                              }
+                            }}
+
+                            onTouchStart={(e) =>
+                              handleSwipeStart(e.touches[0].clientX, notif.id)
+                            }
+
+                            onTouchMove={(e) =>
+                              handleSwipeMove(e.touches[0].clientX)
+                            }
+
+                            onTouchEnd={() => handleSwipeEnd(notif)}
+
+                            onMouseDown={(e) =>
+                              handleSwipeStart(e.clientX, notif.id)
+                            }
+
+                            onMouseMove={(e) => {
+                              if (draggedId === notif.id) {
+                                handleSwipeMove(e.clientX);
+                              }
+                            }}
+
+                            onMouseUp={() => handleSwipeEnd(notif)}
+
+                            onMouseLeave={() => {
+                              if (draggedId === notif.id) {
+                                handleSwipeEnd(notif);
+                              }
+                            }}
+                          >
                           <div className="navigation__notif__item__icon navigation__notif__item__icon--${notif.type}">
                             {ICON_MAP[notif.type] ?? "●"}
                           </div>
@@ -429,7 +525,8 @@ const Navigation = () => {
                             <span className="navigation__notif__item__time">{timeAgo(notif.createdAt)}</span>
                           </div>
                           {!notif.read && <div className="navigation__notif__item__dot" />}
-                        </button>
+                          </button>
+                        </div>
                       ))}
                     </div>
                   )}

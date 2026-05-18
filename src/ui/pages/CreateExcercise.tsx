@@ -1,15 +1,19 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
+
 import Navigation from "../components/navigation/Navigation";
 import Step1 from "../components/excercisewizard/defaultInfo";
 import Step2 from "../components/excercisewizard/sketchcreation";
 import Step3 from "../components/excercisewizard/variantSelection";
+
 import { createExcercise } from "../../services/excercisewizard/createExcercise";
 import { linkVariants } from "../../services/excercisewizard/exerciseVariants";
 import { notifyExerciseCreated } from "../../services/notifications/notifications";
+
 import { useAuth } from "../../auth/authContext";
 import { useGetUserData } from "../../hooks/useGetUserData";
+
 import db from "../../firebase";
 
 interface FormData {
@@ -19,44 +23,95 @@ interface FormData {
   description?: string;
   difficulty?: number;
   tags?: string[];
+
   sketch?: {
     players: Record<string, any>;
     arrows: Record<string, any>;
   };
-  variantOfId?: string;
+
+  variantIds?: string[];
 }
+
+// ── Shared nav arrow SVGs ─────────────────────────────────────────────────────
+
+const ArrowLeft = () => (
+  <svg
+    style={{ marginRight: "10px" }}
+    width="23"
+    height="12"
+    viewBox="0 0 23 12"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M22 6.75H22.75V5.25H22V6.75ZM0.46967 5.46967C0.176777 5.76256 0.176777 6.23744 0.46967 6.53033L5.24264 11.3033C5.53553 11.5962 6.01041 11.5962 6.3033 11.3033C6.59619 11.0104 6.59619 10.5355 6.3033 10.2426L2.06066 6L6.3033 1.75736C6.59619 1.46447 6.59619 0.989593 6.3033 0.696699C6.01041 0.403806 5.53553 0.403806 5.24264 0.696699L0.46967 5.46967ZM22 5.25H1V6.75H22V5.25Z"
+      fill="black"
+    />
+  </svg>
+);
+
+const ArrowRight = () => (
+  <svg
+    style={{ marginLeft: "10px" }}
+    width="23"
+    height="12"
+    viewBox="0 0 23 12"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M1 5.25004H0.25V6.75004H1V5.25004ZM22.5303 6.53037C22.8232 6.23748 22.8232 5.7626 22.5303 5.46971L17.7574 0.696739C17.4645 0.403839 16.9896 0.403839 16.6967 0.696739C16.4038 0.989639 16.4038 1.46454 16.6967 1.75744L20.9393 6.00004L16.6967 10.2427C16.4038 10.5356 16.4038 11.0104 16.6967 11.3033C16.9896 11.5962 17.4645 11.5962 17.7574 11.3033L22.5303 6.53037ZM1 6.75004L22 6.75004V5.25004L1 5.25004V6.75004Z"
+      fill="black"
+    />
+  </svg>
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export default function CreateExcercise() {
   const navigate = useNavigate();
 
   const { currentUser } = useAuth() || { currentUser: null };
+
   // @ts-ignore
   const userData = useGetUserData(currentUser?.uid ?? "");
 
   const [currentStep, setCurrentStep] = useState(1);
+
   const [formData, setFormData] = useState<FormData>({});
-  const [createdId, setCreatedId] = useState<string | null>(null);
 
-  const totalSteps = 3;
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleNext = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep((s) => s + 1);
-    } else {
-      handleFinish();
+  const handlePrev = () => {
+    if (currentStep > 1) {
+      setCurrentStep((s) => s - 1);
     }
   };
 
-  const handlePrev = () => {
-    if (currentStep > 1) setCurrentStep((s) => s - 1);
-  };
-
   const handleChange = (data: Partial<FormData>) => {
-    setFormData((prev) => ({ ...prev, ...data }));
+    setFormData((prev) => ({
+      ...prev,
+      ...data,
+    }));
   };
 
-  // ── Step 2 → 3: save exercise then notify all other users ─────────────────
-  const handleStep2Next = async () => {
+  // ── Step Navigation ────────────────────────────────────────────────────────
+
+  const handleStep1Next = () => {
+    setCurrentStep(2);
+  };
+
+  const handleStep2Next = () => {
+    setCurrentStep(3);
+  };
+
+  // ── Final Submit ───────────────────────────────────────────────────────────
+
+  const handleFinish = async () => {
+    if (isSaving) return;
+
+    setIsSaving(true);
+
     const resolvedAuthor =
       formData.author?.trim() ||
       userData?.userName?.trim() ||
@@ -64,25 +119,38 @@ export default function CreateExcercise() {
       "Unknown";
 
     try {
-      // 1. Save the exercise to Firestore
       const id = await createExcercise({
-        date:        formData.date ? new Date(formData.date) : new Date(),
-        author:      resolvedAuthor,
-        title:       formData.title ?? "",
+        date: formData.date ? new Date(formData.date) : new Date(),
+
+        author: resolvedAuthor,
+
+        title: formData.title ?? "",
+
         description: formData.description ?? "",
-        difficulty:  formData.difficulty ?? 1,
-        tags:        formData.tags ?? [],
+
+        difficulty: formData.difficulty ?? 1,
+
+        tags: formData.tags ?? [],
+
         sketch: {
           players: formData.sketch?.players ?? {},
-          arrows:  formData.sketch?.arrows  ?? {},
+          arrows: formData.sketch?.arrows ?? {},
         },
       });
 
-      setCreatedId(id);
+      // Link variants
+      if (formData.variantIds?.length) {
+        await Promise.all(
+          formData.variantIds.map((variantId) =>
+            linkVariants(id, variantId)
+          )
+        );
+      }
 
-      // 2. Notify all other users (non-blocking — don't let it stop the wizard)
+      // Notifications
       try {
         const usersSnap = await getDocs(collection(db, "users"));
+
         const recipientIds = usersSnap.docs
           .map((d) => d.id)
           .filter((uid) => uid !== currentUser?.uid);
@@ -93,44 +161,37 @@ export default function CreateExcercise() {
             id,
             formData.title ?? "New exercise",
             resolvedAuthor,
-            currentUser?.uid ?? "",
+            currentUser?.uid ?? ""
           );
         }
       } catch (notifError) {
-        // Notification failure is non-critical — log and continue
-        console.warn("Could not send exercise notifications:", notifError);
+        console.warn(
+          "Could not send exercise notifications:",
+          notifError
+        );
       }
 
-      // 3. Proceed to variant step
-      setCurrentStep(3);
+      navigate(`/exercise-detail/${id}`);
     } catch (error) {
       console.error("Error creating exercise:", error);
+    } finally {
+      setIsSaving(false);
     }
-  };
-
-  // ── Step 3 → done: optionally link variants then navigate ────────────────
-  const handleFinish = async () => {
-    const id = createdId;
-    if (!id) return;
-
-    if (formData.variantOfId) {
-      try {
-        await linkVariants(id, formData.variantOfId);
-      } catch (error) {
-        console.error("Error linking variants:", error);
-      }
-    }
-
-    navigate(`/exercise-detail/${id}`);
   };
 
   const defaultAuthor =
-    userData?.userName ?? currentUser?.email?.split("@")[0] ?? "";
+    userData?.userName ??
+    currentUser?.email?.split("@")[0] ??
+    "";
 
   return (
     <>
       <Navigation />
+
       <div className="Createexcercise">
+
+        {/* ── Step 1 ───────────────────────────────────────────── */}
+
         {currentStep === 1 && (
           <Step1
             author={formData.author ?? defaultAuthor}
@@ -139,37 +200,78 @@ export default function CreateExcercise() {
             difficulty={formData.difficulty ?? 1}
             date={formData.date ?? ""}
             tags={formData.tags ?? []}
+
             // @ts-ignore
             onChange={handleChange}
-            onNext={handleNext}
+
+            onNext={handleStep1Next}
+
             onPrev={handlePrev}
+
             isFirstStep={true}
           />
         )}
 
+        {/* ── Step 2 ───────────────────────────────────────────── */}
+
         {currentStep === 2 && (
-          <Step2
-            sketch={formData.sketch}
-            onChange={handleChange}
-            onNext={handleStep2Next}
-            onPrev={handlePrev}
-            isLastStep={false}
-          />
+          <>
+            <Step2
+              sketch={formData.sketch}
+              onChange={handleChange}
+            />
+
+            <div className="excercisewizard__btn__wrapper">
+              <button
+                className="excercisewizard__btn"
+                onClick={handlePrev}
+              >
+                <ArrowLeft />
+                Previous
+              </button>
+
+              <button
+                className="excercisewizard__btn"
+                onClick={handleStep2Next}
+              >
+                Continue
+                <ArrowRight />
+              </button>
+            </div>
+          </>
         )}
 
+        {/* ── Step 3 ───────────────────────────────────────────── */}
+
         {currentStep === 3 && (
-          <Step3
-            newExerciseId={createdId ?? ""}
-            variantOfId={formData.variantOfId}
-            onChange={handleChange}
-            onNext={handleFinish}
-            onPrev={() => {
-              // Exercise already saved — go straight to detail page
-              if (createdId) navigate(`/exercise-detail/${createdId}`);
-            }}
-            isLastStep={true}
-          />
+          <>
+            <Step3
+              variantIds={formData.variantIds ?? []}
+              onChange={handleChange}
+            />
+
+            <div className="excercisewizard__btn__wrapper">
+              <button
+                className="excercisewizard__btn"
+                onClick={handlePrev}
+              >
+                <ArrowLeft />
+                Previous
+              </button>
+
+              <button
+                className="excercisewizard__btn"
+                onClick={handleFinish}
+                disabled={isSaving}
+              >
+                {isSaving ? "Creating..." : "Create Exercise"}
+
+                {!isSaving && <ArrowRight />}
+              </button>
+            </div>
+          </>
         )}
+
       </div>
     </>
   );

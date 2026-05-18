@@ -425,6 +425,48 @@
         }
       }
     }
+
+    &__swipe {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 0.1rem solid $gray-200;
+
+  &:last-child {
+    border-bottom: none;
+  }
+}
+
+&__delete {
+  position: absolute;
+  inset: 0;
+  background-color: $primary-3;
+  color: $white;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 2rem;
+  font-size: 1.3rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08rem;
+  pointer-events: none;
+}
+
+&__item {
+  position: relative;
+  z-index: 2;
+  touch-action: pan-y;
+  user-select: none;
+  transition:
+    transform 0.18s ease,
+    background-color $ease,
+    padding-left $ease;
+
+  &--dragging {
+    transition: none;
+    cursor: grabbing;
+  }
+}
  
     &__panel__count {
       font-size: 1.2rem;

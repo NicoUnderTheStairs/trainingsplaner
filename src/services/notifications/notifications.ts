@@ -8,6 +8,7 @@ import {
   limit,
   onSnapshot,
   writeBatch,
+  deleteDoc,
   Timestamp,
 } from "firebase/firestore";
 import db from "../../firebase";
@@ -31,6 +32,14 @@ export interface AppNotification {
 }
 
 // ─── Write helpers ────────────────────────────────────────────────────────────
+
+export const deleteNotification = async (
+  uid: string,
+  notificationId: string
+) => {
+  const ref = doc(db, "notifications", uid, "items", notificationId);
+  await deleteDoc(ref);
+};
 
 export const sendNotification = async (
   recipientUserId: string,
