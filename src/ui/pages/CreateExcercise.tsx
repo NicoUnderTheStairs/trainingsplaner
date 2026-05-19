@@ -26,6 +26,7 @@ interface FormData {
   sketch?: {
     players: Record<string, any>;
     arrows: Record<string, any>;
+    objects: Record<string, any>; // ← was missing, caused objects to be dropped
   };
   variantIds?: string[];
 }
@@ -113,6 +114,7 @@ export default function CreateExcercise() {
         sketch: {
           players: formData.sketch?.players ?? {},
           arrows: formData.sketch?.arrows ?? {},
+          objects: formData.sketch?.objects ?? {},
         },
       });
 

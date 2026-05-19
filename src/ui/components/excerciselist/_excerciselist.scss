@@ -718,4 +718,23 @@
       margin-bottom: 1.6rem;
     }
   }
+
+  &__status {
+    width: 50%;
+    font-size: 3rem;
+    border: 0.3rem solid $black;
+    padding: 3rem 5rem;
+    border-radius: 2rem;
+    background-color: $white;
+    box-shadow: 0.3rem 0.3rem 0 #1e1e1e;
+    transform: translate(-0.1rem, -0.1rem);
+    color: $primary-3;
+    font-weight: 900;
+
+    & p {
+      font-size: 2rem;
+      margin-top: 1.2rem;
+      color: $black;
+    }
+  }
 }

@@ -199,7 +199,7 @@
     }
   }
 
-    &__variant {
+  &__variant {
     &__desc {
       font-size: 1.6rem;
       font-family: $font-family;
@@ -207,21 +207,21 @@
       line-height: 1.6;
       margin: 0 0 2.4rem 0;
     }
- 
+
     &__search__wrapper {
       margin-bottom: 1.6rem;
     }
- 
+
     &__search {
       // Inherits .excercisewizard__input base styles — just override margin
       margin-bottom: 0 !important;
- 
+
       &::placeholder {
         color: $gray-500;
         font-weight: 400;
       }
     }
- 
+
     &__loading,
     &__empty {
       font-size: 1.6rem;
@@ -230,7 +230,7 @@
       padding: 2.4rem 0;
       text-align: center;
     }
- 
+
     // Scrollable list of exercises to pick from
     &__list {
       display: flex;
@@ -240,12 +240,17 @@
       overflow-y: auto;
       margin-bottom: 2rem;
       padding: 0.4rem;
- 
+
       // Thin brand scrollbar
-      &::-webkit-scrollbar { width: 0.4rem; }
-      &::-webkit-scrollbar-thumb { background: $primary-1; border-radius: 1rem; }
+      &::-webkit-scrollbar {
+        width: 0.4rem;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: $primary-1;
+        border-radius: 1rem;
+      }
     }
- 
+
     &__item {
       display: flex;
       align-items: center;
@@ -260,21 +265,21 @@
       width: 100%;
       font-family: $font-family;
       transition: all $ease;
- 
+
       &:hover {
         border-color: $black;
         background: $secondary;
         transform: translate(-0.1rem, -0.1rem);
         box-shadow: 0.2rem 0.2rem 0 $black;
       }
- 
+
       &--selected {
         border-color: $black;
         background: $secondary;
         transform: translate(-0.2rem, -0.2rem);
         box-shadow: 0.3rem 0.3rem 0 $black;
       }
- 
+
       &__info {
         flex: 1;
         min-width: 0;
@@ -282,7 +287,7 @@
         flex-direction: column;
         gap: 0.6rem;
       }
- 
+
       &__title {
         font-size: 1.8rem;
         font-weight: 700;
@@ -291,13 +296,13 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
- 
+
       &__tags {
         display: flex;
         gap: 0.6rem;
         flex-wrap: wrap;
       }
- 
+
       &__check {
         width: 2.4rem;
         height: 2.4rem;
@@ -308,7 +313,7 @@
         align-items: center;
         justify-content: center;
         transition: all $ease;
- 
+
         &--active {
           background-color: $secondary-2;
           border-color: $black;
@@ -316,7 +321,7 @@
         }
       }
     }
- 
+
     &__skip__hint {
       font-size: 1.4rem;
       font-family: $font-family;
@@ -324,7 +329,7 @@
       text-align: center;
       margin-top: 0.8rem;
     }
- 
+
     &__skip__btn {
       background: transparent;
       border: none;
@@ -336,12 +341,12 @@
       padding: 0;
       text-decoration: underline;
       transition: color $ease;
- 
+
       &:hover {
         color: $secondary-2;
       }
     }
- 
+
     &__actions {
       display: flex;
       flex-direction: column;
@@ -349,7 +354,7 @@
       gap: 0.4rem;
       margin-top: 1.6rem;
     }
- 
+
     &__confirm__btn {
       padding: 0.8rem 2.4rem;
       background-color: $secondary-2;
@@ -361,7 +366,7 @@
       font-family: $font-family;
       cursor: pointer;
       transition: all $ease;
- 
+
       &:hover {
         transform: translate(-0.2rem, -0.2rem);
         box-shadow: 0.3rem 0.3rem 0 $black;
@@ -381,7 +386,7 @@
       background-color: $white;
       border-radius: 1rem;
       margin: 1.2rem 0;
-      border: .3rem solid $black;
+      border: 0.3rem solid $black;
 
       & h4 {
         margin: 0;
@@ -429,7 +434,8 @@
     }
   }
 
-    &__canvas {
+  // ── Canvas ──────────────────────────────────────────────────────────────
+  &__canvas {
     display: block;
     width: 100%;
     height: auto;
@@ -437,24 +443,33 @@
     border-radius: 1rem;
     touch-action: none; // prevent page scroll while drawing
     user-select: none;
- 
-    &--tool-select  { cursor: default;   }
-    &--tool-arrow   { cursor: crosshair; }
- 
+
+    &--tool-select {
+      cursor: default;
+    }
+    &--tool-arrow {
+      cursor: crosshair;
+    }
+
     // When a player type is queued for placement
-    &--placing { cursor: cell; }
+    &--placing {
+      cursor: cell;
+    }
   }
- 
+
   // ── Player palette badge ─────────────────────────────────────────────────
   &__palette {
     &__player {
-      transition: transform $ease, box-shadow $ease;
+      transition:
+        transform $ease,
+        box-shadow $ease;
       user-select: none;
       -webkit-user-select: none;
- 
-      &:active { cursor: grabbing; }
- 
-      // Queued / active state on mobile
+
+      &:active {
+        cursor: grabbing;
+      }
+
       &--active {
         transform: translate(-0.2rem, -0.2rem);
         box-shadow: 0.3rem 0.3rem 0 $black;
@@ -462,8 +477,36 @@
         outline-offset: 0.2rem;
       }
     }
+
+    // Object palette badge (pylon / bench) — no background colour, just border
+    &__object {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.6rem;
+      height: 3.2rem;
+      border: 0.2rem solid $black;
+      border-radius: 0.8rem;
+      cursor: grab;
+      background: $white;
+      transition:
+        transform $ease,
+        box-shadow $ease;
+      user-select: none;
+      -webkit-user-select: none;
+
+      &:active {
+        cursor: grabbing;
+      }
+
+      &--active {
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 $black;
+        background: $secondary;
+      }
+    }
   }
- 
+
   // ── Hint line ────────────────────────────────────────────────────────────
   &__hint {
     font-size: 1.3rem;
@@ -471,7 +514,7 @@
     font-family: $font-family;
     margin: 0.8rem 0 0;
     line-height: 1.5;
- 
+
     &--pending {
       color: $black;
       font-weight: 500;
@@ -482,42 +525,42 @@
       display: inline-block;
     }
   }
- 
+
   // ── Delete / clear action area ────────────────────────────────────────────
   &__tool__btn {
     // Base — already defined; add danger modifier
     &--danger {
       border-color: $error;
       color: $error;
- 
+
       &:hover {
         background-color: $error;
         color: $white;
       }
     }
   }
- 
+
   // ── Responsive ────────────────────────────────────────────────────────────
- 
+
   @media (max-width: #{$screen-lg-min}) {
     &__toolbar {
       &__group {
         padding: 1.6rem;
- 
+
         &--tools {
           flex-wrap: wrap;
           gap: 0.8rem;
         }
       }
     }
- 
+
     &__palette__player {
       // Bigger touch targets on mobile
       width: 4rem;
       height: 4rem;
       font-size: 1.6rem;
     }
- 
+
     &__tool__btn {
       padding: 0.8rem 1.4rem;
       font-size: 1.6rem;

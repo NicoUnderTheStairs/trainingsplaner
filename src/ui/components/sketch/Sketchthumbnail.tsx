@@ -17,6 +17,9 @@ const PLAYER_LABELS: Record<string, string> = {
 const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
   const players = sketch?.players ? Object.entries(sketch.players) : [];
   const arrows = sketch?.arrows ? Object.entries(sketch.arrows) : [];
+  const objects = (sketch as any)?.objects
+    ? Object.entries((sketch as any).objects)
+    : [];
 
   return (
     <svg
@@ -50,6 +53,52 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
         stroke="black"
         strokeWidth="1"
       />
+
+      {/* Objects (below players) */}
+      {objects.map(([id, obj]: [string, any]) => (
+        <g key={id} transform={`translate(${obj.x}, ${obj.y})`}>
+          {obj.type === "pylon" && (
+            <polygon
+              points="0,-13 11,8 -11,8"
+              fill="#FF8C00"
+              stroke="#1E1E1E"
+              strokeWidth={1.5}
+            />
+          )}
+          {obj.type === "bench" && (
+            <>
+              <rect
+                x={-15}
+                y={-7}
+                width={30}
+                height={14}
+                fill="#8B5E3C"
+                stroke="#1E1E1E"
+                strokeWidth={1.5}
+                rx={2}
+              />
+              <line
+                x1={-11}
+                y1={7}
+                x2={-11}
+                y2={12}
+                stroke="#1E1E1E"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+              />
+              <line
+                x1={11}
+                y1={7}
+                x2={11}
+                y2={12}
+                stroke="#1E1E1E"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+              />
+            </>
+          )}
+        </g>
+      ))}
 
       {/* Arrows */}
       {arrows.map(([id, arrow]) => (

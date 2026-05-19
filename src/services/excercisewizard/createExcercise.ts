@@ -30,6 +30,7 @@ export async function createExcercise(
     sketch: {
       players: sketch?.players ?? {},
       arrows: sketch?.arrows ?? {},
+      objects: (sketch as any)?.objects ?? {},
     },
     createdAt: Timestamp.now(),
   });

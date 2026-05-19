@@ -1,4 +1,7 @@
+// src/types/Sketch.ts
+
 export type PlayerType = "attacker" | "defender" | "setter" | "libero";
+export type ObjectType = "pylon" | "bench";
 
 export interface Player {
   id: string;
@@ -17,7 +20,15 @@ export interface Arrow {
   style: "solid" | "dashed";
 }
 
+export interface SketchObject {
+  id: string;
+  x: number;
+  y: number;
+  type: ObjectType;
+}
+
 export interface SketchData {
   players: Record<string, Omit<Player, "id">>;
   arrows: Record<string, Omit<Arrow, "id">>;
+  objects: Record<string, Omit<SketchObject, "id">>; // ← add this line
 }

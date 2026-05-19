@@ -130,9 +130,11 @@ const ExcerciseList = () => {
 
   // ── Fetch exercises + variant counts ───────────────────────────────────────
   useEffect(() => {
+    if (userData === undefined) return; // wait for profile to resolve before querying
+
     const fetchExercises = async () => {
       try {
-        const userTeam = userData?.team ?? "";
+        const userTeam = (userData as any)?.team ?? "";
         const snapshot = userTeam
           ? await getDocs(
               query(
@@ -186,7 +188,7 @@ const ExcerciseList = () => {
       }
     };
     fetchExercises();
-  }, []);
+  }, [userData]);
 
   // ── Fetch user's favourite exercise IDs ───────────────────────────────────
   useEffect(() => {
@@ -512,7 +514,7 @@ const ExcerciseList = () => {
                         : exercise.description}
                     </p>
                     <div className="excerciselist__exercise__content--detail">
-                      <div className="home__exercise__card__tags">
+                      <div>
                         {(exercise.tags ?? []).map((tag) => (
                           <div
                             key={tag}
@@ -571,7 +573,12 @@ const ExcerciseList = () => {
             )}
 
             {exercises.length === 0 && (
-              <p className="excerciselist__status">No exercises yet.</p>
+              <>
+                <a className="excerciselist__status" href="/create-exercise">
+                  No exercises exist yet.
+                  <p>Why don't you create your first exercise for the team?</p>
+                </a>
+              </>
             )}
           </div>
         )}
