@@ -420,6 +420,7 @@ export default function TrainingExportView() {
         minHeight: "100vh",
         fontFamily: "Roboto Condensed, sans-serif",
         padding: "32px 24px 80px",
+        minWidth: "144rem",
       }}
     >
       {/* ── Sticky toolbar ── */}
