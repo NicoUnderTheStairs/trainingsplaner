@@ -10,21 +10,23 @@ interface CreateExcercisePayload {
   difficulty: number;
   tags: string[];
   sketch: SketchData;
+  team: string; // the creator's team — used to scope visibility
 }
 
 export async function createExcercise(
   payload: CreateExcercisePayload,
 ): Promise<string> {
-  const { date, author, title, description, difficulty, tags, sketch } =
+  const { date, author, title, description, difficulty, tags, sketch, team } =
     payload;
 
-  const newExcerciseRef = await addDoc(collection(db, "Excercises"), {
-    date: Timestamp.fromDate(date), // Firestore Timestamp instead of raw Date
+  const ref = await addDoc(collection(db, "Excercises"), {
+    date: Timestamp.fromDate(date),
     author,
     title,
     description,
     difficulty,
     tags,
+    team, // stamped on every exercise doc
     sketch: {
       players: sketch?.players ?? {},
       arrows: sketch?.arrows ?? {},
@@ -32,5 +34,5 @@ export async function createExcercise(
     createdAt: Timestamp.now(),
   });
 
-  return newExcerciseRef.id;
+  return ref.id;
 }

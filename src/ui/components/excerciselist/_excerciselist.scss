@@ -68,23 +68,23 @@
         // same wired style, inherits button base above
       }
 
-            &--favourites {
+      &--favourites {
         display: inline-flex;
         align-items: center;
         gap: 0.6rem;
- 
+
         & svg {
           flex-shrink: 0;
           transition: all $ease;
         }
- 
+
         &--active {
           background-color: rgba($primary-3, 0.08) !important;
           border-color: $primary-3 !important;
           color: $primary-3 !important;
           transform: translate(-0.1rem, -0.1rem);
           box-shadow: 0.3rem 0.3rem 0 darken($primary-3, 10%) !important;
- 
+
           &:hover {
             background-color: rgba($primary-3, 0.15) !important;
           }
@@ -219,13 +219,6 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-      }
-      
-      &--tags {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 0.4rem;
       }
     }
 

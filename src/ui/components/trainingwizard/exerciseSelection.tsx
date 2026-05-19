@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, query, where } from "firebase/firestore";
+import { useAuth } from "../../../auth/authContext";
+import { useGetUserData } from "../../../hooks/useGetUserData";
 import db from "../../../firebase";
 import SketchThumbnail from "../sketch/Sketchthumbnail";
 import withTrainingNavigation from "../../../hoc/withTrainingNavigation";
@@ -69,6 +71,10 @@ const ExerciseSelection: React.FC<Props> = ({
   selectedExercises = [],
   onChange,
 }) => {
+  const { currentUser } = useAuth() || { currentUser: null };
+
+  const userData = useGetUserData(currentUser?.uid ?? "");
+
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -93,11 +99,17 @@ const ExerciseSelection: React.FC<Props> = ({
     0,
   );
 
-  // ── Fetch exercises ──────────────────────────────────────────────────────
+  // ── Fetch exercises (scoped to user's team) ──────────────────────────────
   useEffect(() => {
+    if (userData === undefined) return; // wait for profile
+
     const fetch = async () => {
       try {
-        const snapshot = await getDocs(collection(db, "Excercises"));
+        const userTeam = userData?.team ?? "";
+        const q = userTeam
+          ? query(collection(db, "Excercises"), where("team", "==", userTeam))
+          : collection(db, "Excercises");
+        const snapshot = await getDocs(q);
         const data: Exercise[] = snapshot.docs.map((doc) => ({
           id: doc.id,
           ...(doc.data() as Omit<Exercise, "id">),
@@ -110,7 +122,7 @@ const ExerciseSelection: React.FC<Props> = ({
       }
     };
     fetch();
-  }, []);
+  }, [userData]);
 
   const allTags = Array.from(
     new Set(exercises.flatMap((e) => e.tags ?? [])),

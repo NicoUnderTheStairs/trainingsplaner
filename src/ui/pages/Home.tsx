@@ -57,7 +57,7 @@ const Skeleton = () => (
 export default function Home() {
   const navigate = useNavigate();
   const { currentUser } = useAuth() || { currentUser: null };
-  // @ts-ignore
+
   const userData = useGetUserData(currentUser?.uid ?? "");
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -72,13 +72,23 @@ export default function Home() {
 
   // ── Fetch recent exercises + their variant counts ──────────────────────────
   useEffect(() => {
+    if (userData === undefined) return; // wait for profile to load
+
     const fetch = async () => {
       try {
-        const q = query(
-          collection(db, "Excercises"),
-          orderBy("createdAt", "desc"),
-          limit(2),
-        );
+        const userTeam = userData?.team ?? "";
+        const q = userTeam
+          ? query(
+              collection(db, "Excercises"),
+              where("team", "==", userTeam),
+              orderBy("createdAt", "desc"),
+              limit(4),
+            )
+          : query(
+              collection(db, "Excercises"),
+              orderBy("createdAt", "desc"),
+              limit(4),
+            );
         const snap = await getDocs(q);
         const data = snap.docs.map(
           (d) => ({ id: d.id, ...d.data() }) as Exercise,
@@ -116,9 +126,15 @@ export default function Home() {
           setVariantCounts(counts);
         }
       } catch {
-        const snap = await getDocs(
-          query(collection(db, "Excercises"), limit(4)),
-        );
+        const userTeam = userData?.team ?? "";
+        const q = userTeam
+          ? query(
+              collection(db, "Excercises"),
+              where("team", "==", userTeam),
+              limit(4),
+            )
+          : query(collection(db, "Excercises"), limit(4));
+        const snap = await getDocs(q);
         setExercises(
           snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Exercise),
         );
@@ -127,7 +143,7 @@ export default function Home() {
       }
     };
     fetch();
-  }, []);
+  }, [userData]);
 
   // ── Fetch user's own trainings ─────────────────────────────────────────────
   useEffect(() => {
@@ -239,7 +255,7 @@ export default function Home() {
   return (
     <>
       <Navigation />
-      <div className="home section">
+      <div className="home">
         {/* Hero */}
         <div className="home__hero">
           <div className="home__hero__text">

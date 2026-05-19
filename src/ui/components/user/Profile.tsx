@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  updateDoc,
+  collection,
+} from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { doSignOut } from "../../../auth/auth";
 import Navigation from "../navigation/Navigation";
@@ -11,41 +17,29 @@ import db from "../../../firebase";
 // Add or swap URLs freely — these are the preset images users can choose from.
 
 const AVATAR_OPTIONS = [
-  {
-    id: "wolf",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Eden",
-  },
-  {
-    id: "fox",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Amaya",
-  },
-  {
-    id: "bear",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Jade",
-  },
+  { id: "wolf", url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Wolf" },
+  { id: "fox", url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Fox" },
+  { id: "bear", url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Bear" },
   {
     id: "eagle",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Andrea",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Eagle",
   },
-  {
-    id: "lynx",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=adea",
-  },
+  { id: "lynx", url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Lynx" },
   {
     id: "shark",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=fun",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Shark",
   },
   {
     id: "tiger",
-    url: "https://api.dicebear.com/9.x/bottts/svg?seed=Liam",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Tiger",
   },
   {
     id: "panther",
-    url: "https://api.dicebear.com/8.x/bottts/svg?seed=nicaerewqqqqq",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Panther",
   },
   {
-    id: "avery",
-    url: "https://api.dicebear.com/8.x/bottts/svg?seed=budfabu",
+    id: "falcon",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Falcon",
   },
 ];
 
@@ -129,6 +123,9 @@ const Profile = () => {
   // Avatar picker
   const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
 
+  // Favourite counts (fetched from subcollections, not stored on profile)
+  const [favouriteExerciseCount, setFavouriteExerciseCount] = useState(0);
+
   // ── Fetch ────────────────────────────────────────────────────────────────
   useEffect(() => {
     const fetchProfile = async () => {
@@ -139,6 +136,13 @@ const Profile = () => {
       }
       const snap = await getDoc(doc(db, "users", userId));
       if (snap.exists()) setProfile(snap.data() as UserProfile);
+
+      // Fetch favourite counts from subcollections
+      const [favExSnap] = await Promise.all([
+        getDocs(collection(db, "users", userId, "favouriteExercises")),
+      ]);
+      setFavouriteExerciseCount(favExSnap.size);
+
       setLoading(false);
     };
     fetchProfile();
@@ -355,14 +359,24 @@ const Profile = () => {
               <div className="profile__card__row">
                 <span className="profile__card__label">Team</span>
                 {editing ? (
-                  <input
-                    className="profile__edit__input profile__edit__input--inline"
+                  <select
+                    className="profile__edit__select"
                     value={editData.team ?? ""}
                     onChange={(e) =>
                       setEditData((p) => ({ ...p, team: e.target.value }))
                     }
-                    placeholder="Team name"
-                  />
+                  >
+                    <option value="">— no team —</option>
+                    <option value="Damen 1">Damen 1</option>
+                    <option value="Damen 2">Damen 2</option>
+                    <option value="Damen 3">Damen 3</option>
+                    <option value="Herren 1">Herren 1</option>
+                    <option value="Herren 2">Herren 2</option>
+                    <option value="DU23/1">DU23/1</option>
+                    <option value="DU23/2">DU23/2</option>
+                    <option value="DU20/1">DU20/1</option>
+                    <option value="HU23">HU23</option>
+                  </select>
                 ) : (
                   <span className="profile__card__value">
                     {profile.team || "—"}
@@ -393,25 +407,17 @@ const Profile = () => {
             </div>
 
             {/* Activity */}
-            {/* <div className="profile__card">
+            <div className="profile__card">
               <h3 className="profile__card__title">Activity</h3>
               <div className="profile__card__row">
                 <span className="profile__card__label">
                   Favourite exercises
                 </span>
                 <span className="profile__card__value profile__card__value--accent">
-                  {profile.favoriteExercises?.length ?? 0}
+                  {favouriteExerciseCount}
                 </span>
               </div>
-              <div className="profile__card__row">
-                <span className="profile__card__label">
-                  Favourite trainings
-                </span>
-                <span className="profile__card__value profile__card__value--accent">
-                  {profile.favoriteTrainings?.length ?? 0}
-                </span>
-              </div>
-            </div> */}
+            </div>
 
             {/* Quick links */}
             <div className="profile__card">
