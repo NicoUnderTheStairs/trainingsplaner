@@ -17,29 +17,35 @@ import db from "../../../firebase";
 // Add or swap URLs freely — these are the preset images users can choose from.
 
 const AVATAR_OPTIONS = [
-  { id: "wolf", url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Wolf" },
-  { id: "fox", url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Fox" },
-  { id: "bear", url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Bear" },
+  {
+    id: "wolf",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=eaar21agyawrafan",
+  },
+  { id: "fox", url: "https://www.h2.vbclimmattal.com/christina.png" },
+  { id: "bear", url: "https://www.h2.vbclimmattal.com/ale1.png" },
   {
     id: "eagle",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Eagle",
+    url: "https://www.h2.vbclimmattal.com/nico1.png",
   },
-  { id: "lynx", url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Lynx" },
+  {
+    id: "lynx",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Layfnx",
+  },
   {
     id: "shark",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Shark",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Shhhbbgark",
   },
   {
     id: "tiger",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Tiger",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Tigebxr",
   },
   {
     id: "panther",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Panther",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Pavnther",
   },
   {
     id: "falcon",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Falcon",
+    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Falvcon",
   },
 ];
 

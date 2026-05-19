@@ -514,7 +514,7 @@ const ExcerciseList = () => {
                         : exercise.description}
                     </p>
                     <div className="excerciselist__exercise__content--detail">
-                      <div>
+                      <div className="home__exercise__card__tags">
                         {(exercise.tags ?? []).map((tag) => (
                           <div
                             key={tag}
