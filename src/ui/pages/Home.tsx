@@ -131,7 +131,7 @@ export default function Home() {
           ? query(
               collection(db, "Excercises"),
               where("team", "==", userTeam),
-              limit(4),
+              limit(2),
             )
           : query(collection(db, "Excercises"), limit(4));
         const snap = await getDocs(q);
