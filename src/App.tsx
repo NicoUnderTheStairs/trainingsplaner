@@ -12,15 +12,14 @@ import TrainingDetail from "./ui/pages/TrainingDetail";
 import TrainingOverview from "./ui/pages/TrainingOverview";
 import ExerciseOverview from "./ui/pages/ExerciseOverview";
 import Profile from "./ui/components/user/Profile";
+import TrainingExportView from "./ui/components/trainingexport/TrainingExportView";
 
 const App: React.FC = () => {
-  const { userLoggedIn, currentUser } = useAuth() || {
+  const { userLoggedIn } = useAuth() || {
     currentUser: null,
     userLoggedIn: false,
     loading: false,
   };
-
-  console.log(currentUser);
 
   return (
     <Router>
@@ -33,6 +32,10 @@ const App: React.FC = () => {
             <Route path="/create-exercise" element={<CreateExcercise />} />
             <Route path="/create-training" element={<CreateTraining />} />
             <Route path="/profile" element={<Profile />} />
+            <Route
+              path="/training-export/:trainingId"
+              element={<TrainingExportView />}
+            />
             <Route
               path="/exercise-detail/:exerciseId"
               element={<ExerciseDetail />}
