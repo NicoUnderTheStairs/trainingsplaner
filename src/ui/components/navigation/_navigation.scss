@@ -37,7 +37,12 @@
       display: block;
       margin-left: -3.2rem;
 
-      &--red {
+      &__text {
+        pointer-events: none;
+
+        @media (max-width: #{505px}) {
+          transform: translate(32px, 5px) scale(0.86);
+        }
       }
     }
   }
@@ -514,7 +519,7 @@
       width: 100%;
       border: none;
       border-bottom: 0.1rem solid $gray-200;
-      background: $white;
+      background: $white !important;
       cursor: pointer;
       text-align: left;
       font-family: $font-family;
@@ -532,10 +537,10 @@
       }
 
       &--unread {
-        background-color: rgba($primary-1, 0.05);
+        background-color: $primary-1;
 
         &:hover {
-          background-color: rgba($primary-1, 0.1);
+          background-color: $white;
         }
       }
 

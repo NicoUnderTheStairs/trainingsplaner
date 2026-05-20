@@ -48,7 +48,7 @@ const EyeClosed = () => (
 
 const mapError = (message: string): string => {
   if (message === "PHONE_NOT_ALLOWED")
-    return "Your phone number is not on the access list. Please contact your coach.";
+    return "Your phone number is not on the access list or it is in the wrong format. Please contact your coach.";
   if (message.includes("auth/email-already-in-use"))
     return "This e-mail is already in use. Please try another or reset your password.";
   if (message.includes("auth/weak-password"))

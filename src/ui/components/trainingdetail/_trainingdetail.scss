@@ -103,6 +103,7 @@
       flex-shrink: 0;
       align-items: stretch;
       min-width: 15rem;
+      flex-wrap: wrap;
 
       .btn__wired,
       .btn__primary {
@@ -623,7 +624,7 @@
     }
 
     &__exercises__item {
-      flex-wrap: wrap;
+      // flex-wrap: wrap;
       &__title {
         order: 2;
         flex-basis: 100%;

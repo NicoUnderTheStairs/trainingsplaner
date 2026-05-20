@@ -215,6 +215,7 @@ const Navigation = () => {
                     fill="#1E1E1E"
                   />
                 </g>
+                <g className="navigation__logo__svg__text">
                 <mask
                   id="path-6-outside-1_51_31"
                   maskUnits="userSpaceOnUse"
@@ -406,6 +407,7 @@ const Navigation = () => {
                   stroke-miterlimit="16"
                   mask="url(#path-6-outside-1_51_31)"
                 />
+                </g>
               </svg>
             </a>
           </div>
@@ -470,7 +472,7 @@ const Navigation = () => {
                           </div>
 
                           <button
-                            className={`navigation__notif__item ${
+                            className={`navigation__notif__item ${notif.read} ${
                               !notif.read ? "navigation__notif__item--unread" : ""
                             } ${
                               draggedId === notif.id ? "navigation__notif__item--dragging" : ""
