@@ -8,5 +8,6 @@ export interface Exercise {
   tags: string[];
   author: string;
   date: string;
+  team: string[];
   sketch: SketchData;
 }

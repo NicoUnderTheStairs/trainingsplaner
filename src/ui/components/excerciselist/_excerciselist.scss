@@ -737,4 +737,86 @@
       color: $black;
     }
   }
+
+  
+  // ── Shop teaser ──────────────────────────────────────────────────────────────
+ 
+  &__shopteaser {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    margin-top: 4rem;
+    padding: 2rem 2.4rem;
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    background: $secondary-2;
+    color: $white;
+    cursor: pointer;
+    transition: all $ease;
+ 
+    &:hover {
+      transform: translate(-0.4rem, -0.4rem);
+      box-shadow: 0.8rem 0.8rem 0 $black;
+ 
+      .excerciselist__shopteaser__cta {
+        gap: 1.2rem;
+      }
+    }
+ 
+    &__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 5.6rem;
+      height: 5.6rem;
+      border-radius: 1.2rem;
+      background: $primary-1;
+      color: $black;
+      flex-shrink: 0;
+      border: 0.2rem solid rgba($white, 0.15);
+    }
+ 
+    &__text {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      flex: 1;
+      min-width: 0;
+    }
+ 
+    &__headline {
+      font-size: 2rem;
+      font-weight: 800;
+      font-family: $font-family;
+      line-height: 1.1;
+    }
+ 
+    &__sub {
+      font-size: 1.4rem;
+      color: rgba($white, 0.65);
+      line-height: 1.4;
+    }
+ 
+    &__cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.8rem;
+      flex-shrink: 0;
+      font-size: 1.5rem;
+      font-weight: 800;
+      font-family: $font-family;
+      color: $primary-1;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      transition: gap $ease;
+ 
+      & svg path { fill: $primary-1; }
+    }
+ 
+    @media (max-width: #{$screen-md-min}) {
+      flex-wrap: wrap;
+ 
+      &__cta { width: 100%; justify-content: flex-end; }
+    }
+  }
 }

@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from "react";
 import { collection, getDocs, doc, updateDoc, arrayUnion } from "firebase/firestore";
 // import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../../auth/authContext";
-import { useGetUserData } from "../../hooks/useGetUserData";
-import db from "../../firebase";
-import Navigation from "../components/navigation/Navigation";
-import type { SketchData } from "../../types/Sketch";
-import type { Exercise } from "../../types/Exercise";
+import { useAuth } from "../../../auth/authContext";
+import { useGetUserData } from "../../../hooks/useGetUserData";
+import db from "../../../firebase";
+import Navigation from "../navigation/Navigation";
+import type { SketchData } from "../../../types/Sketch";
+import type { Exercise } from "../../../types/Exercise";
 
 // ─── Sketch thumbnail ─────────────────────────────────────────────────────────
 

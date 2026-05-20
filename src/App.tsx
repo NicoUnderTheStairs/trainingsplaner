@@ -13,6 +13,7 @@ import TrainingOverview from "./ui/pages/TrainingOverview";
 import ExerciseOverview from "./ui/pages/ExerciseOverview";
 import Profile from "./ui/components/user/Profile";
 import TrainingExportView from "./ui/components/trainingexport/TrainingExportView";
+import ExerciseShop from "./ui/components/exerciseshop/ExerciseShop";
 
 const App: React.FC = () => {
   const { userLoggedIn } = useAuth() || {
@@ -32,6 +33,7 @@ const App: React.FC = () => {
             <Route path="/create-exercise" element={<CreateExcercise />} />
             <Route path="/create-training" element={<CreateTraining />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/exercise-shop" element={<ExerciseShop />} />
             <Route
               path="/training-export/:trainingId"
               element={<TrainingExportView />}

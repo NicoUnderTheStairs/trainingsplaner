@@ -43,24 +43,9 @@ const DragHandleIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
   >
-    <path
-      d="M1 2H15"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
-    <path
-      d="M1 7H15"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
-    <path
-      d="M1 12H15"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
+    <path d="M1 2H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M1 7H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M1 12H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
   </svg>
 );
 
@@ -72,7 +57,7 @@ const ExerciseSelection: React.FC<Props> = ({
   onChange,
 }) => {
   const { currentUser } = useAuth() || { currentUser: null };
-
+  // @ts-ignore
   const userData = useGetUserData(currentUser?.uid ?? "");
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
@@ -107,7 +92,7 @@ const ExerciseSelection: React.FC<Props> = ({
       try {
         const userTeam = userData?.team ?? "";
         const q = userTeam
-          ? query(collection(db, "Excercises"), where("team", "==", userTeam))
+          ? query(collection(db, "Excercises"), where("team", "array-contains", userTeam))
           : collection(db, "Excercises");
         const snapshot = await getDocs(q);
         const data: Exercise[] = snapshot.docs.map((doc) => ({
@@ -407,9 +392,7 @@ const ExerciseSelection: React.FC<Props> = ({
                 {loading ? (
                   <p className="exerciseSelection__status">Loading...</p>
                 ) : filteredExercises.length === 0 ? (
-                  <p className="exerciseSelection__status">
-                    No exercises found.
-                  </p>
+                  <p className="exerciseSelection__status">No exercises found.</p>
                 ) : (
                   <div className="exerciseSelection__lightbox__grid">
                     {filteredExercises.map((exercise) => {

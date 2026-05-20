@@ -21,13 +21,13 @@ const VariantSelection: React.FC<Props> = ({
   onChange,
 }) => {
   const { currentUser } = useAuth() || { currentUser: null };
-
+  // @ts-ignore
   const userData = useGetUserData(currentUser?.uid ?? "");
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [selected, setSelected] = useState<string[]>(variantIds);
+  const [loading,   setLoading]   = useState(true);
+  const [search,    setSearch]    = useState("");
+  const [selected,  setSelected]  = useState<string[]>(variantIds);
 
   // Fetch only exercises from the same team, excluding the one just created
   useEffect(() => {
@@ -37,7 +37,7 @@ const VariantSelection: React.FC<Props> = ({
       const userTeam = userData?.team ?? "";
 
       const q = userTeam
-        ? query(collection(db, "Excercises"), where("team", "==", userTeam))
+        ? query(collection(db, "Excercises"), where("team", "array-contains", userTeam))
         : collection(db, "Excercises");
 
       const snap = await getDocs(q);
@@ -87,9 +87,7 @@ const VariantSelection: React.FC<Props> = ({
 
       {/* List */}
       {loading ? (
-        <p className="excercisewizard__variant__loading">
-          Loading exercises...
-        </p>
+        <p className="excercisewizard__variant__loading">Loading exercises...</p>
       ) : filtered.length === 0 ? (
         <p className="excercisewizard__variant__empty">
           {exercises.length === 0
@@ -108,32 +106,17 @@ const VariantSelection: React.FC<Props> = ({
                 type="button"
               >
                 <div className="excercisewizard__variant__item__info">
-                  <span className="excercisewizard__variant__item__title">
-                    {ex.title}
-                  </span>
+                  <span className="excercisewizard__variant__item__title">{ex.title}</span>
                   <div className="excercisewizard__variant__item__tags">
                     {(ex.tags ?? []).slice(0, 2).map((tag) => (
-                      <span
-                        key={tag}
-                        className={`tags tags--${tag.toLowerCase()}`}
-                      >
-                        {tag}
-                      </span>
+                      <span key={tag} className={`tags tags--${tag.toLowerCase()}`}>{tag}</span>
                     ))}
                   </div>
                 </div>
-                <div
-                  className={`excercisewizard__variant__item__check ${isSelected ? "excercisewizard__variant__item__check--active" : ""}`}
-                >
+                <div className={`excercisewizard__variant__item__check ${isSelected ? "excercisewizard__variant__item__check--active" : ""}`}>
                   {isSelected && (
                     <svg width="12" height="10" viewBox="0 0 14 11" fill="none">
-                      <path
-                        d="M1 5L5 9L13 1"
-                        stroke="currentColor"
-                        strokeWidth="2.2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
+                      <path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
                 </div>
