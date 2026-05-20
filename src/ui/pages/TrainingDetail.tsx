@@ -436,6 +436,12 @@ const TrainingDetail = () => {
     }
   };
 
+  
+  const renderDescription = (text?: string) =>
+    text?.split("\n").map((line, i) => (
+      <span key={i}>{line}{i < text.split("\n").length - 1 && <br />}</span>
+  ));
+
   // ── Drag reorder ───────────────────────────────────────────────────────────
   const handleDragStart = (idx: number) => {
     dragIndex.current = idx;
@@ -608,11 +614,7 @@ const TrainingDetail = () => {
                       <h1 className="trainingdetail__title">
                         {training.title}
                       </h1>
-                      {training.description && (
-                        <p className="trainingdetail__description">
-                          {training.description}
-                        </p>
-                      )}
+                      {training.description && <p className="trainingdetail__description">{renderDescription(training.description)}</p>}
                       <div className="trainingdetail__tags">
                         {(training.tags ?? []).map((tag) => (
                           <span

@@ -125,6 +125,11 @@ const PylonShape = ({ selected }: { selected: boolean }) => (
   </>
 );
 
+const renderDescription = (text?: string) =>
+  text?.split("\n").map((line, i) => (
+    <span key={i}>{line}{i < text.split("\n").length - 1 && <br />}</span>
+));
+
 const BenchShape = ({ selected }: { selected: boolean }) => (
   <>
     {selected && (
@@ -915,11 +920,7 @@ const ExerciseDetail = () => {
                       rows={5}
                     />
                   ) : (
-                    exercise.description && (
-                      <p className="exercisedetail__description">
-                        {exercise.description}
-                      </p>
-                    )
+                    exercise.description && <p className="exercisedetail__description">{renderDescription(exercise.description)}</p>
                   )}
 
                   {editing && (
