@@ -1,468 +1,669 @@
-import { useEffect, useRef, useState } from "react";
-import { collection, getDocs, doc, updateDoc, arrayUnion } from "firebase/firestore";
-// import { getAuth } from "firebase/auth";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate, useParams, Link } from "react-router-dom";
+import { doc, getDoc, deleteDoc, updateDoc, addDoc, collection, Timestamp } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
+import Navigation from "../components/navigation/Navigation";
+import SketchThumbnail from "../components/sketch/Sketchthumbnail";
+import type { Exercise } from "../../types/Exercise";
+import type { SketchData } from "../../types/Sketch";
+import db from "../../firebase";
+import { fetchVariants, removeFromVariantGroup } from "../../services/excercisewizard/exerciseVariants";
+import { useFavourite } from "../../hooks/useFavourite";
 import { useAuth } from "../../auth/authContext";
 import { useGetUserData } from "../../hooks/useGetUserData";
-import db from "../../firebase";
-import Navigation from "../components/navigation/Navigation";
-import type { SketchData } from "../../types/Sketch";
-import type { Exercise } from "../../types/Exercise";
-
-// ─── Sketch thumbnail ─────────────────────────────────────────────────────────
-
-const PLAYER_COLORS: Record<string, string> = {
-  attacker: "#E63C2F", defender: "#3EC6D4", setter: "#F5A623", libero: "#4DB87A",
-};
-const PLAYER_LABELS: Record<string, string> = {
-  attacker: "A", defender: "D", setter: "S", libero: "L",
-};
-
-const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
-  const players = sketch?.players ? Object.entries(sketch.players) : [];
-  const arrows  = sketch?.arrows  ? Object.entries(sketch.arrows)  : [];
-  const objects = (sketch as any)?.objects ? Object.entries((sketch as any).objects) : [];
-  return (
-    <svg width="100%" height="100%" viewBox="0 0 560 440" fill="none" preserveAspectRatio="xMidYMid meet">
-      <defs>
-        <marker id="shop-arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
-          <path d="M0,0 L0,6 L6,3 Z" fill="#1E1E1E" />
-        </marker>
-      </defs>
-      <path d="M560 0H0V440H560V0Z" fill="white" />
-      <path d="M363.814 77H496.261V365H279.5L280 77H363.814ZM280 77L279.5 365H194.203V77H280ZM194.203 77V365H62.9062V77H194.203Z" fill="#F4EDE0" />
-      <path d="M363.814 77V365M363.814 77H496.261V365H279.5M363.814 77H280M279.5 365L280 77M279.5 365H194.203M280 77H194.203M194.203 365V77M194.203 365H62.9062V77H194.203" stroke="black" strokeWidth="1" />
-      {objects.map(([id, obj]: [string, any]) => (
-        <g key={id} transform={`translate(${obj.x}, ${obj.y})`}>
-          {obj.type === "pylon" && <polygon points="0,-13 11,8 -11,8" fill="#FF8C00" stroke="#1E1E1E" strokeWidth={1.5} />}
-          {obj.type === "bench" && (
-            <>
-              <rect x={-15} y={-7} width={30} height={14} fill="#8B5E3C" stroke="#1E1E1E" strokeWidth={1.5} rx={2} />
-              <line x1={-11} y1={7} x2={-11} y2={12} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
-              <line x1={11}  y1={7} x2={11}  y2={12} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
-            </>
-          )}
-        </g>
-      ))}
-      {arrows.map(([id, arrow]: [string, any]) => (
-        <line key={id} x1={arrow.x1} y1={arrow.y1} x2={arrow.x2} y2={arrow.y2}
-          stroke="#1E1E1E" strokeWidth="2"
-          strokeDasharray={arrow.style === "dashed" ? "6 4" : undefined}
-          markerEnd="url(#shop-arrow)" />
-      ))}
-      {players.map(([id, player]: [string, any]) => (
-        <g key={id} transform={`translate(${player.x}, ${player.y})`}>
-          <circle r={11} fill={PLAYER_COLORS[player.type] ?? "#999"} />
-          <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize={11} fontWeight="bold" fontFamily="Roboto, sans-serif">
-            {PLAYER_LABELS[player.type] ?? "?"}
-          </text>
-        </g>
-      ))}
-    </svg>
-  );
-};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const AVAILABLE_TAGS = ["Warmup", "Defense", "Attack", "Block", "Reception", "Service"];
-const DIFFICULTIES   = [1, 2, 3, 4, 5];
 
-// ─── Component ────────────────────────────────────────────────────────────────
+const SVG_W = 560;
+const SVG_H = 440;
 
-const ExerciseShop = () => {
-  const navigate = useNavigate();
-  const { currentUser } = useAuth() || { currentUser: null };
-  // @ts-ignore
-  const userData   = useGetUserData(currentUser?.uid ?? "");
-  // const currentUid = getAuth().currentUser?.uid;
+type PlayerType = "attacker" | "defender" | "setter" | "libero";
+type SketchTool = "select" | "arrow";
+type ObjectType = "pylon" | "bench";
 
-  const [exercises,    setExercises]    = useState<Exercise[]>([]);
-  const [loading,      setLoading]      = useState(true);
-  const [search,       setSearch]       = useState("");
-  const [filterOpen,   setFilterOpen]   = useState(false);
-  const [activeTags,   setActiveTags]   = useState<string[]>([]);
-  const [activeDiffs,  setActiveDiffs]  = useState<number[]>([]);
-  // IDs currently being added (to show loading state per card)
-  const [addingIds,    setAddingIds]    = useState<Set<string>>(new Set());
-  // IDs already added this session (to show success state)
-  const [addedIds,     setAddedIds]     = useState<Set<string>>(new Set());
+interface Player      { id: string; x: number; y: number; type: PlayerType; label: string; }
+interface Arrow       { id: string; x1: number; y1: number; x2: number; y2: number; style: "solid" | "dashed"; }
+interface SketchObject { id: string; x: number; y: number; type: ObjectType; }
 
-  const filterRef = useRef<HTMLDivElement>(null);
-
-  const userTeam = (userData as any)?.team ?? "";
-
-  // ── Fetch ALL exercises (no team filter) ─────────────────────────────────
-  useEffect(() => {
-    const fetchAll = async () => {
-      try {
-        const snap = await getDocs(collection(db, "Excercises"));
-        const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }) as Exercise);
-        setExercises(data);
-
-        // Pre-mark exercises already in user's team
-        if (userTeam) {
-          const alreadyOwned = new Set(
-            data
-              .filter((ex) => {
-                const t = (ex as any).team;
-                return Array.isArray(t) ? t.includes(userTeam) : t === userTeam;
-              })
-              .map((ex) => ex.id!)
-          );
-          setAddedIds(alreadyOwned);
-        }
-      } catch (e) {
-        console.error("Error fetching exercises:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    if (userData !== undefined) fetchAll();
-  }, [userData, userTeam]);
-
-  // ── Close filter on outside click ─────────────────────────────────────────
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (filterRef.current && !filterRef.current.contains(e.target as Node))
-        setFilterOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  // ── Add exercise to team ───────────────────────────────────────────────────
-  const handleAdd = async (exerciseId: string) => {
-    if (!userTeam || addingIds.has(exerciseId) || addedIds.has(exerciseId)) return;
-
-    setAddingIds((prev) => new Set(prev).add(exerciseId));
-    try {
-      // Add this team to the exercise's team array — no duplication,
-      // forking only happens if a non-owner edits in ExerciseDetail
-      await updateDoc(doc(db, "Excercises", exerciseId), {
-        team: arrayUnion(userTeam),
-      });
-      setAddedIds((prev) => new Set(prev).add(exerciseId));
-    } catch (e) {
-      console.error("Error adding exercise to team:", e);
-    } finally {
-      setAddingIds((prev) => { const s = new Set(prev); s.delete(exerciseId); return s; });
-    }
-  };
-
-  // ── Filters ────────────────────────────────────────────────────────────────
-  const toggleTag  = (tag: string) => setActiveTags((p) => p.includes(tag) ? p.filter((t) => t !== tag) : [...p, tag]);
-  const toggleDiff = (d: number)   => setActiveDiffs((p) => p.includes(d)  ? p.filter((x) => x !== d)  : [...p, d]);
-  const clearFilters = () => { setActiveTags([]); setActiveDiffs([]); setSearch(""); };
-
-  const hasActiveFilters  = activeTags.length > 0 || activeDiffs.length > 0 || search.trim() !== "";
-  const activeFilterCount = activeTags.length + activeDiffs.length;
-
-  const filtered = exercises.filter((ex) => {
-    const q           = search.trim().toLowerCase();
-    const matchSearch = q === "" || ex.title?.toLowerCase().includes(q) || ex.description?.toLowerCase().includes(q);
-    const matchTags   = activeTags.length === 0 || activeTags.every((tag) => (ex.tags ?? []).includes(tag));
-    const matchDiff   = activeDiffs.length === 0 || activeDiffs.includes(ex.difficulty);
-    return matchSearch && matchTags && matchDiff;
-  });
-
-  // Separate: already in team / not yet added
-  const ownedFiltered = filtered.filter((ex) => addedIds.has(ex.id!));
-  const newFiltered   = filtered.filter((ex) => !addedIds.has(ex.id!));
-
-  return (
-    <>
-      <Navigation />
-      <div className="excerciseshop section">
-        <div className="excerciseshop__inner">
-
-          {/* ── Header ── */}
-          <div className="excerciseshop__header">
-            <div className="excerciseshop__header__text">
-              <h1 className="excerciseshop__title">
-                Exercise Shop
-                <span className="excerciseshop__title__dot">.</span>
-              </h1>
-              <p className="excerciseshop__subtitle">
-                Browse all exercises across every team. Add any to your team's library.
-              </p>
-            </div>
-            {userTeam && (
-              <div className="excerciseshop__team__badge">
-                <span className="excerciseshop__team__badge__label">Adding to</span>
-                <span className="excerciseshop__team__badge__name">{userTeam}</span>
-              </div>
-            )}
-          </div>
-
-          {/* ── Toolbar ── */}
-          <div className="excerciseshop__toolbar">
-            <div className="excerciseshop__search__wrapper">
-              <input
-                type="text"
-                className="excerciseshop__search"
-                placeholder="Search exercises..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
-              {search && (
-                <button className="excerciseshop__search__clear" onClick={() => setSearch("")}>×</button>
-              )}
-            </div>
-
-            <div className="excerciseshop__filter__wrapper" ref={filterRef}>
-              <button
-                className={`excerciseshop__filter__btn ${filterOpen ? "excerciseshop__filter__btn--open" : ""}`}
-                onClick={() => setFilterOpen((p) => !p)}
-              >
-                Filter
-                {activeFilterCount > 0 && (
-                  <span className="excerciseshop__filter__badge">{activeFilterCount}</span>
-                )}
-              </button>
-
-              {filterOpen && (
-                <div className="excerciseshop__filter__dropdown">
-                  <div className="excerciseshop__filter__section">
-                    <p className="excerciseshop__filter__label">Tags</p>
-                    <div className="excerciseshop__filter__tags">
-                      {AVAILABLE_TAGS.map((tag) => (
-                        <button key={tag} onClick={() => toggleTag(tag)}
-                          className={`tags tags--${tag.toLowerCase()} ${activeTags.includes(tag) ? `tags--${tag.toLowerCase()}--active` : ""}`}>
-                          {tag}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="excerciseshop__filter__section">
-                    <p className="excerciseshop__filter__label">Difficulty</p>
-                    <div className="excerciseshop__filter__difficulties">
-                      {DIFFICULTIES.map((d) => (
-                        <button key={d} onClick={() => toggleDiff(d)}
-                          className={`excerciseshop__filter__difficulty ${activeDiffs.includes(d) ? "excerciseshop__filter__difficulty--active" : ""}`}>
-                          {d}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="excerciseshop__filter__footer">
-                    <button className="excerciseshop__filter__clear" onClick={clearFilters} disabled={!hasActiveFilters}>Clear all</button>
-                    <button className="excerciseshop__filter__apply btn__primary" onClick={() => setFilterOpen(false)}>
-                      Show {filtered.length} result{filtered.length !== 1 ? "s" : ""}
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="excerciseshop__counts">
-              <span className="excerciseshop__counts__total">{exercises.length} exercises total</span>
-              {userTeam && (
-                <span className="excerciseshop__counts__owned">{addedIds.size} in your team</span>
-              )}
-            </div>
-          </div>
-
-          {/* Active chips */}
-          {hasActiveFilters && (
-            <div className="excerciseshop__chips">
-              {search && (
-                <span className="excerciseshop__chip">"{search}" <button onClick={() => setSearch("")}>×</button></span>
-              )}
-              {activeTags.map((tag) => (
-                <span key={tag} className={`excerciseshop__chip tags tags--${tag.toLowerCase()} tags--${tag.toLowerCase()}--active`}>
-                  {tag}<button onClick={() => toggleTag(tag)}>×</button>
-                </span>
-              ))}
-              {activeDiffs.map((d) => (
-                <span key={d} className="excerciseshop__chip">
-                  Difficulty {d}<button onClick={() => toggleDiff(d)}>×</button>
-                </span>
-              ))}
-              <button className="excerciseshop__chip__clear" onClick={clearFilters}>Clear all</button>
-            </div>
-          )}
-
-          {loading && <p className="excerciseshop__status">Loading exercises...</p>}
-
-          {!loading && (
-            <>
-              {/* ── New to your team ── */}
-              {newFiltered.length > 0 && (
-                <section className="excerciseshop__section">
-                  {!hasActiveFilters && (
-                    <div className="excerciseshop__section__header">
-                      <h2 className="excerciseshop__section__title">Available to add</h2>
-                      <span className="excerciseshop__section__count">{newFiltered.length}</span>
-                    </div>
-                  )}
-                  <div className="excerciseshop__grid">
-                    {newFiltered.map((exercise) => (
-                      <ExerciseShopCard
-                        key={exercise.id}
-                        exercise={exercise}
-                        isAdded={addedIds.has(exercise.id!)}
-                        isAdding={addingIds.has(exercise.id!)}
-                        userTeam={userTeam}
-                        onAdd={() => handleAdd(exercise.id!)}
-                        onView={() => navigate(`/exercise-detail/${exercise.id}`)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* ── Already in your team ── */}
-              {ownedFiltered.length > 0 && (
-                <section className="excerciseshop__section excerciseshop__section--owned">
-                  <div className="excerciseshop__section__header">
-                    <h2 className="excerciseshop__section__title">Already in your library</h2>
-                    <span className="excerciseshop__section__count excerciseshop__section__count--owned">{ownedFiltered.length}</span>
-                  </div>
-                  <div className="excerciseshop__grid">
-                    {ownedFiltered.map((exercise) => (
-                      <ExerciseShopCard
-                        key={exercise.id}
-                        exercise={exercise}
-                        isAdded={true}
-                        isAdding={false}
-                        userTeam={userTeam}
-                        onAdd={() => {}}
-                        onView={() => navigate(`/exercise-detail/${exercise.id}`)}
-                      />
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {filtered.length === 0 && exercises.length > 0 && (
-                <div className="excerciseshop__empty">
-                  <p>No exercises match your filters.</p>
-                  <button className="btn__wired" onClick={clearFilters}>Clear filters</button>
-                </div>
-              )}
-
-              {exercises.length === 0 && (
-                <p className="excerciseshop__status">No exercises in the database yet.</p>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </>
-  );
+const PLAYER_COLORS: Record<PlayerType, string> = {
+  attacker: "#E63C2F", defender: "#3EC6D4", setter: "#F5A623", libero: "#4DB87A",
+};
+const PLAYER_LABELS: Record<PlayerType, string> = {
+  attacker: "A", defender: "D", setter: "S", libero: "L",
+};
+const OBJECT_COLORS: Record<ObjectType, string> = {
+  pylon: "#FF8C00", bench: "#8B5E3C",
 };
 
-// ─── Card component ────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
-interface CardProps {
-  exercise: Exercise;
-  isAdded: boolean;
-  isAdding: boolean;
-  userTeam: string;
-  onAdd: () => void;
-  onView: () => void;
-}
+const uid = () => Math.random().toString(36).slice(2, 9);
 
-const ExerciseShopCard = ({ exercise, isAdded, isAdding, userTeam, onAdd, onView }: CardProps) => {
-  // Which team(s) own this exercise
-  const teams: string[] = Array.isArray((exercise as any).team)
-    ? (exercise as any).team
-    : (exercise as any).team ? [(exercise as any).team] : [];
+const toSketchData = (players: Player[], arrows: Arrow[], objects: SketchObject[]): SketchData => ({
+  players: Object.fromEntries(players.map(({ id, ...r }) => [id, r])),
+  arrows:  Object.fromEntries(arrows.map(({ id, ...r })  => [id, r])),
+  objects: Object.fromEntries(objects.map(({ id, ...r }) => [id, r])),
+});
+
+const fromSketchData = (sketch?: SketchData): { players: Player[]; arrows: Arrow[]; objects: SketchObject[] } => {
+  if (!sketch) return { players: [], arrows: [], objects: [] };
+  return {
+    players: Object.entries(sketch.players ?? {}).map(([id, p]) => ({ id, ...(p as any) })),
+    arrows:  Object.entries(sketch.arrows  ?? {}).map(([id, a]) => ({ id, ...(a as any) })),
+    objects: Object.entries((sketch as any).objects ?? {}).map(([id, o]) => ({ id, ...(o as any) })),
+  };
+};
+
+// ─── Object shape renderers ────────────────────────────────────────────────────
+
+const PylonShape = ({ selected }: { selected: boolean }) => (
+  <>
+    {selected && <polygon points="0,-20 17,12 -17,12" fill="none" stroke="#E63C2F" strokeWidth={2} strokeDasharray="4 2" />}
+    <polygon points="0,-13 11,8 -11,8" fill={OBJECT_COLORS.pylon} stroke="#1E1E1E" strokeWidth={1.5} />
+  </>
+);
+
+const BenchShape = ({ selected }: { selected: boolean }) => (
+  <>
+    {selected && <rect x={-22} y={-12} width={44} height={24} fill="none" stroke="#E63C2F" strokeWidth={2} strokeDasharray="4 2" rx={2} />}
+    <rect x={-15} y={-7} width={30} height={14} fill={OBJECT_COLORS.bench} stroke="#1E1E1E" strokeWidth={1.5} rx={2} />
+    <line x1={-11} y1={7}  x2={-11} y2={12} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
+    <line x1={11}  y1={7}  x2={11}  y2={12} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
+  </>
+);
+
+// ─── Sketch editor ────────────────────────────────────────────────────────────
+
+const SketchEditor = ({ sketch, onChange }: { sketch?: SketchData; onChange: (s: SketchData) => void }) => {
+  const { players: initP, arrows: initA, objects: initO } = fromSketchData(sketch);
+
+  const [players,   setPlayers]   = useState<Player[]>(initP);
+  const [arrows,    setArrows]    = useState<Arrow[]>(initA);
+  const [objects,   setObjects]   = useState<SketchObject[]>(initO);
+  const [tool,      setTool]      = useState<SketchTool>("select");
+  const [arrowStyle, setArrowStyle] = useState<"solid" | "dashed">("solid");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [draftArrow, setDraftArrow] = useState<{ x1: number; y1: number; x2: number; y2: number } | null>(null);
+
+  const dragRef  = useRef<{ id: string; offsetX: number; offsetY: number; kind: "player" | "object" } | null>(null);
+  const arrowRef = useRef<{ x1: number; y1: number } | null>(null);
+  const svgRef   = useRef<SVGSVGElement>(null);
+
+  useEffect(() => { onChange(toSketchData(players, arrows, objects)); }, [players, arrows, objects]);
+
+  const getSVGPoint = useCallback((e: React.MouseEvent | MouseEvent) => {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0 };
+    const r = svg.getBoundingClientRect();
+    return { x: (e.clientX - r.left) * (SVG_W / r.width), y: (e.clientY - r.top) * (SVG_H / r.height) };
+  }, []);
+
+  const handlePlayerMouseDown = useCallback((e: React.MouseEvent, id: string) => {
+    if (tool !== "select") return;
+    e.stopPropagation();
+    setSelectedId(id);
+    const pt = getSVGPoint(e);
+    const p = players.find((p) => p.id === id);
+    if (!p) return;
+    dragRef.current = { id, offsetX: pt.x - p.x, offsetY: pt.y - p.y, kind: "player" };
+  }, [tool, players, getSVGPoint]);
+
+  const handleObjectMouseDown = useCallback((e: React.MouseEvent, id: string) => {
+    if (tool !== "select") return;
+    e.stopPropagation();
+    setSelectedId(id);
+    const pt = getSVGPoint(e);
+    const o = objects.find((o) => o.id === id);
+    if (!o) return;
+    dragRef.current = { id, offsetX: pt.x - o.x, offsetY: pt.y - o.y, kind: "object" };
+  }, [tool, objects, getSVGPoint]);
+
+  const handleSVGMouseMove = useCallback((e: React.MouseEvent) => {
+    const pt = getSVGPoint(e);
+    if (dragRef.current) {
+      const { id, offsetX, offsetY, kind } = dragRef.current;
+      if (kind === "player") {
+        setPlayers((prev) => prev.map((p) => p.id === id
+          ? { ...p, x: Math.max(10, Math.min(SVG_W - 10, pt.x - offsetX)), y: Math.max(10, Math.min(SVG_H - 10, pt.y - offsetY)) } : p));
+      } else {
+        setObjects((prev) => prev.map((o) => o.id === id
+          ? { ...o, x: Math.max(15, Math.min(SVG_W - 15, pt.x - offsetX)), y: Math.max(15, Math.min(SVG_H - 15, pt.y - offsetY)) } : o));
+      }
+    }
+    if (arrowRef.current) setDraftArrow({ ...arrowRef.current, x2: pt.x, y2: pt.y });
+  }, [getSVGPoint]);
+
+  const handleSVGMouseUp = useCallback(() => {
+    dragRef.current = null;
+    if (arrowRef.current && draftArrow) {
+      const dx = draftArrow.x2 - draftArrow.x1, dy = draftArrow.y2 - draftArrow.y1;
+      if (Math.sqrt(dx * dx + dy * dy) > 20) {
+        setArrows((prev) => [...prev, { id: uid(), ...draftArrow, style: arrowStyle }]);
+      }
+      arrowRef.current = null;
+      setDraftArrow(null);
+    }
+  }, [draftArrow, arrowStyle]);
+
+  const handleSVGMouseDown = useCallback((e: React.MouseEvent) => {
+    if (tool === "arrow") {
+      const pt = getSVGPoint(e);
+      arrowRef.current = { x1: pt.x, y1: pt.y };
+      setDraftArrow({ x1: pt.x, y1: pt.y, x2: pt.x, y2: pt.y });
+    } else {
+      setSelectedId(null);
+    }
+  }, [tool, getSVGPoint]);
+
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const pt = getSVGPoint(e as unknown as MouseEvent);
+    const playerType = e.dataTransfer.getData("playerType") as PlayerType;
+    const objectType = e.dataTransfer.getData("objectType") as ObjectType;
+    if (playerType) {
+      setPlayers((prev) => [...prev, { id: uid(), x: Math.max(10, Math.min(SVG_W - 10, pt.x)), y: Math.max(10, Math.min(SVG_H - 10, pt.y)), type: playerType, label: PLAYER_LABELS[playerType] }]);
+    } else if (objectType) {
+      setObjects((prev) => [...prev, { id: uid(), x: Math.max(15, Math.min(SVG_W - 15, pt.x)), y: Math.max(15, Math.min(SVG_H - 15, pt.y)), type: objectType }]);
+    }
+  }, [getSVGPoint]);
+
+  const handleDelete = useCallback(() => {
+    if (!selectedId) return;
+    setPlayers((p) => p.filter((x) => x.id !== selectedId));
+    setArrows((a)  => a.filter((x) => x.id !== selectedId));
+    setObjects((o) => o.filter((x) => x.id !== selectedId));
+    setSelectedId(null);
+  }, [selectedId]);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Delete" || e.key === "Backspace") handleDelete(); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [handleDelete]);
 
   return (
-    <div className={`excerciseshop__card ${isAdded ? "excerciseshop__card--owned" : ""}`}>
+    <div className="sketch__editor">
+      <div className="sketch__toolbar">
 
-      {/* Sketch */}
-      <div className="excerciseshop__card__sketch" onClick={onView}>
-        <SketchThumbnail sketch={exercise.sketch} />
-        {isAdded && (
-          <div className="excerciseshop__card__owned__badge">
-            <svg width="12" height="10" viewBox="0 0 14 11" fill="none">
-              <path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            In library
-          </div>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="excerciseshop__card__content">
-        <div className="excerciseshop__card__meta">
-          <span className="excerciseshop__card__author">{exercise.author}</span>
-          <div className={`difficulty difficulty--${exercise.difficulty}`}>
-            <svg width="14" height="16" viewBox="0 0 21 24" fill="none">
-              <path className={`difficulty--${exercise.difficulty}__path1`} d="M0 17.5238H6V24H0V17.5238Z" fill="#1E1E1E" />
-              <path className={`difficulty--${exercise.difficulty}__path2`} d="M7.5 8.7619H13.5V24H7.5V8.7619Z" fill="#1E1E1E" />
-              <path className={`difficulty--${exercise.difficulty}__path3`} d="M15 0H21V24H15V0Z" fill="#1E1E1E" />
-            </svg>
-          </div>
-        </div>
-
-        <h3 className="excerciseshop__card__title" onClick={onView}>{exercise.title}</h3>
-
-        {exercise.description && (
-          <p className="excerciseshop__card__desc">
-            {exercise.description.replace(/\n/g, " ").substring(0, 90)}
-            {exercise.description.length > 90 ? "…" : ""}
-          </p>
-        )}
-
-        <div className="excerciseshop__card__tags">
-          {(exercise.tags ?? []).slice(0, 3).map((tag) => (
-            <span key={tag} className={`tags tags--${tag.toLowerCase()}`}>{tag}</span>
+        {/* Players */}
+        <div className="sketch__toolbar__group">
+          <span className="sketch__toolbar__label">Players</span>
+          {(Object.keys(PLAYER_COLORS) as PlayerType[]).map((type) => (
+            <div key={type} className="sketch__palette__player" draggable title={type}
+              onDragStart={(e) => e.dataTransfer.setData("playerType", type)}
+              style={{ background: PLAYER_COLORS[type] }}>
+              {PLAYER_LABELS[type]}
+            </div>
           ))}
         </div>
 
-        {/* Team chips */}
-        {teams.length > 0 && (
-          <div className="excerciseshop__card__teams">
-            {teams.map((t) => (
-              <span key={t} className={`excerciseshop__card__team ${t === userTeam ? "excerciseshop__card__team--yours" : ""}`}>
-                {t}
-              </span>
-            ))}
+        {/* Objects */}
+        <div className="sketch__toolbar__group">
+          <span className="sketch__toolbar__label">Objects</span>
+          <div className="sketch__palette__object" draggable title="Pylon"
+            onDragStart={(e) => e.dataTransfer.setData("objectType", "pylon")}>
+            <svg width="24" height="24" viewBox="-12 -12 24 24">
+              <polygon points="0,-10 9,6 -9,6" fill={OBJECT_COLORS.pylon} stroke="#1E1E1E" strokeWidth={1.5} />
+            </svg>
+          </div>
+          <div className="sketch__palette__object" draggable title="Bench / elevated object"
+            onDragStart={(e) => e.dataTransfer.setData("objectType", "bench")}>
+            <svg width="32" height="22" viewBox="-16 -11 32 22">
+              <rect x={-12} y={-5} width={24} height={11} fill={OBJECT_COLORS.bench} stroke="#1E1E1E" strokeWidth={1.5} rx={2} />
+              <line x1={-8} y1={6} x2={-8} y2={10} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
+              <line x1={8}  y1={6} x2={8}  y2={10} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
+            </svg>
+          </div>
+        </div>
+
+        {/* Tools */}
+        <div className="sketch__toolbar__group">
+          <span className="sketch__toolbar__label">Tool</span>
+          <button className={`sketch__tool__btn ${tool === "select" ? "sketch__tool__btn--active" : ""}`} onClick={() => setTool("select")}>↖ Select</button>
+          <button className={`sketch__tool__btn ${tool === "arrow"  ? "sketch__tool__btn--active" : ""}`} onClick={() => setTool("arrow")}>→ Arrow</button>
+        </div>
+
+        {tool === "arrow" && (
+          <div className="sketch__toolbar__group">
+            <span className="sketch__toolbar__label">Style</span>
+            <button className={`sketch__tool__btn ${arrowStyle === "solid"  ? "sketch__tool__btn--active" : ""}`} onClick={() => setArrowStyle("solid")}>— Solid</button>
+            <button className={`sketch__tool__btn ${arrowStyle === "dashed" ? "sketch__tool__btn--active" : ""}`} onClick={() => setArrowStyle("dashed")}>╌ Dashed</button>
           </div>
         )}
 
-        {/* Action buttons */}
-        <div className="excerciseshop__card__actions">
-          <button className="excerciseshop__card__view__btn" onClick={onView}>
-            View
-            <svg width="14" height="8" viewBox="0 0 23 12" fill="none">
-              <path d="M1 5.25H0.25V6.75H1V5.25ZM22.53 6.53C22.82 6.24 22.82 5.76 22.53 5.47L17.76 0.697C17.46 0.404 16.99 0.404 16.697 0.697C16.404 0.99 16.404 1.465 16.697 1.757L20.94 6L16.697 10.243C16.404 10.536 16.404 11.01 16.697 11.303C16.99 11.596 17.465 11.596 17.757 11.303L22.53 6.53ZM1 6.75H22V5.25H1V6.75Z" fill="currentColor" />
-            </svg>
-          </button>
-
-          {!isAdded ? (
-            <button
-              className="excerciseshop__card__add__btn btn__primary"
-              onClick={onAdd}
-              disabled={isAdding || !userTeam}
-              title={!userTeam ? "Set your team in Profile first" : ""}
-            >
-              {isAdding ? (
-                "Adding…"
-              ) : (
-                <>
-                  <svg width="12" height="12" viewBox="0 0 14 14" fill="none">
-                    <path d="M7 1V13M1 7H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                  </svg>
-                  Add to team
-                </>
-              )}
-            </button>
-          ) : (
-            <span className="excerciseshop__card__added__label">
-              <svg width="12" height="10" viewBox="0 0 14 11" fill="none">
-                <path d="M1 5L5 9L13 1" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Added
-            </span>
+        <div className="sketch__toolbar__group sketch__toolbar__group--right">
+          {selectedId && (
+            <button className="sketch__tool__btn sketch__tool__btn--danger" onClick={handleDelete}>× Delete</button>
           )}
+          <button className="sketch__tool__btn" onClick={() => { setPlayers([]); setArrows([]); setObjects([]); setSelectedId(null); }}>✕ Clear all</button>
         </div>
       </div>
+
+      <svg ref={svgRef} width={SVG_W} height={SVG_H} viewBox={`0 0 ${SVG_W} ${SVG_H}`} fill="none"
+        className={`sketch__canvas sketch__canvas--tool-${tool}`}
+        onMouseDown={handleSVGMouseDown} onMouseMove={handleSVGMouseMove}
+        onMouseUp={handleSVGMouseUp} onMouseLeave={handleSVGMouseUp}
+        onDrop={handleDrop} onDragOver={(e) => e.preventDefault()}
+      >
+        <defs>
+          <marker id="ed-arrow"       markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4 Z" fill="#1E1E1E" /></marker>
+          <marker id="ed-arrow-draft" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto"><path d="M0,0 L0,8 L8,4 Z" fill="#aaa" /></marker>
+        </defs>
+
+        {/* Court */}
+        <path d="M560 0H0V440H560V0Z" fill="white" />
+        <path d="M363.814 77H496.261V365H279.5L280 77H363.814ZM280 77L279.5 365H194.203V77H280ZM194.203 77V365H62.9062V77H194.203Z" fill="#F4EDE0" />
+        <path d="M363.814 77V365M363.814 77H496.261V365H279.5M363.814 77H280M279.5 365L280 77M279.5 365H194.203M280 77H194.203M194.203 365V77M194.203 365H62.9062V77H194.203" stroke="black" />
+
+        {/* Objects (below players) */}
+        {objects.map((o) => (
+          <g key={o.id} transform={`translate(${o.x}, ${o.y})`}
+            onMouseDown={(e) => handleObjectMouseDown(e, o.id)}
+            onClick={(e) => { e.stopPropagation(); if (tool === "select") setSelectedId(o.id); }}
+            style={{ cursor: tool === "select" ? "grab" : "default" }}
+          >
+            {o.type === "pylon" && <PylonShape selected={selectedId === o.id} />}
+            {o.type === "bench" && <BenchShape selected={selectedId === o.id} />}
+          </g>
+        ))}
+
+        {/* Arrows */}
+        {arrows.map((a) => (
+          <g key={a.id} onClick={(e) => { e.stopPropagation(); if (tool === "select") setSelectedId(a.id); }}>
+            <line x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} stroke={selectedId === a.id ? "#E63C2F" : "#1E1E1E"} strokeWidth={selectedId === a.id ? 2.5 : 2} strokeDasharray={a.style === "dashed" ? "6 4" : undefined} markerEnd="url(#ed-arrow)" style={{ cursor: "pointer" }} />
+            <line x1={a.x1} y1={a.y1} x2={a.x2} y2={a.y2} stroke="transparent" strokeWidth={12} style={{ cursor: "pointer" }} />
+          </g>
+        ))}
+
+        {/* Draft arrow */}
+        {draftArrow && (
+          <line x1={draftArrow.x1} y1={draftArrow.y1} x2={draftArrow.x2} y2={draftArrow.y2} stroke="#aaa" strokeWidth={2} strokeDasharray={arrowStyle === "dashed" ? "6 4" : undefined} markerEnd="url(#ed-arrow-draft)" pointerEvents="none" />
+        )}
+
+        {/* Players */}
+        {players.map((p) => (
+          <g key={p.id} transform={`translate(${p.x}, ${p.y})`}
+            onMouseDown={(e) => handlePlayerMouseDown(e, p.id)}
+            onClick={(e) => { e.stopPropagation(); if (tool === "select") setSelectedId(p.id); }}
+            style={{ cursor: tool === "select" ? "grab" : "default" }}
+          >
+            {selectedId === p.id && <circle r={15} fill="none" stroke="#E63C2F" strokeWidth={2} strokeDasharray="4 2" />}
+            <circle r={11} fill={PLAYER_COLORS[p.type]} />
+            <text textAnchor="middle" dominantBaseline="central" fill="white" fontSize={11} fontWeight="bold" fontFamily="Roboto, sans-serif" pointerEvents="none">{p.label}</text>
+          </g>
+        ))}
+      </svg>
+
+      <p className="sketch__hint">
+        {tool === "select" ? "Drag players/objects onto the court · Click to select · Del to remove" : "Click and drag to draw an arrow"}
+      </p>
     </div>
   );
 };
 
-export default ExerciseShop;
+// ─── Variant types ────────────────────────────────────────────────────────────
+
+interface VariantExercise { id: string; title: string; difficulty: number; tags: string[]; }
+
+// ─── Main component ───────────────────────────────────────────────────────────
+
+const ExerciseDetail = () => {
+  const { exerciseId } = useParams<{ exerciseId: string }>();
+  const navigate = useNavigate();
+
+  const { currentUser } = useAuth() || { currentUser: null };
+  // @ts-ignore
+  const userData   = useGetUserData(currentUser?.uid ?? "");
+  const userTeam   = (userData as any)?.team ?? "";
+  const currentUid = getAuth().currentUser?.uid ?? "";
+
+  const [exercise,        setExercise]        = useState<Exercise | null>(null);
+  const [loading,         setLoading]         = useState(true);
+  const [variants,        setVariants]        = useState<VariantExercise[]>([]);
+  const [loadingVariants, setLoadingVariants] = useState(false);
+
+  const [editing,  setEditing]  = useState(false);
+  const [saving,   setSaving]   = useState(false);
+  const [editData, setEditData] = useState<Partial<Exercise>>({});
+
+  const [editingSketch, setEditingSketch] = useState(false);
+  const [editSketch,    setEditSketch]    = useState<SketchData | undefined>(undefined);
+
+  const [deleteConfirm, setDeleteConfirm] = useState(false);
+  const [deleting,      setDeleting]      = useState(false);
+
+  const { isFavourite, toggleFavourite, toggling } = useFavourite(exerciseId);
+
+  // ── Fetch ──────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!exerciseId) return;
+    const fetch = async () => {
+      const snap = await getDoc(doc(db, "Excercises", exerciseId));
+      if (snap.exists()) setExercise({ id: snap.id, ...snap.data() } as Exercise);
+      setLoading(false);
+    };
+    fetch();
+  }, [exerciseId]);
+
+  useEffect(() => {
+    if (!exerciseId || !exercise || !(exercise as any).variantGroupId) return;
+    setLoadingVariants(true);
+    fetchVariants(exerciseId).then(setVariants).catch(() => setVariants([])).finally(() => setLoadingVariants(false));
+  }, [exerciseId, exercise]);
+
+  // ── Edit info ──────────────────────────────────────────────────────────────
+  const handleEditStart = () => {
+    if (!exercise) return;
+    setEditData({ title: exercise.title, description: exercise.description, difficulty: exercise.difficulty, tags: exercise.tags ?? [] });
+    setEditing(true);
+  };
+  const handleEditCancel = () => { setEditing(false); setEditData({}); };
+  const handleEditChange = (field: keyof Exercise, value: unknown) => setEditData((prev) => ({ ...prev, [field]: value }));
+  const handleTagToggle = (tag: string) => {
+    const current = editData.tags ?? [];
+    handleEditChange("tags", current.includes(tag) ? current.filter((t) => t !== tag) : [...current, tag]);
+  };
+
+  // ── Fork helper ────────────────────────────────────────────────────────────
+  // If the current user's team is not the original creator's team,
+  // create a private copy for this team and navigate to it.
+  // Returns the ID to save to (either original or new fork).
+  const forkIfNeeded = async (): Promise<string> => {
+    if (!exercise || !exerciseId) return exerciseId ?? "";
+
+    const exTeam = (exercise as any).team;
+    const teams: string[] = Array.isArray(exTeam) ? exTeam : exTeam ? [exTeam] : [];
+
+    // Owner check: team array has exactly one team and it's ours,
+    // OR the exercise was created by the current user
+    const isOwner =
+      (teams.length === 1 && teams[0] === userTeam) ||
+      (exercise as any).createdBy === currentUid;
+
+    if (isOwner) return exerciseId; // no fork needed
+
+    // Non-owner editing — create a fork for this team
+    const { id: _id, ...exerciseData } = exercise as any;
+    const forkRef = await addDoc(collection(db, "Excercises"), {
+      ...exerciseData,
+      team:        userTeam ? [userTeam] : teams,
+      forkedFrom:  exerciseId,   // track origin
+      createdBy:   currentUid,
+      createdAt:   Timestamp.now(),
+    });
+    return forkRef.id;
+  };
+
+  const handleSave = async () => {
+    if (!exerciseId || !exercise) return;
+    setSaving(true);
+    try {
+      const targetId = await forkIfNeeded();
+      const isForked = targetId !== exerciseId;
+
+      await updateDoc(doc(db, "Excercises", targetId), {
+        title:       editData.title       ?? exercise.title,
+        description: editData.description ?? exercise.description,
+        difficulty:  editData.difficulty  ?? exercise.difficulty,
+        tags:        editData.tags        ?? exercise.tags,
+      });
+
+      setEditing(false); setEditData({});
+
+      // If we forked, navigate to the new copy
+      if (isForked) navigate(`/exercise-detail/${targetId}`, { replace: true });
+      else setExercise((prev) => prev ? { ...prev, ...editData } : prev);
+    } catch (e) { console.error("Error updating exercise:", e); }
+    finally { setSaving(false); }
+  };
+
+  // ── Edit sketch ────────────────────────────────────────────────────────────
+  const handleEditSketchStart  = () => { setEditSketch(exercise?.sketch); setEditingSketch(true); };
+  const handleEditSketchCancel = () => { setEditingSketch(false); setEditSketch(undefined); };
+  const handleSaveSketch = async () => {
+    if (!exerciseId || !exercise || !editSketch) return;
+    setSaving(true);
+    try {
+      const targetId = await forkIfNeeded();
+      const isForked = targetId !== exerciseId;
+
+      await updateDoc(doc(db, "Excercises", targetId), { sketch: editSketch });
+
+      setEditingSketch(false); setEditSketch(undefined);
+
+      if (isForked) navigate(`/exercise-detail/${targetId}`, { replace: true });
+      else setExercise((prev) => prev ? { ...prev, sketch: editSketch } : prev);
+    } catch (e) { console.error("Error updating sketch:", e); }
+    finally { setSaving(false); }
+  };
+
+  // ── Delete ─────────────────────────────────────────────────────────────────
+  const handleDelete = async () => {
+    if (!exerciseId) return;
+    setDeleting(true);
+    try {
+      await removeFromVariantGroup(exerciseId);
+      await deleteDoc(doc(db, "Excercises", exerciseId));
+      navigate(-1);
+    } catch (e) {
+      console.error("Error deleting exercise:", e);
+      setDeleting(false); setDeleteConfirm(false);
+    }
+  };
+
+  if (loading)   return <><Navigation /><p style={{ padding: "4rem 11.2rem" }}>Loading...</p></>;
+  if (!exercise) return <><Navigation /><p style={{ padding: "4rem 11.2rem" }}>Exercise not found.</p></>;
+
+  const hasVariants = variants.length > 0;
+
+  return (
+    <>
+      <Navigation />
+      <div className="exercisedetail section">
+        <div className="exercisedetail__inner">
+
+          {/* Back */}
+          <div className="exercisedetail__back">
+            <button className="btn__wired" onClick={() => navigate(-1)}>
+              <svg width="23" height="12" viewBox="0 0 23 12" fill="none">
+                <path d="M22 6.75H22.75V5.25H22V6.75ZM0.46967 5.46967C0.176777 5.76256 0.176777 6.23744 0.46967 6.53033L5.24264 11.3033C5.53553 11.5962 6.01041 11.5962 6.3033 11.3033C6.59619 11.0104 6.59619 10.5355 6.3033 10.2426L2.06066 6L6.3033 1.75736C6.59619 1.46447 6.59619 0.989593 6.3033 0.696699C6.01041 0.403806 5.53553 0.403806 5.24264 0.696699L0.46967 5.46967ZM22 5.25H1V6.75H22V5.25Z" fill="black" />
+              </svg>
+              Back
+            </button>
+          </div>
+
+          {/* ── Two-column layout ── */}
+          <div className="exercisedetail__layout">
+
+            {/* Left: info */}
+            <div className="exercisedetail__info">
+              <div className="exercisedetail__header">
+                <div className="exercisedetail__header__accent" />
+                <div className="exercisedetail__header__body">
+
+                  <div className="exercisedetail__meta">
+                    <span className="exercisedetail__meta__author">{exercise.author}</span>
+                    {!editing && (
+                      <>
+                        <span className="exercisedetail__meta__sep">·</span>
+                        <div className={`difficulty difficulty--${exercise.difficulty}`}>
+                          <svg width="16" height="18" viewBox="0 0 21 24" fill="none">
+                            <path className={`difficulty--${exercise.difficulty}__path1`} d="M0 17.5238H6V24H0V17.5238Z" fill="#1E1E1E" />
+                            <path className={`difficulty--${exercise.difficulty}__path2`} d="M7.5 8.7619H13.5V24H7.5V8.7619Z" fill="#1E1E1E" />
+                            <path className={`difficulty--${exercise.difficulty}__path3`} d="M15 0H21V24H15V0Z" fill="#1E1E1E" />
+                          </svg>
+                          <span>Level {exercise.difficulty}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {editing ? (
+                    <input className="exercisedetail__edit__input exercisedetail__edit__input--title" value={editData.title ?? ""} onChange={(e) => handleEditChange("title", e.target.value)} placeholder="Exercise title" />
+                  ) : (
+                    <h1 className="exercisedetail__title">{exercise.title}</h1>
+                  )}
+
+                  {editing ? (
+                    <textarea className="exercisedetail__edit__input exercisedetail__edit__input--description" value={editData.description ?? ""} onChange={(e) => handleEditChange("description", e.target.value)} placeholder="Description" rows={5} />
+                  ) : (
+                    exercise.description && <p className="exercisedetail__description">{exercise.description}</p>
+                  )}
+
+                  {editing && (
+                    <div className="exercisedetail__edit__difficulty">
+                      <label>Difficulty</label>
+                      <div className="exercisedetail__edit__difficulty__btns">
+                        {[1, 2, 3, 4, 5].map((d) => (
+                          <button key={d} type="button"
+                            className={`exercisedetail__edit__difficulty__btn ${(editData.difficulty ?? exercise.difficulty) === d ? "exercisedetail__edit__difficulty__btn--active" : ""}`}
+                            onClick={() => handleEditChange("difficulty", d)}
+                          >{d}</button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="exercisedetail__tags">
+                    {editing ? (
+                      <div className="exercisedetail__edit__tags">
+                        {AVAILABLE_TAGS.map((tag) => (
+                          <label key={tag}
+                            className={["tags", `tags--${tag.toLowerCase()}`, (editData.tags ?? []).includes(tag) ? `tags--${tag.toLowerCase()}--active` : ""].filter(Boolean).join(" ")}
+                            style={{ cursor: "pointer" }}
+                          >
+                            <input type="checkbox" style={{ display: "none" }} checked={(editData.tags ?? []).includes(tag)} onChange={() => handleTagToggle(tag)} />
+                            {tag}
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      (exercise.tags ?? []).map((tag) => (
+                        <span key={tag} className={`tags tags--${tag.toLowerCase()}`}>{tag}</span>
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="exercisedetail__actions">
+                {editing ? (
+                  <>
+                    <button className="btn__wired" onClick={handleEditCancel} disabled={saving}>Cancel</button>
+                    <button className="btn__primary" onClick={handleSave} disabled={saving}>{saving ? "Saving..." : "Save"}</button>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      className={`exercisedetail__btn exercisedetail__btn--favourite${isFavourite ? " exercisedetail__btn--favourite--active" : ""}`}
+                      title={isFavourite ? "Remove from favourites" : "Add to favourites"}
+                      onClick={toggleFavourite} disabled={toggling}
+                    >
+                      <svg width="22" height="20" viewBox="0 0 26 24" fill="none">
+                        <path d="M19.2754 1.5C22.2429 1.5 24.4998 3.75726 24.5 6.79199C24.5 8.52207 24.2672 9.79464 23.8379 10.8643C23.4088 11.9333 22.7465 12.892 21.7627 13.9512C20.7617 15.0288 19.4807 16.1562 17.8262 17.6025C16.4436 18.8112 14.8339 20.216 13 21.9346C11.1661 20.216 9.55644 18.8112 8.17383 17.6025C6.51934 16.1562 5.2383 15.0288 4.2373 13.9512C3.25348 12.892 2.59124 11.9333 2.16211 10.8643C1.73284 9.79464 1.5 8.52207 1.5 6.79199C1.50023 3.75726 3.7571 1.5 6.72461 1.5C8.77382 1.50018 10.5736 2.70206 11.71 4.61523L13 6.78613L14.29 4.61523C15.4264 2.70206 17.2262 1.50018 19.2754 1.5Z" stroke="currentColor" strokeWidth="3" fill={isFavourite ? "currentColor" : "none"} />
+                      </svg>
+                      {isFavourite ? "Favourited" : "Favourite"}
+                    </button>
+                    <button className="exercisedetail__btn" onClick={handleEditStart}>
+                      <svg width="16" height="18" viewBox="0 0 18 24" fill="none">
+                        <path d="M16.8756 21.5929H1.12977C0.831474 21.5929 0.545402 21.7198 0.334478 21.9454C0.123556 22.1711 0.00506036 22.4772 0.00506036 22.7964C0.00506036 23.1156 0.123556 23.4217 0.334478 23.6474C0.545402 23.873 0.831474 23.9999 1.12977 23.9999H16.8756C17.1739 23.9999 17.46 23.873 17.671 23.6474C17.8818 23.4217 18.0004 23.1156 18.0004 22.7964C18.0004 22.4772 17.8818 22.1711 17.671 21.9454C17.46 21.7198 17.1739 21.5929 16.8756 21.5929Z" fill="currentColor" />
+                        <path d="M1.12943 19.1861H1.23066L5.92067 18.7288C6.43444 18.674 6.91495 18.4318 7.28156 18.0428L17.404 7.21152C17.7968 6.76739 18.0091 6.17473 17.9944 5.5634C17.9796 4.95206 17.739 4.37192 17.3251 3.9501L14.2435 0.652573C13.8413 0.248321 13.3142 0.0163667 12.7626 0.000833716C12.211 -0.0146993 11.6733 0.187273 11.2518 0.568331L1.12943 11.3996C0.765888 11.7919 0.53953 12.3061 0.48835 12.8558L0.00472708 17.8744C-0.0104239 18.0505 0.0109516 18.2282 0.0673295 18.3947C0.123707 18.5611 0.2137 18.7122 0.330892 18.8371C0.435984 18.9486 0.56062 19.0369 0.69765 19.0968C0.834682 19.1567 0.981413 19.187 1.12943 19.1861ZM12.6802 2.33744L15.7506 5.62292L13.5012 7.9697L10.487 4.74439L12.6802 2.33744ZM2.67028 13.0604L9.00236 6.33298L12.0391 9.58236L5.74072 16.3218L2.3666 16.6588L2.67028 13.0604Z" fill="currentColor" />
+                      </svg>
+                      Edit
+                    </button>
+                    <button className="exercisedetail__btn exercisedetail__btn--danger" onClick={() => setDeleteConfirm(true)}>Delete</button>
+                  </>
+                )}
+              </div>
+
+              {/* Variants */}
+              {(hasVariants || loadingVariants) && (
+                <div className="exercisedetail__variants">
+                  <h3 className="exercisedetail__variants__title">
+                    Variants <span className="exercisedetail__variants__count">{variants.length}</span>
+                  </h3>
+                  <p className="exercisedetail__variants__hint">These exercises are variations of the same base exercise.</p>
+                  {loadingVariants ? (
+                    <div className="exercisedetail__variants__loading">Loading variants...</div>
+                  ) : (
+                    <div className="exercisedetail__variants__list">
+                      {variants.map((v) => (
+                        <Link key={v.id} to={`/exercise-detail/${v.id}`} className="exercisedetail__variants__item">
+                          <div className="exercisedetail__variants__item__info">
+                            <span className="exercisedetail__variants__item__title">{v.title}</span>
+                            <div className="exercisedetail__variants__item__tags">
+                              {v.tags.slice(0, 2).map((tag) => <span key={tag} className={`tags tags--${tag.toLowerCase()}`}>{tag}</span>)}
+                            </div>
+                          </div>
+                          <div className="exercisedetail__variants__item__right">
+                            <div className={`difficulty difficulty--${v.difficulty}`}>
+                              <svg width="14" height="16" viewBox="0 0 21 24" fill="none">
+                                <path className={`difficulty--${v.difficulty}__path1`} d="M0 17.5238H6V24H0V17.5238Z" fill="#1E1E1E" />
+                                <path className={`difficulty--${v.difficulty}__path2`} d="M7.5 8.7619H13.5V24H7.5V8.7619Z" fill="#1E1E1E" />
+                                <path className={`difficulty--${v.difficulty}__path3`} d="M15 0H21V24H15V0Z" fill="#1E1E1E" />
+                              </svg>
+                            </div>
+                            <svg width="14" height="10" viewBox="0 0 23 12" fill="none">
+                              <path d="M1 5.25004H0.25V6.75004H1V5.25004ZM22.5303 6.53037C22.8232 6.23748 22.8232 5.7626 22.5303 5.46971L17.7574 0.696739C17.4645 0.403839 16.9896 0.403839 16.6967 0.696739C16.4038 0.989639 16.4038 1.46454 16.6967 1.75744L20.9393 6.00004L16.6967 10.2427C16.4038 10.5356 16.4038 11.0104 16.6967 11.3033C16.9896 11.5962 17.4645 11.5962 17.7574 11.3033L22.5303 6.53037ZM1 6.75004L22 6.75004V5.25004L1 5.25004V6.75004Z" fill="currentColor" />
+                            </svg>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Right: sketch panel */}
+            <div className="exercisedetail__sketch__panel">
+              {editingSketch ? (
+                <>
+                  <SketchEditor sketch={editSketch} onChange={(s) => setEditSketch(s)} />
+                  <div className="exercisedetail__sketch__edit__actions">
+                    <button className="btn__wired" onClick={handleEditSketchCancel} disabled={saving}>Cancel</button>
+                    <button className="btn__primary" onClick={handleSaveSketch} disabled={saving}>{saving ? "Saving..." : "Save sketch"}</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="exercisedetail__sketch">
+                    {exercise.sketch ? <SketchThumbnail sketch={exercise.sketch} /> : (
+                      <div className="exercisedetail__sketch__empty"><p>No sketch yet.</p></div>
+                    )}
+                  </div>
+                  <button className="exercisedetail__btn exercisedetail__btn--sketch" onClick={handleEditSketchStart}>
+                    <svg width="16" height="18" viewBox="0 0 18 24" fill="none">
+                      <path d="M16.8756 21.5929H1.12977C0.831474 21.5929 0.545402 21.7198 0.334478 21.9454C0.123556 22.1711 0.00506036 22.4772 0.00506036 22.7964C0.00506036 23.1156 0.123556 23.4217 0.334478 23.6474C0.545402 23.873 0.831474 23.9999 1.12977 23.9999H16.8756C17.1739 23.9999 17.46 23.873 17.671 23.6474C17.8818 23.4217 18.0004 23.1156 18.0004 22.7964C18.0004 22.4772 17.8818 22.1711 17.671 21.9454C17.46 21.7198 17.1739 21.5929 16.8756 21.5929Z" fill="currentColor" />
+                      <path d="M1.12943 19.1861H1.23066L5.92067 18.7288C6.43444 18.674 6.91495 18.4318 7.28156 18.0428L17.404 7.21152C17.7968 6.76739 18.0091 6.17473 17.9944 5.5634C17.9796 4.95206 17.739 4.37192 17.3251 3.9501L14.2435 0.652573C13.8413 0.248321 13.3142 0.0163667 12.7626 0.000833716C12.211 -0.0146993 11.6733 0.187273 11.2518 0.568331L1.12943 11.3996C0.765888 11.7919 0.53953 12.3061 0.48835 12.8558L0.00472708 17.8744C-0.0104239 18.0505 0.0109516 18.2282 0.0673295 18.3947C0.123707 18.5611 0.2137 18.7122 0.330892 18.8371C0.435984 18.9486 0.56062 19.0369 0.69765 19.0968C0.834682 19.1567 0.981413 19.187 1.12943 19.1861ZM12.6802 2.33744L15.7506 5.62292L13.5012 7.9697L10.487 4.74439L12.6802 2.33744ZM2.67028 13.0604L9.00236 6.33298L12.0391 9.58236L5.74072 16.3218L2.3666 16.6588L2.67028 13.0604Z" fill="currentColor" />
+                    </svg>
+                    {exercise.sketch ? "Edit sketch" : "Create sketch"}
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Delete dialog */}
+      {deleteConfirm && (
+        <div className="dialog__overlay" onClick={() => !deleting && setDeleteConfirm(false)}>
+          <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <h3 className="dialog__title">Delete exercise?</h3>
+            <p className="dialog__body"><strong>{exercise.title}</strong> will be permanently deleted. This cannot be undone.</p>
+            <div className="dialog__actions">
+              <button className="btn__wired" onClick={() => setDeleteConfirm(false)} disabled={deleting}>Cancel</button>
+              <button className="btn__danger" onClick={handleDelete} disabled={deleting}>{deleting ? "Deleting..." : "Yes, delete"}</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+};
+
+export default ExerciseDetail;
