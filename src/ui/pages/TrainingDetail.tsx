@@ -13,9 +13,69 @@ import { useNavigate, useParams, Link } from "react-router-dom";
 import Navigation from "../components/navigation/Navigation";
 import type { Training } from "../../types/Training";
 import type { SelectedExercise } from "../components/trainingwizard/exerciseSelection";
+import type { Players } from "../components/trainingwizard/playerSelection";
 import type { UserProfile } from "../../services/upload/registerUser";
 import { notifyTrainingShared } from "../../services/notifications/notifications";
 import db from "../../firebase";
+
+// ─── Player display ───────────────────────────────────────────────────────────
+
+const POSITION_META: {
+  key: keyof Players;
+  label: string;
+  abbr: string;
+  color: string;
+}[] = [
+  { key: "outside", label: "Outside Hitter", abbr: "OH", color: "#E63C2F" },
+  { key: "opposite", label: "Opposite", abbr: "OP", color: "#F5A623" },
+  {
+    key: "middleBlocker",
+    label: "Middle Blocker",
+    abbr: "MB",
+    color: "#4DB87A",
+  },
+  { key: "setter", label: "Setter", abbr: "S", color: "#3EC6D4" },
+  { key: "libero", label: "Libero", abbr: "L", color: "#624DB8" },
+];
+
+const PlayerDisplay = ({ players }: { players: Players }) => {
+  const total = Object.values(players).reduce((s, v) => s + v, 0);
+  const attending = POSITION_META.filter((p) => players[p.key] > 0);
+
+  if (total === 0)
+    return (
+      <p className="trainingdetail__players__empty">
+        No players added to this training.
+      </p>
+    );
+
+  return (
+    <div className="trainingdetail__players__grid">
+      {attending.map((pos) => (
+        <div key={pos.key} className="trainingdetail__players__chip">
+          <div
+            className="trainingdetail__players__chip__abbr"
+            style={{ background: pos.color }}
+          >
+            {pos.abbr}
+          </div>
+          <div className="trainingdetail__players__chip__info">
+            <span className="trainingdetail__players__chip__count">
+              {players[pos.key]}
+            </span>
+            <span className="trainingdetail__players__chip__label">
+              {pos.label}
+            </span>
+          </div>
+        </div>
+      ))}
+      <div className="trainingdetail__players__total">
+        <span className="trainingdetail__players__total__num">{total}</span>
+        <span className="trainingdetail__players__total__label">Total</span>
+      </div>
+    </div>
+  );
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -436,12 +496,6 @@ const TrainingDetail = () => {
     }
   };
 
-  
-  const renderDescription = (text?: string) =>
-    text?.split("\n").map((line, i) => (
-      <span key={i}>{line}{i < text.split("\n").length - 1 && <br />}</span>
-  ));
-
   // ── Drag reorder ───────────────────────────────────────────────────────────
   const handleDragStart = (idx: number) => {
     dragIndex.current = idx;
@@ -614,7 +668,11 @@ const TrainingDetail = () => {
                       <h1 className="trainingdetail__title">
                         {training.title}
                       </h1>
-                      {training.description && <p className="trainingdetail__description">{renderDescription(training.description)}</p>}
+                      {training.description && (
+                        <p className="trainingdetail__description">
+                          {training.description}
+                        </p>
+                      )}
                       <div className="trainingdetail__tags">
                         {(training.tags ?? []).map((tag) => (
                           <span
@@ -749,6 +807,19 @@ const TrainingDetail = () => {
               </div>
             </div>
           </div>
+
+          {/* Players section */}
+          {training.players && (
+            <div className="trainingdetail__players">
+              <h2 className="trainingdetail__players__title">
+                Players
+                <span>
+                  {Object.values(training.players).reduce((s, v) => s + v, 0)}
+                </span>
+              </h2>
+              <PlayerDisplay players={training.players} />
+            </div>
+          )}
 
           {/* Exercises section */}
           <div className="trainingdetail__exercises">

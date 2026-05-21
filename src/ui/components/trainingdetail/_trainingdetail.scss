@@ -71,11 +71,6 @@
     overflow: hidden;
     margin-bottom: 4rem;
 
-    &__accent {
-      width: 1rem;
-      flex-shrink: 0;
-    }
-
     &__body {
       flex: 1;
       padding: 2.8rem 3.2rem;
@@ -314,6 +309,134 @@
 
     &__over {
       font-weight: 400;
+    }
+  }
+
+  // ── Players section ───────────────────────────────────────────────────────
+
+  &__players {
+    margin-bottom: 3.2rem;
+
+    &__title {
+      font-size: 2.4rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin: 0 0 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      & span {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: $white;
+        background: $secondary-2;
+        padding: 0.2rem 0.8rem;
+        border-radius: 10rem;
+      }
+    }
+
+    &__grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      align-items: center;
+    }
+
+    &__chip {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: 1rem 1.4rem;
+      border: 0.3rem solid $black;
+      border-radius: 1.2rem;
+      background: $white;
+      transition: all $ease;
+
+      &:hover {
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.4rem 0.4rem 0 $black;
+      }
+
+      &__abbr {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 3.2rem;
+        height: 3.2rem;
+        border-radius: 0.6rem;
+        border: 0.2rem solid $black;
+        color: $white;
+        font-size: 1.2rem;
+        font-weight: 800;
+        font-family: $font-family;
+        flex-shrink: 0;
+      }
+
+      &__info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+      }
+
+      &__count {
+        font-size: 2rem;
+        font-weight: 800;
+        font-family: $font-family;
+        line-height: 1;
+      }
+
+      &__label {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: $black;
+        font-family: $font-family;
+        white-space: nowrap;
+      }
+    }
+
+    &__total {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem 1.6rem;
+      background: $secondary-2;
+      border: 0.3rem solid $black;
+      border-radius: 1.2rem;
+      margin-left: auto;
+
+      &__num {
+        font-size: 2.4rem;
+        font-weight: 800;
+        font-family: $font-family;
+        color: $primary-1;
+        line-height: 1;
+      }
+
+      &__label {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: rgba($white, 0.6);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+    }
+
+    &__empty {
+      font-size: 1.4rem;
+      color: $black;
+      font-style: italic;
+    }
+
+    @media (max-width: #{$screen-md-min}) {
+      &__total {
+        margin-left: 0;
+      }
+      &__grid {
+        gap: 0.8rem;
+      }
     }
   }
 
@@ -612,9 +735,6 @@
       &__body {
         padding: 2rem 1.6rem;
       }
-      &__accent {
-        width: 0.6rem;
-      }
     }
   }
 
@@ -624,7 +744,7 @@
     }
 
     &__exercises__item {
-      // flex-wrap: wrap;
+      flex-wrap: wrap;
       &__title {
         order: 2;
         flex-basis: 100%;
@@ -664,6 +784,7 @@
 
 .share__user__list {
   flex: 1;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 0.8rem;

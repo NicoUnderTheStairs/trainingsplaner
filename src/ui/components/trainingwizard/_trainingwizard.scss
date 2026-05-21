@@ -217,6 +217,10 @@
       gap: 1rem;
       position: relative;
 
+      @media (max-width: #{$screen-lg-min}) {
+        align-items: center;
+      }
+
       &--dragging {
         opacity: 0.4;
       }
@@ -240,6 +244,12 @@
 
       &__name {
         min-width: 20rem;
+
+        @media (max-width: #{$screen-lg-min}) {
+          max-width: 10rem;
+          min-width: unset;
+          font-size: 2.1rem;
+        }
       }
 
       &__duration {
@@ -258,7 +268,8 @@
 
       &__remove {
         position: absolute;
-        top: 0.6rem;
+        top: 50%;
+        transform: translateY(-50%);
         right: 0.7rem;
         padding: 0 !important;
         width: 5rem;
@@ -470,6 +481,174 @@
       @media (max-width: #{$screen-lg-min}) {
         grid-template-columns: 1fr;
       }
+    }
+  }
+}
+
+.playerselection {
+  &__subtitle {
+    font-size: 1.5rem;
+    color: $black;
+    margin: 0 0 2.4rem;
+    line-height: 1.5;
+    font-family: $font-family;
+  }
+
+  &__grid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 0.3rem solid $black;
+    border-radius: 1.6rem;
+    overflow: hidden;
+    margin-bottom: 2rem;
+  }
+
+  &__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.6rem;
+    padding: 1.4rem 1.8rem;
+    border-bottom: 0.2rem solid $black;
+    background: $white;
+    transition: background $ease;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &:hover {
+      background: $secondary;
+    }
+
+    &__left {
+      display: flex;
+      align-items: center;
+      gap: 1.4rem;
+      flex: 1;
+      min-width: 0;
+    }
+
+    &__info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      min-width: 0;
+    }
+
+    &__label {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+    }
+
+    &__desc {
+      font-size: 1.2rem;
+      color: $black;
+      font-family: $font-family;
+    }
+  }
+
+  &__abbr {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.6rem;
+    height: 3.6rem;
+    border-radius: 0.8rem;
+    border: 0.2rem solid $black;
+    color: $white;
+    font-size: 1.3rem;
+    font-weight: 800;
+    font-family: $font-family;
+    flex-shrink: 0;
+    letter-spacing: 0.03em;
+  }
+
+  // ── Counter ────────────────────────────────────────────────────────────────
+
+  &__counter {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 0.25rem solid $black;
+    border-radius: 0.8rem;
+    overflow: hidden;
+    flex-shrink: 0;
+
+    &__btn {
+      width: 3.2rem;
+      height: 3.2rem;
+      background: $white;
+      border: none;
+      font-size: 2rem;
+      font-weight: 300;
+      font-family: $font-family;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background $ease;
+      color: $black;
+      line-height: 1;
+
+      &:hover:not(:disabled) {
+        background: $secondary;
+      }
+
+      &:disabled {
+        opacity: 0.3;
+        cursor: default;
+      }
+
+      &--inc {
+        border-left: 0.2rem solid $black;
+        font-weight: 400;
+      }
+
+      &--dec {
+        border-right: 0.2rem solid $black;
+      }
+    }
+
+    &__value {
+      min-width: 3.2rem;
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-family: $font-family;
+      padding: 0 0.4rem;
+      background: $white;
+    }
+  }
+
+  // ── Total ──────────────────────────────────────────────────────────────────
+
+  &__total {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.2rem 1.8rem;
+    background: $secondary-2;
+    border: 0.3rem solid $black;
+    border-radius: 1rem;
+
+    &__label {
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: $font-family;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: rgba($white, 0.7);
+    }
+
+    &__value {
+      font-size: 2.4rem;
+      font-weight: 800;
+      font-family: $font-family;
+      color: $primary-1;
     }
   }
 }

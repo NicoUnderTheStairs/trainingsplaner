@@ -2,6 +2,7 @@ import db from "../../firebase";
 import { addDoc, collection, Timestamp } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import type { SelectedExercise } from "../../ui/components/trainingwizard/exerciseSelection";
+import type { Players } from "../../ui/components/trainingwizard/playerSelection";
 
 interface CreateTrainingPayload {
   date: Date;
@@ -12,6 +13,7 @@ interface CreateTrainingPayload {
   duration: number;
   tags: string[];
   selectedExercises: SelectedExercise[];
+  players: Players;
 }
 
 export async function createTraining(
@@ -33,9 +35,9 @@ export async function createTraining(
     duration,
     tags,
     selectedExercises,
+    players,
   } = payload;
 
-  // Store under users/{userId}/trainings/{trainingId}
   const trainingRef = await addDoc(
     collection(db, "users", userId, "trainings"),
     {
@@ -46,12 +48,12 @@ export async function createTraining(
       difficulty,
       duration,
       tags,
-      // Store as array for ordered access — each item has exerciseId, title, duration
       exercises: selectedExercises.map((e) => ({
         exerciseId: e.exerciseId,
         title: e.title,
         duration: e.duration,
       })),
+      players,
       createdAt: Timestamp.now(),
     },
   );

@@ -43,6 +43,7 @@ const TrainingList = () => {
   const [search, setSearch] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [activeTags, setActiveTags] = useState<string[]>([]);
+  const [minPlayers, setMinPlayers] = useState<number>(0); // 0 = any
   const filterRef = useRef<HTMLDivElement>(null);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
@@ -97,25 +98,37 @@ const TrainingList = () => {
   const clearFilters = () => {
     setActiveTags([]);
     setSearch("");
+    setMinPlayers(0);
   };
 
-  const hasActiveFilters = activeTags.length > 0 || search.trim() !== "";
-  const activeFilterCount = activeTags.length;
+  const hasActiveFilters =
+    activeTags.length > 0 || search.trim() !== "" || minPlayers > 0;
+  const activeFilterCount = activeTags.length + (minPlayers > 0 ? 1 : 0);
 
   // ── Filtered list ─────────────────────────────────────────────────────────
   const filtered = trainings.filter((tr) => {
     const q = search.trim().toLowerCase();
+
+    // Search: title, description, author, tags, exercise titles
     const matchesSearch =
       q === "" ||
       tr.title?.toLowerCase().includes(q) ||
       tr.description?.toLowerCase().includes(q) ||
-      tr.author?.toLowerCase().includes(q);
+      tr.author?.toLowerCase().includes(q) ||
+      (tr.tags ?? []).some((tag) => tag.toLowerCase().includes(q)) ||
+      (tr.exercises ?? []).some((ex) => ex.title?.toLowerCase().includes(q));
 
     const matchesTags =
       activeTags.length === 0 ||
       activeTags.every((tag) => (tr.tags ?? []).includes(tag));
 
-    return matchesSearch && matchesTags;
+    // Player count filter
+    const totalPlayers = tr.players
+      ? Object.values(tr.players).reduce((s, v) => s + v, 0)
+      : 0;
+    const matchesPlayers = minPlayers === 0 || totalPlayers >= minPlayers;
+
+    return matchesSearch && matchesTags && matchesPlayers;
   });
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -123,11 +136,8 @@ const TrainingList = () => {
     <div className="traininglist section">
       <div className="traininglist__inner">
         {/* Back */}
-        <div className="btn__back">
-          <button
-            className="btn__wired"
-            onClick={() => (window.location.href = "/")}
-          >
+        <div className="exercisedetail__back">
+          <button className="btn__wired" onClick={() => navigate(-1)}>
             <svg
               width="23"
               height="12"
@@ -206,6 +216,21 @@ const TrainingList = () => {
                     </div>
                   </div>
 
+                  <div className="traininglist__filter__section">
+                    <p className="traininglist__filter__label">Min. players</p>
+                    <div className="traininglist__filter__players">
+                      {[0, 6, 8, 10, 12, 14].map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => setMinPlayers(n)}
+                          className={`traininglist__filter__player__btn ${minPlayers === n ? "traininglist__filter__player__btn--active" : ""}`}
+                        >
+                          {n === 0 ? "Any" : `${n}+`}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   <div className="traininglist__filter__footer">
                     <button
                       className="traininglist__filter__clear"
@@ -252,6 +277,12 @@ const TrainingList = () => {
                 <button onClick={() => toggleTag(tag)}>×</button>
               </span>
             ))}
+            {minPlayers > 0 && (
+              <span className="traininglist__filter__chip traininglist__filter__chip--players">
+                {minPlayers}+ players
+                <button onClick={() => setMinPlayers(0)}>×</button>
+              </span>
+            )}
             <button
               className="traininglist__filter__chip__clear"
               onClick={clearFilters}
@@ -343,6 +374,22 @@ const TrainingList = () => {
                             {(training.exercises ?? []).length} exercise
                             {(training.exercises ?? []).length !== 1 ? "s" : ""}
                           </span>
+                          {training.players &&
+                            (() => {
+                              const total = Object.values(
+                                training.players,
+                              ).reduce((s: number, v) => s + (v as number), 0);
+                              return total > 0 ? (
+                                <>
+                                  <span className="traininglist__card__dot">
+                                    ·
+                                  </span>
+                                  <span>
+                                    {total} player{total !== 1 ? "s" : ""}
+                                  </span>
+                                </>
+                              ) : null;
+                            })()}
                           <svg
                             width="16"
                             height="10"

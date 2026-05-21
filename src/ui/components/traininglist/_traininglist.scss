@@ -1,64 +1,4 @@
 .traininglist {
-  margin: 44px 0;
-
-  &__inner {
-    padding: 0 11.2rem;
-  }
-
-  &__menu {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 5.2rem;
-  }
-
-  &__list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.2rem;
-
-    &__row {
-      display: grid;
-      grid-template-columns: 1fr 180px 1fr 40px;
-      align-items: center;
-      background: $white;
-      border: 0.3rem solid $black;
-      padding: 1.2rem 2.1rem;
-      border-radius: 2rem;
-      cursor: pointer;
-
-      &__cell {
-        &--title {
-          display: flex;
-          flex-direction: column;
-          margin: 0;
-          font-size: 2.4rem;
-        }
-
-        &--author {
-          font-size: 1.4rem;
-          height: 2.5rem;
-        }
-
-        &--date {
-          margin: 0;
-          font-size: 2rem;
-        }
-
-        &--duration {
-          font-size: 1.4rem;
-        }
-
-        &--tags {
-          display: flex;
-          gap: 1rem;
-        }
-      }
-    }
-  }
-}
-
-.traininglist {
   margin: 4.4rem 0;
 
   &__inner {
@@ -108,7 +48,6 @@
         font-weight: 700;
         font-family: $font-family;
         transition: all $ease;
-        color: $black;
       }
 
       &--search {
@@ -303,6 +242,22 @@
     padding: 0.6rem 1.6rem !important;
   }
 
+  // ── Player count filter ────────────────────────────────────────────────────
+
+  &__filter__players {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  &__filter__player__btn {
+    &--active {
+      background: $secondary-2 !important;
+      color: $white !important;
+      border-color: $secondary-2 !important;
+    }
+  }
+
   // ── Filter chips ──────────────────────────────────────────────────────────
 
   &__filter__chips {
@@ -345,6 +300,12 @@
       &:hover {
         background-color: $primary-1;
       }
+    }
+
+    &--players {
+      background: rgba($primary-4, 0.15);
+      border-color: $primary-4;
+      color: $black;
     }
   }
 
@@ -586,6 +547,10 @@
   }
 
   @media (max-width: #{$screen-md-min}) {
+    &__inner {
+      padding: 0 1.6rem;
+    }
+
     &__filter__dropdown {
       position: fixed;
       bottom: 0;
@@ -618,8 +583,17 @@
   @media (max-width: #{$screen-sm-min}) {
     margin: 2.4rem 0;
 
+    &__inner {
+      padding: 0 1.2rem;
+    }
+
     &__menu h2 {
       font-size: 3.2rem;
     }
+  }
+
+  &__card__dot {
+    color: rgba($black, 0.5);
+    margin: 0 0.2rem;
   }
 }

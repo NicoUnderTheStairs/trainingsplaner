@@ -42,7 +42,7 @@ function WithTrainingNavigation<T>(Component: React.ComponentType<T>) {
           )}
 
           <button className="excercisewizard__btn" onClick={onNext}>
-            {isLastStep ? "Create Training" : "Select Exercises"}
+            {isLastStep ? "Create Training" : "Next"}
             <svg
               style={{ marginLeft: "10px" }}
               width="23"

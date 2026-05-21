@@ -109,14 +109,14 @@
     font-size: 1.8rem;
     font-weight: 700;
     font-family: $font-family;
-    color: $secondary;
+    color: $secondary !important;
     cursor: pointer;
     padding: 0.8rem 2.2rem;
     border-radius: 1.4rem;
     text-transform: uppercase;
     transition: all $ease;
-    border: 0.2rem solid $black;
-    background-color: $secondary-2;
+    border: 0.2rem solid $black !important;
+    background-color: $secondary-2 !important;
     text-decoration: none;
     white-space: nowrap;
 
