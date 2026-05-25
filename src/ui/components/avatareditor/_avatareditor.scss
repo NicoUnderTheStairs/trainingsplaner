@@ -1,0 +1,390 @@
+.avatar {
+  // ── Reusable display ───────────────────────────────────────────────────────
+  &__display {
+    border-radius: 50%;
+    overflow: hidden;
+    border: 0.3rem solid $black;
+    background: $secondary;
+    flex-shrink: 0;
+
+    // All layer divs inside the display stack absolutely and contain their SVG
+    & > div {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    // Force every inline SVG to fill its container, regardless of its own w/h attrs
+    & svg {
+      position: absolute;
+      inset: 0;
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+    }
+  }
+
+  // ── Editor shell ───────────────────────────────────────────────────────────
+  &__editor {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    overflow: hidden;
+
+    // ── Preview ──────────────────────────────────────────────────────────────
+    &__preview {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      padding: 2rem 2.4rem;
+      background: $secondary;
+
+      &__avatar {
+        flex-shrink: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        border: 0.3rem solid rgba($white, 0.2);
+
+        // The AvatarDisplay inside
+        .avatar__display {
+          border: none;
+        }
+      }
+
+      &__right {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        min-width: 0;
+      }
+
+      &__info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+      }
+
+      &__title {
+        font-size: 1.7rem;
+        font-weight: 800;
+        font-family: $font-family;
+        color: $black;
+        margin: 0;
+      }
+
+      &__hint {
+        font-size: 1.2rem;
+        color: $black;
+        margin: 0;
+        line-height: 1.4;
+        font-family: $font-family;
+      }
+
+      &__actions {
+        display: flex;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+      }
+    }
+
+    // ── Tabs ─────────────────────────────────────────────────────────────────
+    &__tabs {
+      display: flex;
+      background: $white;
+      border-bottom: 0.3rem solid $black;
+      overflow-x: auto;
+      scrollbar-width: none;
+      &::-webkit-scrollbar {
+        display: none;
+      }
+    }
+
+    &__tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 1rem 0.6rem;
+      border: none;
+      border-right: 0.15rem solid rgba($black, 0.1);
+      background: $white;
+      cursor: pointer;
+      position: relative;
+      transition: background $ease;
+      font-family: $font-family;
+      min-width: 5.6rem;
+
+      &:last-child {
+        border-right: none;
+      }
+
+      &--active {
+        background: $secondary-2;
+        border-right-color: transparent;
+        .avatar__editor__tab__label {
+          color: $white;
+        }
+      }
+
+      &__icon {
+        font-size: 1.6rem;
+        line-height: 1;
+      }
+
+      &__label {
+        font-size: 1rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: $black;
+        font-family: $font-family;
+      }
+
+      // Coloured dot shows the selected colour for this tab
+      &__dot {
+        position: absolute;
+        top: 0.4rem;
+        right: 0.4rem;
+        width: 0.8rem;
+        height: 0.8rem;
+        border-radius: 50%;
+        border: 0.15rem solid $white;
+        // background is set via inline style
+      }
+    }
+
+    // ── Variant grid ──────────────────────────────────────────────────────────
+    &__panel {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+      gap: 0.8rem;
+      padding: 1.4rem;
+      background: $secondary;
+      max-height: 42rem;
+      overflow-y: auto;
+      scrollbar-width: thin;
+      scrollbar-color: $black transparent;
+    }
+
+    &__loading {
+      grid-column: 1 / -1;
+      font-size: 1.4rem;
+      color: rgba($black, 0.4);
+      padding: 2rem;
+      text-align: center;
+      font-family: $font-family;
+    }
+
+    // ── Thumbnail ─────────────────────────────────────────────────────────────
+    &__thumb {
+      position: relative;
+      aspect-ratio: 1;
+      border: 0.25rem solid $black;
+      border-radius: 0.8rem;
+      background: $white;
+      overflow: hidden;
+      cursor: pointer;
+      transition: all $ease;
+      padding: 0;
+
+      // Force inline SVGs (and their wrapper divs) to fill the thumb
+      //   & > div,
+      //   & > div > div {
+      //     position: absolute;
+      //     inset: 0;
+      //     width: 100%;
+      //     height: 100%;
+      //   }
+
+      & svg {
+        position: absolute;
+        inset: 0;
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+      }
+
+      &:hover {
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 $black;
+      }
+
+      &--selected {
+        border-color: $primary-4;
+        border-width: 0.3rem;
+        box-shadow: 0 0 0 0.2rem rgba($primary-4, 0.25);
+        &:hover {
+          box-shadow: 0.3rem 0.3rem 0 $primary-4;
+        }
+      }
+
+      &--none {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.4rem;
+        color: rgba($black, 0.25);
+        border-style: dashed;
+        background: $white;
+      }
+
+      &__check {
+        position: absolute;
+        bottom: 0.3rem;
+        right: 0.3rem;
+        width: 1.6rem;
+        height: 1.6rem;
+        border-radius: 50%;
+        background: $primary-4;
+        border: 0.15rem solid $white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    }
+
+    // ── Colour picker ─────────────────────────────────────────────────────────
+    &__color {
+      padding: 1.4rem 1.6rem;
+      border-top: 0.3rem solid $black;
+      background: $white;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+
+      &__header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      &__label {
+        font-size: 1.2rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        font-family: $font-family;
+        color: $black;
+        flex-shrink: 0;
+      }
+
+      &__preview {
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 0.4rem;
+        border: 0.2rem solid $black;
+        flex-shrink: 0;
+        transition: background $ease;
+      }
+
+      // Single hue slider row
+      &__slider__row {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      &__slider {
+        -webkit-appearance: none;
+        appearance: none;
+        flex: 1;
+        height: 1.6rem;
+        border-radius: 10rem;
+        border: 0.2rem solid $black;
+        cursor: pointer;
+        outline: none;
+        // Full rainbow gradient
+        background: linear-gradient(
+          to right,
+          hsl(0, 70%, 45%),
+          hsl(30, 70%, 45%),
+          hsl(60, 70%, 45%),
+          hsl(90, 70%, 45%),
+          hsl(120, 70%, 45%),
+          hsl(150, 70%, 45%),
+          hsl(180, 70%, 45%),
+          hsl(210, 70%, 45%),
+          hsl(240, 70%, 45%),
+          hsl(270, 70%, 45%),
+          hsl(300, 70%, 45%),
+          hsl(330, 70%, 45%),
+          hsl(360, 70%, 45%)
+        );
+
+        &::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 2.4rem;
+          height: 2.4rem;
+          border-radius: 50%;
+          background: var(--thumb-color, #fff);
+          border: 0.25rem solid $black;
+          box-shadow: 0 0.2rem 0.6rem rgba($black, 0.35);
+          cursor: grab;
+          transition: transform 0.15s ease;
+
+          &:active {
+            cursor: grabbing;
+            transform: scale(1.18);
+          }
+        }
+
+        &::-moz-range-thumb {
+          width: 2.4rem;
+          height: 2.4rem;
+          border-radius: 50%;
+          background: var(--thumb-color, #fff);
+          border: 0.25rem solid $black;
+          cursor: grab;
+        }
+      }
+
+      // Swatches
+      &__swatches {
+        display: flex;
+        gap: 0.6rem;
+        flex-wrap: wrap;
+      }
+
+      &__swatch {
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 50%;
+        border: 0.2rem solid $black;
+        cursor: pointer;
+        padding: 0;
+        transition: all $ease;
+        flex-shrink: 0;
+
+        &:hover {
+          transform: scale(1.2);
+          box-shadow: 0 0.2rem 0.6rem rgba($black, 0.3);
+        }
+
+        &--active {
+          border-width: 0.3rem;
+          transform: scale(1.12);
+          box-shadow: 0 0 0 0.2rem rgba($black, 0.2);
+        }
+      }
+    }
+
+    // ── Responsive ────────────────────────────────────────────────────────────
+    @media (max-width: #{$screen-md-min}) {
+      &__preview {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1.4rem;
+      }
+
+      &__panel {
+        grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+        max-height: 18rem;
+      }
+    }
+  }
+}

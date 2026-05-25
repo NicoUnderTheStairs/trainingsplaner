@@ -688,3 +688,52 @@ $transition-slow: 250ms ease;
     flex-wrap: wrap;
   }
 }
+
+.profile__avatar__editor__dialog {
+  width: 92vw;
+  max-width: 95vw;
+  padding: 0;
+  overflow: hidden;
+  height: 90vh;
+  background-color: $secondary;
+
+  .dialog__header {
+    padding: 2rem 2.4rem 1.6rem;
+    border-bottom: 0.2rem solid $black;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .dialog__title {
+    font-size: 2rem;
+    font-weight: 800;
+    font-family: $font-family;
+    margin: 0;
+  }
+
+  .dialog__close {
+    width: 3.2rem;
+    height: 3.2rem;
+    border-radius: 50%;
+    border: 0.2rem solid $black;
+    background: transparent;
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background $ease;
+
+    &:hover {
+      background: $secondary;
+    }
+  }
+
+  // AvatarEditor lives directly inside — no extra padding needed
+  .avatar__editor {
+    border: none;
+    border-radius: 0;
+  }
+}

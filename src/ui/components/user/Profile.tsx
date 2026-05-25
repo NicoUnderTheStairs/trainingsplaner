@@ -10,44 +10,9 @@ import {
 import { getAuth } from "firebase/auth";
 import { doSignOut } from "../../../auth/auth";
 import Navigation from "../navigation/Navigation";
+import AvatarEditor from "../avatareditor/AvatarEditor";
 import type { UserProfile } from "../../../services/upload/registerUser";
 import db from "../../../firebase";
-
-// ─── Avatar options ───────────────────────────────────────────────────────────
-// Add or swap URLs freely — these are the preset images users can choose from.
-
-const AVATAR_OPTIONS = [
-  {
-    id: "wolf",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=eaar21agyawrafan",
-  },
-  { id: "fox", url: "https://www.h2.vbclimmattal.com/christina.png" },
-  { id: "bear", url: "https://www.h2.vbclimmattal.com/ale1.png" },
-  {
-    id: "eagle",
-    url: "https://www.h2.vbclimmattal.com/nico1.png",
-  },
-  {
-    id: "lynx",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Layfnx",
-  },
-  {
-    id: "shark",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Shhhbbgark",
-  },
-  {
-    id: "tiger",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Tigebxr",
-  },
-  {
-    id: "panther",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Pavnther",
-  },
-  {
-    id: "falcon",
-    url: "https://api.dicebear.com/8.x/adventurer/svg?seed=Falvcon",
-  },
-];
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -69,49 +34,6 @@ const RoleBadge = ({ role }: { role: string }) => (
   <span className={`profile__role profile__role--${role}`}>{role}</span>
 );
 
-// ─── Avatar picker dialog ─────────────────────────────────────────────────────
-
-interface AvatarPickerProps {
-  current: string | null;
-  onSelect: (url: string) => void;
-  onClose: () => void;
-}
-
-const AvatarPicker = ({ current, onSelect, onClose }: AvatarPickerProps) => (
-  <div className="dialog__overlay" onClick={onClose}>
-    <div
-      className="dialog profile__avatar__picker"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="dialog__header">
-        <h3 className="dialog__title">Choose your avatar</h3>
-        <button className="profile__avatar__picker__close" onClick={onClose}>
-          ×
-        </button>
-      </div>
-      <div className="profile__avatar__picker__grid">
-        {AVATAR_OPTIONS.map((avatar) => (
-          <button
-            key={avatar.id}
-            className={`profile__avatar__picker__option ${
-              current === avatar.url
-                ? "profile__avatar__picker__option--selected"
-                : ""
-            }`}
-            onClick={() => onSelect(avatar.url)}
-            title={avatar.id}
-          >
-            <img src={avatar.url} alt={avatar.id} />
-            {current === avatar.url && (
-              <div className="profile__avatar__picker__check">✓</div>
-            )}
-          </button>
-        ))}
-      </div>
-    </div>
-  </div>
-);
-
 // ─── Main component ────────────────────────────────────────────────────────────
 
 const Profile = () => {
@@ -126,8 +48,8 @@ const Profile = () => {
   const [saving, setSaving] = useState(false);
   const [editData, setEditData] = useState<Partial<UserProfile>>({});
 
-  // Avatar picker
-  const [avatarPickerOpen, setAvatarPickerOpen] = useState(false);
+  // Avatar editor
+  const [avatarEditorOpen, setAvatarEditorOpen] = useState(false);
 
   // Favourite counts (fetched from subcollections, not stored on profile)
   const [favouriteExerciseCount, setFavouriteExerciseCount] = useState(0);
@@ -193,18 +115,12 @@ const Profile = () => {
     }
   };
 
-  // ── Avatar select ────────────────────────────────────────────────────────
-  const handleAvatarSelect = async (url: string) => {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
-    try {
-      await updateDoc(doc(db, "users", userId), { profileImageUrl: url });
-      setProfile((prev) => (prev ? { ...prev, profileImageUrl: url } : prev));
-    } catch (e) {
-      console.error("Error updating avatar:", e);
-    } finally {
-      setAvatarPickerOpen(false);
-    }
+  // ── Avatar saved (called by AvatarEditor after Firestore write) ──────────
+  const handleAvatarSaved = (dataUrl: string) => {
+    // AvatarEditor already wrote profileImageUrl + avatarConfig to Firestore.
+    // Just update local state so the hero avatar updates instantly.
+    setProfile((prev) => (prev ? { ...prev, profileImageUrl: dataUrl } : prev));
+    setAvatarEditorOpen(false);
   };
 
   // ── Sign out ─────────────────────────────────────────────────────────────
@@ -243,7 +159,7 @@ const Profile = () => {
               )}
               <button
                 className="profile__avatar__change__btn"
-                onClick={() => setAvatarPickerOpen(true)}
+                onClick={() => setAvatarEditorOpen(true)}
                 title="Change avatar"
               >
                 <svg
@@ -373,15 +289,15 @@ const Profile = () => {
                     }
                   >
                     <option value="">— no team —</option>
+                    <option value="Herren 1">Herren 1</option>
+                    <option value="Herren 2">Herren 2</option>
                     <option value="Damen 1">Damen 1</option>
                     <option value="Damen 2">Damen 2</option>
                     <option value="Damen 3">Damen 3</option>
-                    <option value="Herren 1">Herren 1</option>
-                    <option value="Herren 2">Herren 2</option>
+                    <option value="HU23">HU23</option>
                     <option value="DU23/1">DU23/1</option>
                     <option value="DU23/2">DU23/2</option>
                     <option value="DU20/1">DU20/1</option>
-                    <option value="HU23">HU23</option>
                   </select>
                 ) : (
                   <span className="profile__card__value">
@@ -469,13 +385,32 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* ── Avatar picker dialog ── */}
-      {avatarPickerOpen && (
-        <AvatarPicker
-          current={profile.profileImageUrl ?? null}
-          onSelect={handleAvatarSelect}
-          onClose={() => setAvatarPickerOpen(false)}
-        />
+      {/* ── Avatar editor dialog ── */}
+      {avatarEditorOpen && (
+        <div
+          className="dialog__overlay"
+          onClick={() => setAvatarEditorOpen(false)}
+        >
+          <div
+            className="dialog profile__avatar__editor__dialog"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="dialog__header">
+              <h3 className="dialog__title">Customize your avatar</h3>
+              <button
+                className="dialog__close"
+                onClick={() => setAvatarEditorOpen(false)}
+              >
+                ×
+              </button>
+            </div>
+            <AvatarEditor
+              userId={auth.currentUser?.uid}
+              onSaved={handleAvatarSaved}
+              onClose={() => setAvatarEditorOpen(false)}
+            />
+          </div>
+        </div>
       )}
     </>
   );
