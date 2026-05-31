@@ -46,6 +46,7 @@ const App: React.FC = () => {
               path="/training-detail/:trainingId"
               element={<TrainingDetail />}
             />
+            <Route path="*" element={<Home />} />
           </>
         ) : (
           <>
