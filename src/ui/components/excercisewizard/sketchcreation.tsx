@@ -29,28 +29,29 @@ const SVG_WIDTH = 560;
 const SVG_HEIGHT = 440;
 
 const PLAYER_COLORS: Record<PlayerType, string> = {
-  attacker: "#E63C2F",
-  defender: "#3EC6D4",
-  setter: "#F5A623",
-  libero: "#4DB87A",
+  outside: "#E63C2F",
+  opposite: "#F5A623",
+  middleBlocker: "#4DB87A",
+  setter: "#3EC6D4",
+  libero: "#624DB8",
 };
 const PLAYER_LABELS: Record<PlayerType, string> = {
-  attacker: "A",
-  defender: "D",
+  outside: "OH",
+  opposite: "OP",
+  middleBlocker: "MB",
   setter: "S",
   libero: "L",
 };
 
 const OBJECT_COLORS: Record<ObjectType, string> = {
-  pylon: "#FF8C00", // orange
-  bench: "#8B5E3C", // brown
+  pylon: "#FF8C00",
+  bench: "#8B5E3C",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 
-// Extend SketchData serialisation to include objects
 const toSketchData = (
   players: Player[],
   arrows: Arrow[],
@@ -69,11 +70,32 @@ const fromSketchData = (
   objects: SketchObject[];
 } => {
   if (!sketch) return { players: [], arrows: [], objects: [] };
+
+  const rawPlayers = Object.entries(sketch.players ?? {}).map(([id, p]) => ({
+    id,
+    ...(p as any),
+  }));
+
+  // Legacy migration: old sketches used attacker/defender/setter/libero with
+  // different color semantics. Detect by checking for old-only type names.
+  const hasLegacy = rawPlayers.some(
+    (p) => p.type === "attacker" || p.type === "defender",
+  );
+  const LEGACY_MAP: Record<string, PlayerType> = {
+    attacker: "outside", // red → red (OH)
+    defender: "setter", // teal → teal (S)
+    setter: "opposite", // orange → orange (OP)
+    libero: "middleBlocker", // green → green (MB)
+  };
+  const players: Player[] = rawPlayers.map((p) => {
+    const newType = hasLegacy
+      ? ((LEGACY_MAP[p.type] ?? p.type) as PlayerType)
+      : (p.type as PlayerType);
+    return { ...p, type: newType, label: PLAYER_LABELS[newType] ?? p.label };
+  });
+
   return {
-    players: Object.entries(sketch.players ?? {}).map(([id, p]) => ({
-      id,
-      ...(p as any),
-    })),
+    players,
     arrows: Object.entries(sketch.arrows ?? {}).map(([id, a]) => ({
       id,
       ...(a as any),
@@ -132,7 +154,6 @@ const BenchShape = ({ selected }: { selected: boolean }) => (
       strokeWidth={1.5}
       rx={2}
     />
-    {/* legs */}
     <line
       x1={-11}
       y1={7}
@@ -237,7 +258,6 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
   const arrowRef = useRef<{ x1: number; y1: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
 
-  // Emit upward whenever canvas changes
   useEffect(() => {
     onChange({ sketch: toSketchData(players, arrows, objects) });
   }, [players, arrows, objects]);
@@ -399,7 +419,6 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
     commitDraftArrow();
   }, [commitDraftArrow]);
 
-  // Desktop DnD from palette
   const handleDrop = useCallback(
     (e: React.DragEvent) => {
       e.preventDefault();
@@ -419,13 +438,11 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
       e.preventDefault();
       const pt = fromTouchEvent(e);
 
-      // Pending player placement
       if (pendingPlayerType) {
         placePlayer(pt, pendingPlayerType);
         setPendingPlayerType(null);
         return;
       }
-      // Pending object placement
       if (pendingObjectType) {
         placeObject(pt, pendingObjectType);
         setPendingObjectType(null);
@@ -436,7 +453,6 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
         arrowRef.current = { x1: pt.x, y1: pt.y };
         setDraftArrow({ x1: pt.x, y1: pt.y, x2: pt.x, y2: pt.y });
       } else {
-        // Hit-test players first
         const hitPlayer = players.find((p) => {
           const dx = p.x - pt.x,
             dy = p.y - pt.y;
@@ -452,7 +468,6 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
           };
           return;
         }
-        // Hit-test objects
         const hitObject = objects.find((o) => {
           const dx = Math.abs(o.x - pt.x),
             dy = Math.abs(o.y - pt.y);
@@ -626,7 +641,6 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
             <h4 className="sketch__toolbar__label">Objects</h4>
           </div>
           <div className="sketch__toolbar__group--tools">
-            {/* Pylon */}
             <div
               className={`sketch__palette__object ${pendingObjectType === "pylon" ? "sketch__palette__object--active" : ""}`}
               draggable
@@ -637,7 +651,6 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
             >
               <PylonPalette active={pendingObjectType === "pylon"} />
             </div>
-            {/* Bench */}
             <div
               className={`sketch__palette__object ${pendingObjectType === "bench" ? "sketch__palette__object--active" : ""}`}
               draggable
@@ -678,7 +691,6 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
           </div>
         </div>
 
-        {/* Arrow style */}
         {tool === "arrow" && (
           <div className="sketch__toolbar__group">
             <h4 className="sketch__toolbar__label">Arrow style</h4>
@@ -753,7 +765,7 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
           stroke="black"
         />
 
-        {/* Objects (rendered below players so players appear on top) */}
+        {/* Objects */}
         {objects.map((obj) => (
           <g
             key={obj.id}

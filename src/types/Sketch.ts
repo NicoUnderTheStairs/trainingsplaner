@@ -1,6 +1,6 @@
 // src/types/Sketch.ts
 
-export type PlayerType = "attacker" | "defender" | "setter" | "libero";
+export type PlayerType = "outside" | "opposite" | "middleBlocker" | "setter" | "libero";
 export type ObjectType = "pylon" | "bench";
 
 export interface Player {

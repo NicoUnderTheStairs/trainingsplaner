@@ -14,6 +14,7 @@ export interface UserProfile {
   role: "coach" | "player" | "admin";
   team: string | null; // optional team name
   bio: string | null;
+  mobileMode?: "advanced" | "simple";
 }
 
 export const registerUser = async (

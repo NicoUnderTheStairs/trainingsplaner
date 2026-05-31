@@ -178,6 +178,15 @@
       }
     }
 
+    &--setting {
+      background-color: rgba($primary-7, 0.2);
+      border: 0.1rem solid $primary-7;
+
+      &--active {
+        background-color: rgba($primary-7, 1);
+      }
+    }
+
     &__option {
       display: flex;
       align-items: center;

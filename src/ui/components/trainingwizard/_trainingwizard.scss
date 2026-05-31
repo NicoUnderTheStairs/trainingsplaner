@@ -177,6 +177,15 @@
       }
     }
 
+    &--setting {
+      background-color: rgba($primary-7, 0.2);
+      border: 0.1rem solid $primary-7;
+
+      &--active {
+        background-color: rgba($primary-7, 1);
+      }
+    }
+
     &__option {
       display: flex;
       align-items: center;
@@ -242,6 +251,40 @@
         }
       }
 
+      &__reorder {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        flex-shrink: 0;
+        padding: 0 4px;
+
+        &__btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 2.8rem;
+          height: 2.4rem;
+          border: 0.15rem solid $gray-300;
+          border-radius: 0.5rem;
+          background: $white;
+          font-size: 1rem;
+          color: $gray-600;
+          cursor: pointer;
+          transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+          &:hover:not(:disabled) {
+            background: $secondary;
+            border-color: $black;
+            color: $black;
+          }
+
+          &:disabled {
+            opacity: 0.3;
+            cursor: default;
+          }
+        }
+      }
+
       &__name {
         min-width: 20rem;
 
@@ -277,6 +320,10 @@
         justify-content: center;
         align-items: center;
         font-size: 2.2rem !important;
+
+        &:hover {
+          transform: translateY(-50%) translate(-0.2rem, -0.2rem) !important;
+        }
       }
 
       & h3 {

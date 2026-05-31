@@ -172,7 +172,7 @@ const coloriseByIdPath = (svgText: string, color: string): string => {
   // This handles the case where fill is set on child <path> elements, overriding the group fill.
   result = result.replace(
     /(<g[^>]*id="Color"[^>]*>)([\s\S]*?)(<\/g>)/gi,
-    (openTag, inner, closeTag) => {
+    (_match, openTag, inner, closeTag) => {
       // Recolor the group tag fill attribute
       let updatedOpen = openTag;
       if (/fill="/i.test(updatedOpen)) {

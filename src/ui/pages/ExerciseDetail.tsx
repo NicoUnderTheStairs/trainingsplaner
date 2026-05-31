@@ -32,12 +32,18 @@ const AVAILABLE_TAGS = [
   "Block",
   "Reception",
   "Service",
+  "Setting",
 ];
 
 const SVG_W = 560;
 const SVG_H = 440;
 
-type PlayerType = "attacker" | "defender" | "setter" | "libero";
+type PlayerType =
+  | "outside"
+  | "opposite"
+  | "middleBlocker"
+  | "setter"
+  | "libero";
 type SketchTool = "select" | "arrow";
 type ObjectType = "pylon" | "bench";
 
@@ -64,14 +70,16 @@ interface SketchObject {
 }
 
 const PLAYER_COLORS: Record<PlayerType, string> = {
-  attacker: "#E63C2F",
-  defender: "#3EC6D4",
-  setter: "#F5A623",
-  libero: "#4DB87A",
+  outside: "#E63C2F",
+  opposite: "#F5A623",
+  middleBlocker: "#4DB87A",
+  setter: "#3EC6D4",
+  libero: "#624DB8",
 };
 const PLAYER_LABELS: Record<PlayerType, string> = {
-  attacker: "A",
-  defender: "D",
+  outside: "OH",
+  opposite: "OP",
+  middleBlocker: "MB",
   setter: "S",
   libero: "L",
 };
@@ -98,11 +106,32 @@ const fromSketchData = (
   sketch?: SketchData,
 ): { players: Player[]; arrows: Arrow[]; objects: SketchObject[] } => {
   if (!sketch) return { players: [], arrows: [], objects: [] };
+
+  const rawPlayers = Object.entries(sketch.players ?? {}).map(([id, p]) => ({
+    id,
+    ...(p as any),
+  }));
+
+  // Legacy migration: old sketches used attacker/defender/setter/libero with
+  // different color semantics. Detect by checking for old-only type names.
+  const hasLegacy = rawPlayers.some(
+    (p) => p.type === "attacker" || p.type === "defender",
+  );
+  const LEGACY_MAP: Record<string, PlayerType> = {
+    attacker: "outside", // red → red (OH)
+    defender: "setter", // teal → teal (S)
+    setter: "opposite", // orange → orange (OP)
+    libero: "middleBlocker", // green → green (MB)
+  };
+  const players: Player[] = rawPlayers.map((p) => {
+    const newType = hasLegacy
+      ? ((LEGACY_MAP[p.type] ?? p.type) as PlayerType)
+      : (p.type as PlayerType);
+    return { ...p, type: newType, label: PLAYER_LABELS[newType] ?? p.label };
+  });
+
   return {
-    players: Object.entries(sketch.players ?? {}).map(([id, p]) => ({
-      id,
-      ...(p as any),
-    })),
+    players,
     arrows: Object.entries(sketch.arrows ?? {}).map(([id, a]) => ({
       id,
       ...(a as any),
@@ -290,10 +319,13 @@ const SketchEditor = ({
 
   const fromMouse = (e: React.MouseEvent | MouseEvent) =>
     getPoint(e.clientX, e.clientY);
-  const fromTouch = (e: React.TouchEvent) => {
-    const t = e.touches[0] ?? e.changedTouches[0];
-    return getPoint(t.clientX, t.clientY);
-  };
+  const fromTouch = useCallback(
+    (e: React.TouchEvent) => {
+      const t = e.touches[0] ?? e.changedTouches[0];
+      return getPoint(t.clientX, t.clientY);
+    },
+    [getPoint],
+  );
 
   // ── Place helpers ──────────────────────────────────────────────────────────
   const placePlayer = (pt: { x: number; y: number }, type: PlayerType) => {
@@ -498,9 +530,33 @@ const SketchEditor = ({
         };
         return;
       }
+      // Hit-test arrows (point-to-segment distance)
+      const hitArrow = arrows.find((a) => {
+        const dx = a.x2 - a.x1,
+          dy = a.y2 - a.y1;
+        const lenSq = dx * dx + dy * dy;
+        if (lenSq === 0) return Math.hypot(pt.x - a.x1, pt.y - a.y1) < 18;
+        const t = Math.max(
+          0,
+          Math.min(1, ((pt.x - a.x1) * dx + (pt.y - a.y1) * dy) / lenSq),
+        );
+        return Math.hypot(pt.x - (a.x1 + t * dx), pt.y - (a.y1 + t * dy)) < 18;
+      });
+      if (hitArrow) {
+        setSelectedId(hitArrow.id);
+        return;
+      }
       setSelectedId(null);
     },
-    [tool, players, objects, pendingPlayerType, pendingObjectType, getPoint],
+    [
+      tool,
+      players,
+      objects,
+      arrows,
+      pendingPlayerType,
+      pendingObjectType,
+      fromTouch,
+    ],
   );
 
   const handleSVGTouchMove = useCallback(
@@ -527,25 +583,15 @@ const SketchEditor = ({
     typeof window !== "undefined" &&
     window.matchMedia("(pointer: coarse)").matches;
 
-  const handlePalettePlayer = (
-    type: PlayerType,
-    e: React.MouseEvent | React.TouchEvent,
-  ) => {
-    if (isCoarse()) {
-      e.preventDefault();
-      setPendingObjectType(null);
-      setPendingPlayerType((prev) => (prev === type ? null : type));
-    }
+  const handlePalettePlayer = (type: PlayerType) => {
+    if (!isCoarse()) return;
+    setPendingObjectType(null);
+    setPendingPlayerType((prev) => (prev === type ? null : type));
   };
-  const handlePaletteObject = (
-    type: ObjectType,
-    e: React.MouseEvent | React.TouchEvent,
-  ) => {
-    if (isCoarse()) {
-      e.preventDefault();
-      setPendingPlayerType(null);
-      setPendingObjectType((prev) => (prev === type ? null : type));
-    }
+  const handlePaletteObject = (type: ObjectType) => {
+    if (!isCoarse()) return;
+    setPendingPlayerType(null);
+    setPendingObjectType((prev) => (prev === type ? null : type));
   };
 
   // ── Delete ─────────────────────────────────────────────────────────────────
@@ -596,8 +642,7 @@ const SketchEditor = ({
               draggable
               title={type}
               onDragStart={(e) => e.dataTransfer.setData("playerType", type)}
-              onClick={(e) => handlePalettePlayer(type, e)}
-              onTouchStart={(e) => handlePalettePlayer(type, e)}
+              onClick={() => handlePalettePlayer(type)}
               style={{ background: PLAYER_COLORS[type] }}
             >
               {PLAYER_LABELS[type]}
@@ -613,8 +658,7 @@ const SketchEditor = ({
             draggable
             title="Pylon"
             onDragStart={(e) => e.dataTransfer.setData("objectType", "pylon")}
-            onClick={(e) => handlePaletteObject("pylon", e)}
-            onTouchStart={(e) => handlePaletteObject("pylon", e)}
+            onClick={() => handlePaletteObject("pylon")}
           >
             <PylonPalette active={pendingObjectType === "pylon"} />
           </div>
@@ -623,8 +667,7 @@ const SketchEditor = ({
             draggable
             title="Bench / elevated object"
             onDragStart={(e) => e.dataTransfer.setData("objectType", "bench")}
-            onClick={(e) => handlePaletteObject("bench", e)}
-            onTouchStart={(e) => handlePaletteObject("bench", e)}
+            onClick={() => handlePaletteObject("bench")}
           >
             <BenchPalette active={pendingObjectType === "bench"} />
           </div>
@@ -864,6 +907,14 @@ const SketchEditor = ({
     </div>
   );
 };
+
+const renderDescription = (text?: string) =>
+  text?.split("\n").map((line, i) => (
+    <span key={i}>
+      {line}
+      {i < text.split("\n").length - 1 && <br />}
+    </span>
+  ));
 
 // ─── Variant types ────────────────────────────────────────────────────────────
 
@@ -1149,7 +1200,7 @@ const ExerciseDetail = () => {
                   ) : (
                     exercise.description && (
                       <p className="exercisedetail__description">
-                        {exercise.description}
+                        {renderDescription(exercise.description)}
                       </p>
                     )
                   )}

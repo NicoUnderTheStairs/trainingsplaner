@@ -1,17 +1,28 @@
 import type { SketchData } from "../../../types/Sketch";
 
+// Support both new and legacy player type names for backward compat.
+// Old sketches stored attacker/defender in Firestore — render them with the
+// correct color (preserved) and new label so they look right without migration.
 const PLAYER_COLORS: Record<string, string> = {
+  outside: "#E63C2F",
+  opposite: "#F5A623",
+  middleBlocker: "#4DB87A",
+  setter: "#3EC6D4",
+  libero: "#624DB8",
+  // Legacy types (color-preserved)
   attacker: "#E63C2F",
   defender: "#3EC6D4",
-  setter: "#F5A623",
-  libero: "#4DB87A",
 };
 
 const PLAYER_LABELS: Record<string, string> = {
-  attacker: "A",
-  defender: "D",
+  outside: "OH",
+  opposite: "OP",
+  middleBlocker: "MB",
   setter: "S",
   libero: "L",
+  // Legacy types get new labels
+  attacker: "OH",
+  defender: "S",
 };
 
 const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
@@ -29,19 +40,6 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
       fill="none"
       preserveAspectRatio="xMidYMid meet"
     >
-      <defs>
-        <marker
-          id="thumb-arrow"
-          markerWidth="6"
-          markerHeight="6"
-          refX="3"
-          refY="3"
-          orient="auto"
-        >
-          <path d="M0,0 L0,6 L6,3 Z" fill="#1E1E1E" />
-        </marker>
-      </defs>
-
       {/* Court */}
       <path d="M560 0H0V440H560V0Z" fill="white" />
       <path
@@ -54,7 +52,7 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
         strokeWidth="1"
       />
 
-      {/* Objects (below players) */}
+      {/* Objects */}
       {objects.map(([id, obj]: [string, any]) => (
         <g key={id} transform={`translate(${obj.x}, ${obj.y})`}>
           {obj.type === "pylon" && (
@@ -101,7 +99,7 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
       ))}
 
       {/* Arrows */}
-      {arrows.map(([id, arrow]) => (
+      {arrows.map(([id, arrow]: [string, any]) => (
         <line
           key={id}
           x1={arrow.x1}
@@ -111,12 +109,11 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
           stroke="#1E1E1E"
           strokeWidth="2"
           strokeDasharray={arrow.style === "dashed" ? "6 4" : undefined}
-          markerEnd="url(#thumb-arrow)"
         />
       ))}
 
       {/* Players */}
-      {players.map(([id, player]) => (
+      {players.map(([id, player]: [string, any]) => (
         <g key={id} transform={`translate(${player.x}, ${player.y})`}>
           <circle r={11} fill={PLAYER_COLORS[player.type] ?? "#999"} />
           <text
@@ -125,7 +122,6 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
             fill="white"
             fontSize={11}
             fontWeight="bold"
-            fontFamily="Roboto, sans-serif"
           >
             {PLAYER_LABELS[player.type] ?? "?"}
           </text>

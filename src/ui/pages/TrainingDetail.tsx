@@ -82,17 +82,25 @@ const PlayerDisplay = ({ players }: { players: Players }) => {
 
 // ─── Sketch thumbnail (for add-exercise dialog) ───────────────────────────────
 
-const PLAYER_COLORS: Record<string, string> = {
+const SKETCH_PLAYER_COLORS: Record<string, string> = {
+  outside: "#E63C2F",
+  opposite: "#F5A623",
+  middleBlocker: "#4DB87A",
+  setter: "#3EC6D4",
+  libero: "#624DB8",
+  // Legacy backward compat (color-preserved mapping)
   attacker: "#E63C2F",
   defender: "#3EC6D4",
-  setter: "#F5A623",
-  libero: "#4DB87A",
 };
-const PLAYER_LABELS: Record<string, string> = {
-  attacker: "A",
-  defender: "D",
+const SKETCH_PLAYER_LABELS: Record<string, string> = {
+  outside: "OH",
+  opposite: "OP",
+  middleBlocker: "MB",
   setter: "S",
   libero: "L",
+  // Legacy types get new labels
+  attacker: "OH",
+  defender: "S",
 };
 
 const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
@@ -177,7 +185,7 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
       ))}
       {players.map(([id, player]: [string, any]) => (
         <g key={id} transform={`translate(${player.x}, ${player.y})`}>
-          <circle r={11} fill={PLAYER_COLORS[player.type] ?? "#999"} />
+          <circle r={11} fill={SKETCH_PLAYER_COLORS[player.type] ?? "#999"} />
           <text
             textAnchor="middle"
             dominantBaseline="central"
@@ -185,7 +193,7 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
             fontSize={11}
             fontWeight="bold"
           >
-            {PLAYER_LABELS[player.type] ?? "?"}
+            {SKETCH_PLAYER_LABELS[player.type] ?? "?"}
           </text>
         </g>
       ))}
@@ -449,6 +457,7 @@ const AVAILABLE_TAGS = [
   "Block",
   "Reception",
   "Service",
+  "Setting",
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -701,6 +710,14 @@ const ShareDialog = ({
   );
 };
 
+const renderDescription = (text?: string) =>
+  text?.split("\n").map((line, i) => (
+    <span key={i}>
+      {line}
+      {i < text.split("\n").length - 1 && <br />}
+    </span>
+  ));
+
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const TrainingDetail = () => {
@@ -723,6 +740,7 @@ const TrainingDetail = () => {
   // Edit exercises
   const [editingExercises, setEditingExercises] = useState(false);
   const [editExercises, setEditExercises] = useState<SelectedExercise[]>([]);
+  const [mobileMode, setMobileMode] = useState<"advanced" | "simple">("advanced");
   const [addOpen, setAddOpen] = useState(false);
 
   // Delete
@@ -764,6 +782,7 @@ const TrainingDetail = () => {
             data.userName ?? currentUser?.email?.split("@")[0] ?? "Someone",
           );
           setUserTeam(data.team ?? "");
+          setMobileMode(data.mobileMode ?? "advanced");
         }
       } catch {
         setSenderName(currentUser?.email?.split("@")[0] ?? "Someone");
@@ -869,6 +888,25 @@ const TrainingDetail = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  // ── Simple reorder (up/down buttons) ──────────────────────────────────────
+  const isSimpleMobile =
+    mobileMode === "simple" &&
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: coarse)").matches;
+
+  const moveExerciseUp = (idx: number) => {
+    if (idx === 0) return;
+    const arr = [...editExercises];
+    [arr[idx - 1], arr[idx]] = [arr[idx], arr[idx - 1]];
+    setEditExercises(arr);
+  };
+  const moveExerciseDown = (idx: number) => {
+    if (idx === editExercises.length - 1) return;
+    const arr = [...editExercises];
+    [arr[idx], arr[idx + 1]] = [arr[idx + 1], arr[idx]];
+    setEditExercises(arr);
   };
 
   // ── Drag reorder ───────────────────────────────────────────────────────────
@@ -1045,7 +1083,7 @@ const TrainingDetail = () => {
                       </h1>
                       {training.description && (
                         <p className="trainingdetail__description">
-                          {training.description}
+                          {renderDescription(training.description)}
                         </p>
                       )}
                       <div className="trainingdetail__tags">
@@ -1269,48 +1307,45 @@ const TrainingDetail = () => {
                         className={[
                           "trainingdetail__exercises__item",
                           "trainingdetail__exercises__item--edit",
-                          draggingIdx === index
+                          !isSimpleMobile && draggingIdx === index
                             ? "trainingdetail__exercises__item--dragging"
                             : "",
-                          dragOverIdx === index && draggingIdx !== index
+                          !isSimpleMobile && dragOverIdx === index && draggingIdx !== index
                             ? "trainingdetail__exercises__item--dragover"
                             : "",
                         ]
                           .filter(Boolean)
                           .join(" ")}
-                        draggable
-                        onDragStart={() => handleDragStart(index)}
-                        onDragEnter={() => handleDragEnter(index)}
-                        onDragEnd={handleDragEnd}
-                        onDragOver={(e) => e.preventDefault()}
+                        draggable={!isSimpleMobile}
+                        onDragStart={!isSimpleMobile ? () => handleDragStart(index) : undefined}
+                        onDragEnter={!isSimpleMobile ? () => handleDragEnter(index) : undefined}
+                        onDragEnd={!isSimpleMobile ? handleDragEnd : undefined}
+                        onDragOver={!isSimpleMobile ? (e) => e.preventDefault() : undefined}
                       >
-                        <div className="trainingdetail__exercises__item__handle">
-                          <svg
-                            width="14"
-                            height="12"
-                            viewBox="0 0 14 12"
-                            fill="none"
-                          >
-                            <path
-                              d="M1 1H13"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                            />
-                            <path
-                              d="M1 6H13"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                            />
-                            <path
-                              d="M1 11H13"
-                              stroke="currentColor"
-                              strokeWidth="1.8"
-                              strokeLinecap="round"
-                            />
-                          </svg>
-                        </div>
+                        {isSimpleMobile ? (
+                          <div className="trainingdetail__exercises__item__reorder">
+                            <button
+                              className="trainingdetail__exercises__item__reorder__btn"
+                              onClick={() => moveExerciseUp(index)}
+                              disabled={index === 0}
+                              aria-label="Move up"
+                            >▲</button>
+                            <button
+                              className="trainingdetail__exercises__item__reorder__btn"
+                              onClick={() => moveExerciseDown(index)}
+                              disabled={index === editExercises.length - 1}
+                              aria-label="Move down"
+                            >▼</button>
+                          </div>
+                        ) : (
+                          <div className="trainingdetail__exercises__item__handle">
+                            <svg width="14" height="12" viewBox="0 0 14 12" fill="none">
+                              <path d="M1 1H13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                              <path d="M1 6H13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                              <path d="M1 11H13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                            </svg>
+                          </div>
+                        )}
                         <span className="trainingdetail__exercises__item__index">
                           {index + 1}
                         </span>

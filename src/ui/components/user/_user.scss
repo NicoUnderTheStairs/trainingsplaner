@@ -319,6 +319,54 @@ $transition-slow: 250ms ease;
   }
 }
 
+// ─── Mobile mode toggle ───────────────────────────────────────────────────────
+
+.profile__mobilemode {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.8rem;
+
+  &__btn {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.3rem;
+    padding: 1rem 1.2rem;
+    border: 0.2rem solid $border;
+    border-radius: 1rem;
+    background: $white;
+    cursor: pointer;
+    text-align: left;
+    transition: border-color $transition, background $transition, box-shadow $transition;
+
+    strong {
+      font-size: 1.4rem;
+      font-family: inherit;
+      font-weight: 700;
+      color: $text;
+    }
+
+    span {
+      font-size: 1.2rem;
+      font-family: inherit;
+      color: $text-muted;
+    }
+
+    &:hover {
+      border-color: $text;
+    }
+
+    &--active {
+      border-color: $text;
+      background: $secondary;
+      box-shadow: 0.3rem 0.3rem 0 $text;
+
+      strong { color: $text; }
+    }
+  }
+}
+
 // ─── Quick links ──────────────────────────────────────────────────────────────
 
 .profile__quicklink {

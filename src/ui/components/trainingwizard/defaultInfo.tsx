@@ -20,6 +20,7 @@ const AVAILABLE_TAGS = [
   "Block",
   "Reception",
   "Service",
+  "Setting",
 ];
 
 const DefaultInfo: React.FC<Props> = ({

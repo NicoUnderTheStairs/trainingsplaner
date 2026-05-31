@@ -11,7 +11,7 @@ import type { Exercise } from "../../../types/Exercise";
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const AVAILABLE_TAGS = [
-  "Warmup", "Defense", "Attack", "Block", "Reception", "Service",
+  "Warmup", "Defense", "Attack", "Block", "Reception", "Service", "Setting",
 ];
 const DIFFICULTIES = [1, 2, 3, 4, 5];
 

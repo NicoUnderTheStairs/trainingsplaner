@@ -10,4 +10,5 @@ export interface Exercise {
   date: string;
   team: string[];
   sketch: SketchData;
+  sourceId?: string;
 }

@@ -328,6 +328,40 @@ const Profile = () => {
               </div>
             </div>
 
+            {/* Mobile settings */}
+            <div className="profile__card">
+              <h3 className="profile__card__title">Mobile settings</h3>
+              <div className="profile__card__row">
+                <span className="profile__card__label">Reorder mode</span>
+              </div>
+              <div className="profile__mobilemode">
+                <button
+                  className={`profile__mobilemode__btn${(profile.mobileMode ?? "advanced") === "advanced" ? " profile__mobilemode__btn--active" : ""}`}
+                  onClick={async () => {
+                    const userId = auth.currentUser?.uid;
+                    if (!userId) return;
+                    await updateDoc(doc(db, "users", userId), { mobileMode: "advanced" });
+                    setProfile((p) => p ? { ...p, mobileMode: "advanced" } : p);
+                  }}
+                >
+                  <strong>Advanced</strong>
+                  <span>Drag &amp; drop to reorder</span>
+                </button>
+                <button
+                  className={`profile__mobilemode__btn${(profile.mobileMode ?? "advanced") === "simple" ? " profile__mobilemode__btn--active" : ""}`}
+                  onClick={async () => {
+                    const userId = auth.currentUser?.uid;
+                    if (!userId) return;
+                    await updateDoc(doc(db, "users", userId), { mobileMode: "simple" });
+                    setProfile((p) => p ? { ...p, mobileMode: "simple" } : p);
+                  }}
+                >
+                  <strong>Simple</strong>
+                  <span>Up / down buttons to reorder</span>
+                </button>
+              </div>
+            </div>
+
             {/* Activity */}
             <div className="profile__card">
               <h3 className="profile__card__title">Activity</h3>

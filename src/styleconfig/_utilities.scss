@@ -291,4 +291,13 @@
       background-color: rgba($primary-6, 1);
     }
   }
+
+  &--setting {
+    background-color: rgba(#e91e8c, 0.2);
+    border: 0.1rem solid #e91e8c;
+
+    &--active {
+      background-color: rgba(#e91e8c, 1);
+    }
+  }
 }

@@ -14,6 +14,7 @@ const AVAILABLE_TAGS = [
   "Block",
   "Reception",
   "Service",
+  "Setting",
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

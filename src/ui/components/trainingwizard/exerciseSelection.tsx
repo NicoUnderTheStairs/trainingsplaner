@@ -123,6 +123,25 @@ const ExerciseSelection: React.FC<Props> = ({
     return matchesSearch && matchesTag;
   });
 
+  // ── Simple reorder (up/down buttons) ────────────────────────────────────
+  const isSimpleMobile =
+    (userData as any)?.mobileMode === "simple" &&
+    typeof window !== "undefined" &&
+    window.matchMedia("(pointer: coarse)").matches;
+
+  const moveUp = (index: number) => {
+    if (index === 0) return;
+    const arr = [...selectedExercises];
+    [arr[index - 1], arr[index]] = [arr[index], arr[index - 1]];
+    onChange({ selectedExercises: arr });
+  };
+  const moveDown = (index: number) => {
+    if (index === selectedExercises.length - 1) return;
+    const arr = [...selectedExercises];
+    [arr[index], arr[index + 1]] = [arr[index + 1], arr[index]];
+    onChange({ selectedExercises: arr });
+  };
+
   // ── Drag handlers ────────────────────────────────────────────────────────
   const handleDragStart = (index: number) => {
     dragIndex.current = index;
@@ -247,28 +266,37 @@ const ExerciseSelection: React.FC<Props> = ({
         {selectedExercises.map((sel, index) => (
           <div
             key={sel.exerciseId}
-            className={`exerciseSelection__selected__item ${
-              draggingIndex === index
-                ? "exerciseSelection__selected__item--dragging"
-                : ""
-            } ${
-              dragOverIdx === index && draggingIndex !== index
-                ? "exerciseSelection__selected__item--dragover"
-                : ""
-            }`}
-            draggable
-            onDragStart={() => handleDragStart(index)}
-            onDragEnter={() => handleDragEnter(index)}
-            onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
+            className={[
+              "exerciseSelection__selected__item",
+              !isSimpleMobile && draggingIndex === index ? "exerciseSelection__selected__item--dragging" : "",
+              !isSimpleMobile && dragOverIdx === index && draggingIndex !== index ? "exerciseSelection__selected__item--dragover" : "",
+            ].filter(Boolean).join(" ")}
+            draggable={!isSimpleMobile}
+            onDragStart={!isSimpleMobile ? () => handleDragStart(index) : undefined}
+            onDragEnter={!isSimpleMobile ? () => handleDragEnter(index) : undefined}
+            onDragEnd={!isSimpleMobile ? handleDragEnd : undefined}
+            onDragOver={!isSimpleMobile ? handleDragOver : undefined}
           >
-            {/* Drag handle — only this triggers the grab cursor */}
-            <div
-              className="exerciseSelection__selected__item__handle"
-              title="Drag to reorder"
-            >
-              <DragHandleIcon />
-            </div>
+            {isSimpleMobile ? (
+              <div className="exerciseSelection__selected__item__reorder">
+                <button
+                  className="exerciseSelection__selected__item__reorder__btn"
+                  onClick={() => moveUp(index)}
+                  disabled={index === 0}
+                  aria-label="Move up"
+                >▲</button>
+                <button
+                  className="exerciseSelection__selected__item__reorder__btn"
+                  onClick={() => moveDown(index)}
+                  disabled={index === selectedExercises.length - 1}
+                  aria-label="Move down"
+                >▼</button>
+              </div>
+            ) : (
+              <div className="exerciseSelection__selected__item__handle" title="Drag to reorder">
+                <DragHandleIcon />
+              </div>
+            )}
 
             <h3 className="exerciseSelection__selected__item__name">
               {sel.title}

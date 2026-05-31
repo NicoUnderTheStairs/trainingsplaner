@@ -71,12 +71,6 @@
     overflow: hidden;
     margin-bottom: 4rem;
 
-    &__accent {
-      width: 1rem;
-      flex-shrink: 0;
-      background-color: $primary-5;
-    }
-
     &__body {
       flex: 1;
       padding: 2.8rem 3.2rem;
@@ -99,6 +93,7 @@
 
     &__actions {
       display: flex;
+      flex-wrap: wrap;
       flex-direction: column;
       gap: 1.2rem;
       flex-shrink: 0;
@@ -552,6 +547,39 @@
         &:active { cursor: grabbing; }
       }
 
+      &__reorder {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+        flex-shrink: 0;
+
+        &__btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 2.8rem;
+          height: 2.4rem;
+          border: 0.15rem solid $gray-300;
+          border-radius: 0.5rem;
+          background: $white;
+          font-size: 1rem;
+          color: $gray-600;
+          cursor: pointer;
+          transition: background $ease, border-color $ease, color $ease;
+
+          &:hover:not(:disabled) {
+            background: $secondary;
+            border-color: $black;
+            color: $black;
+          }
+
+          &:disabled {
+            opacity: 0.3;
+            cursor: default;
+          }
+        }
+      }
+
       &__index {
         font-size: 1.6rem;
         font-weight: 900;
@@ -698,7 +726,6 @@
 
     &__header {
       &__body { padding: 2rem 1.6rem; }
-      &__accent { width: 0.6rem; }
     }
   }
 
