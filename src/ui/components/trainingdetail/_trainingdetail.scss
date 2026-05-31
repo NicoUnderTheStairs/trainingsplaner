@@ -71,6 +71,12 @@
     overflow: hidden;
     margin-bottom: 4rem;
 
+    &__accent {
+      width: 1rem;
+      flex-shrink: 0;
+      background-color: $primary-5;
+    }
+
     &__body {
       flex: 1;
       padding: 2.8rem 3.2rem;
@@ -98,7 +104,6 @@
       flex-shrink: 0;
       align-items: stretch;
       min-width: 15rem;
-      flex-wrap: wrap;
 
       .btn__wired,
       .btn__primary {
@@ -185,9 +190,7 @@
       color: $black;
       background-color: $secondary;
       outline: none;
-      transition:
-        border-color $ease,
-        box-shadow $ease;
+      transition: border-color $ease, box-shadow $ease;
       display: block;
 
       &:focus {
@@ -195,9 +198,7 @@
         box-shadow: 0.2rem 0.2rem 0 $black;
       }
 
-      &::placeholder {
-        color: $gray-400;
-      }
+      &::placeholder { color: $gray-400; }
 
       &--title {
         font-size: 3.2rem;
@@ -290,9 +291,7 @@
       border-radius: 5.2rem;
       transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
-      &--over {
-        background-color: $primary-3;
-      }
+      &--over { background-color: $primary-3; }
     }
 
     &__label {
@@ -302,14 +301,10 @@
       color: $black;
       white-space: nowrap;
 
-      &--over {
-        color: $primary-3;
-      }
+      &--over { color: $primary-3; }
     }
 
-    &__over {
-      font-weight: 400;
-    }
+    &__over { font-weight: 400; }
   }
 
   // ── Players section ───────────────────────────────────────────────────────
@@ -388,7 +383,7 @@
       }
 
       &__label {
-        font-size: 1.4rem;
+        font-size: 1.1rem;
         font-weight: 600;
         color: $black;
         font-family: $font-family;
@@ -416,7 +411,7 @@
       }
 
       &__label {
-        font-size: 1.4rem;
+        font-size: 1.1rem;
         font-weight: 600;
         color: rgba($white, 0.6);
         text-transform: uppercase;
@@ -431,18 +426,28 @@
     }
 
     @media (max-width: #{$screen-md-min}) {
-      &__total {
-        margin-left: 0;
-      }
-      &__grid {
-        gap: 0.8rem;
-      }
+      &__total { margin-left: 0; }
+      &__grid  { gap: 0.8rem; }
     }
   }
 
   // ── Exercises section ─────────────────────────────────────────────────────
 
   &__exercises {
+    &__add {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.8rem;
+      width: 100%;
+      margin-top: 0.4rem;
+      padding: 1.2rem;
+      border-style: dashed !important;
+      font-size: 1.5rem;
+      font-weight: 700;
+      font-family: $font-family;
+    }
+
     &__header {
       display: flex;
       justify-content: space-between;
@@ -501,9 +506,7 @@
       position: relative;
       color: $black;
       text-decoration: none;
-      transition:
-        transform $ease,
-        box-shadow $ease;
+      transition: transform $ease, box-shadow $ease;
 
       &:not(&--edit):hover {
         transform: translate(-0.4rem, -0.4rem);
@@ -543,17 +546,10 @@
         flex-shrink: 0;
         padding: 0.4rem;
         border-radius: 0.6rem;
-        transition:
-          color $ease,
-          background $ease;
+        transition: color $ease, background $ease;
 
-        &:hover {
-          color: $black;
-          background-color: $secondary;
-        }
-        &:active {
-          cursor: grabbing;
-        }
+        &:hover { color: $black; background-color: $secondary; }
+        &:active { cursor: grabbing; }
       }
 
       &__index {
@@ -607,15 +603,10 @@
           padding: 0.2rem 0;
           transition: border-color $ease;
 
-          &:focus {
-            border-bottom-color: $primary-5;
-          }
+          &:focus { border-bottom-color: $primary-5; }
 
           &::-webkit-outer-spin-button,
-          &::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-          }
+          &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
         }
 
         & span {
@@ -629,9 +620,7 @@
       &__arrow {
         color: $gray-400;
         flex-shrink: 0;
-        transition:
-          transform $ease,
-          color $ease;
+        transition: transform $ease, color $ease;
       }
 
       &__remove {
@@ -655,11 +644,7 @@
         padding: 0;
         transition: all $ease;
 
-        &:hover {
-          background-color: $error;
-          border-color: $error;
-          color: $white;
-        }
+        &:hover { background-color: $error; border-color: $error; color: $white; }
       }
     }
   }
@@ -667,99 +652,65 @@
   // ── Responsive ────────────────────────────────────────────────────────────
 
   @media (max-width: #{$screen-xl-min}) {
-    &__inner {
-      padding: 0 4.8rem;
-    }
+    &__inner { padding: 0 4.8rem; }
   }
 
   @media (max-width: #{$screen-lg-min}) {
-    &__inner {
-      padding: 0 2.4rem;
-    }
+    &__inner { padding: 0 2.4rem; }
 
     &__header {
-      &__main {
-        flex-direction: column;
-        gap: 2.4rem;
-      }
+      &__main { flex-direction: column; gap: 2.4rem; }
 
       &__actions {
         flex-direction: row;
         min-width: unset;
         width: 100%;
 
-        .trainingdetail__btn,
-        .btn__wired,
-        .btn__primary {
+        .trainingdetail__btn, .btn__wired, .btn__primary {
           flex: 1;
           justify-content: center;
         }
       }
     }
 
-    &__title {
-      font-size: 3.6rem;
-    }
+    &__title { font-size: 3.6rem; }
 
     &__exercises__header {
       flex-direction: column;
       align-items: flex-start;
       gap: 1.6rem;
 
-      &__actions {
-        width: 100%;
-        justify-content: flex-end;
-      }
+      &__actions { width: 100%; justify-content: flex-end; }
     }
   }
 
   @media (max-width: #{$screen-md-min}) {
-    &__inner {
-      padding: 0 1.6rem;
-    }
-    &__title {
-      font-size: 2.8rem;
-    }
+    &__inner { padding: 0 1.6rem; }
+    &__title { font-size: 2.8rem; }
 
     &__exercises__item {
       &:not(&--edit):hover {
         transform: translate(-0.2rem, -0.2rem);
         box-shadow: 0.4rem 0.4rem 0 $black;
       }
-      &__title {
-        font-size: 1.8rem;
-      }
+      &__title { font-size: 1.8rem; }
     }
 
     &__header {
-      &__body {
-        padding: 2rem 1.6rem;
-      }
+      &__body { padding: 2rem 1.6rem; }
+      &__accent { width: 0.6rem; }
     }
   }
 
   @media (max-width: #{$screen-sm-min}) {
-    &__inner {
-      padding: 0 1.2rem;
-    }
+    &__inner { padding: 0 1.2rem; }
 
     &__exercises__item {
-      flex-wrap: wrap;
-      &__title {
-        order: 2;
-        flex-basis: 100%;
-        font-size: 1.8rem;
-      }
-      &__index {
-        order: 1;
-      }
-      &__duration__pill,
-      &__duration {
-        order: 3;
-      }
-      &__arrow {
-        order: 4;
-      }
+      // flex-wrap: wrap;
+      &__title { order: 2; flex-basis: 100%; font-size: 1.8rem; }
+      &__index { order: 1; }
+      &__duration__pill, &__duration { order: 3; }
+      &__arrow { order: 4; }
     }
   }
 }
@@ -793,13 +744,8 @@
   padding-right: 0.4rem;
 
   // Thin scrollbar
-  &::-webkit-scrollbar {
-    width: 0.4rem;
-  }
-  &::-webkit-scrollbar-thumb {
-    background: $primary-1;
-    border-radius: 1rem;
-  }
+  &::-webkit-scrollbar { width: 0.4rem; }
+  &::-webkit-scrollbar-thumb { background: $primary-1; border-radius: 1rem; }
 }
 
 .share__user {
@@ -974,9 +920,7 @@
     line-height: 1.6;
     margin: 0 0 2.4rem 0;
 
-    strong {
-      color: $black;
-    }
+    strong { color: $black; }
   }
 
   &__actions {
@@ -1008,30 +952,15 @@
     box-shadow: 0.3rem 0.3rem 0 darken($error, 15%);
   }
 
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
-  }
+  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
 }
 
 @keyframes dialog-overlay-in {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 @keyframes dialog-in {
-  from {
-    opacity: 0;
-    transform: translateY(1.2rem) scale(0.97);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(1.2rem) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }

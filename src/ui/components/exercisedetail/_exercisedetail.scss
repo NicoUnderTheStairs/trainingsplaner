@@ -56,12 +56,13 @@
       }
     }
 
+    // Filled heart when favourited
     &--favourite {
       &--active {
         color: $primary-3; // red
         border-color: $primary-3;
         background-color: rgba($primary-3, 0.08);
- 
+
         &:hover {
           background-color: rgba($primary-3, 0.15);
           box-shadow: 0.3rem 0.3rem 0 darken($primary-3, 10%);
@@ -133,7 +134,7 @@
     }
 
     &__sep {
-      color: $black;
+      color: $gray-400;
       font-size: 1.4rem;
     }
 
@@ -168,7 +169,7 @@
   &__description {
     font-size: 2rem;
     font-family: $font-family;
-    color: $black;
+    color: $gray-700;
     margin: 0;
     line-height: 1.6;
   }
@@ -201,7 +202,7 @@
   &__edit {
     &__input {
       width: 100%;
-      border: 0.2rem solid $black;
+      border: 0.2rem solid $gray-300;
       border-radius: 1rem;
       padding: 1rem 1.4rem;
       font-family: $font-family;
@@ -209,9 +210,7 @@
       color: $black;
       background-color: $secondary;
       outline: none;
-      transition:
-        border-color $ease,
-        box-shadow $ease;
+      transition: border-color $ease, box-shadow $ease;
       display: block;
 
       &:focus {
@@ -220,7 +219,7 @@
       }
 
       &::placeholder {
-        color: $black;
+        color: $gray-400;
       }
 
       &--title {
@@ -249,7 +248,7 @@
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.15rem;
-        color: $black;
+        color: $gray-600;
         font-family: $font-family;
       }
 
@@ -312,7 +311,7 @@
     top: calc(8.3rem + 2.4rem);
     display: flex;
     flex-direction: column;
-    gap: 2rem;
+    gap: 1.2rem;
   }
 
   &__sketch {
@@ -321,9 +320,7 @@
     overflow: hidden;
     background-color: $secondary;
     aspect-ratio: 560 / 440;
-    transition:
-      box-shadow $ease,
-      transform $ease;
+    transition: box-shadow $ease, transform $ease;
 
     &:hover {
       transform: translate(-0.2rem, -0.2rem);
@@ -346,7 +343,7 @@
 
       & p {
         font-size: 1.8rem;
-        color: $black;
+        color: $gray-400;
         font-family: $font-family;
       }
     }
@@ -383,7 +380,7 @@
     gap: 1.6rem;
     flex-wrap: wrap;
     padding: 1.2rem 1.6rem;
-    background-color: $white;
+    background-color: $secondary;
     border-bottom: 0.2rem solid $black;
 
     &__group {
@@ -401,7 +398,7 @@
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.15rem;
-      color: $black;
+      color: $gray-600;
       font-family: $font-family;
       white-space: nowrap;
     }
@@ -415,23 +412,59 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.6rem;
+    font-size: 1.3rem;
     font-weight: 900;
     font-family: $font-family;
     color: $white;
     cursor: grab;
     user-select: none;
-    transition:
-      transform $ease,
-      box-shadow $ease;
+    transition: transform $ease, box-shadow $ease;
 
     &:hover {
       transform: translate(-0.1rem, -0.1rem);
       box-shadow: 0.2rem 0.2rem 0 $black;
     }
 
-    &:active {
-      cursor: grabbing;
+    &:active { cursor: grabbing; }
+
+    // Selected for tap-to-place (mobile)
+    &--active {
+      transform: translate(-0.1rem, -0.1rem);
+      box-shadow: 0.2rem 0.2rem 0 $black;
+      outline: 0.3rem solid $primary-1;
+      outline-offset: 0.2rem;
+    }
+  }
+
+  .sketch__palette__object {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 3.6rem;
+    height: 3.2rem;
+    padding: 0 0.4rem;
+    border-radius: 0.8rem;
+    border: 0.2rem solid $black;
+    background-color: $white;
+    cursor: grab;
+    user-select: none;
+    transition: transform $ease, box-shadow $ease;
+
+    & svg { display: block; pointer-events: none; }
+
+    &:hover {
+      transform: translate(-0.1rem, -0.1rem);
+      box-shadow: 0.2rem 0.2rem 0 $black;
+    }
+
+    &:active { cursor: grabbing; }
+
+    // Selected for tap-to-place (mobile)
+    &--active {
+      transform: translate(-0.1rem, -0.1rem);
+      box-shadow: 0.2rem 0.2rem 0 $black;
+      outline: 0.3rem solid $primary-1;
+      outline-offset: 0.2rem;
     }
   }
 
@@ -478,37 +511,35 @@
     height: auto;
     touch-action: none;
 
-    &--tool-select {
-      cursor: default;
-    }
-    &--tool-arrow {
-      cursor: crosshair;
-    }
+    &--tool-select { cursor: default; }
+    &--tool-arrow  { cursor: crosshair; }
+    &--placing     { cursor: copy; }
   }
 
   .sketch__hint {
     padding: 0.8rem 1.6rem;
-    font-size: 1.6rem;
-    color: $black;
+    font-size: 1.3rem;
+    color: $gray-500;
     font-family: $font-family;
-    background-color: $white;
-    text-align: center;
-    // border-top: 0.1rem solid $black;
+    background-color: $secondary;
+    border-top: 0.1rem solid $gray-200;
     margin: 0;
+
+    &--pending {
+      color: $black;
+      font-weight: 700;
+      background-color: rgba($primary-1, 0.25);
+    }
   }
 
   // ── Responsive ────────────────────────────────────────────────────────────
 
   @media (max-width: #{$screen-xl-min}) {
-    &__inner {
-      padding: 0 4.8rem;
-    }
+    &__inner { padding: 0 4.8rem; }
   }
 
   @media (max-width: #{$screen-lg-min}) {
-    &__inner {
-      padding: 0 2.4rem;
-    }
+    &__inner { padding: 0 2.4rem; }
 
     &__layout {
       grid-template-columns: 1fr;
@@ -537,13 +568,9 @@
   }
 
   @media (max-width: #{$screen-md-min}) {
-    &__inner {
-      padding: 0 1.6rem;
-    }
+    &__inner { padding: 0 1.6rem; }
 
-    &__title {
-      font-size: 2.8rem;
-    }
+    &__title { font-size: 2.8rem; }
 
     &__header__body {
       padding: 2rem 1.6rem;
@@ -551,12 +578,8 @@
   }
 
   @media (max-width: #{$screen-sm-min}) {
-    &__inner {
-      padding: 0 1.2rem;
-    }
-    &__title {
-      font-size: 2.4rem;
-    }
+    &__inner { padding: 0 1.2rem; }
+    &__title { font-size: 2.4rem; }
   }
 
   // ── Variants section ──────────────────────────────────────────────────────
@@ -568,11 +591,11 @@
     overflow: hidden;
 
     &__title {
-      font-size: 1.6rem;
+      font-size: 1.2rem;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.15rem;
-      color: $black;
+      color: $gray-600;
       font-family: $font-family;
       margin: 0;
       padding: 1.6rem 2rem 0;
@@ -597,18 +620,18 @@
     }
 
     &__hint {
-      font-size: 1.6rem;
-      color: $black;
+      font-size: 1.3rem;
+      color: $gray-500;
       font-family: $font-family;
       margin: 0.4rem 0 0;
       padding: 0 2rem 1.6rem;
-      border-bottom: 0.2rem solid $black;
+      border-bottom: 0.2rem solid $gray-200;
     }
 
     &__loading {
       padding: 1.6rem 2rem;
       font-size: 1.4rem;
-      color: $black;
+      color: $gray-500;
       font-family: $font-family;
     }
 
@@ -623,14 +646,12 @@
       justify-content: space-between;
       gap: 1.6rem;
       padding: 1.4rem 2rem;
-      border-bottom: 0.1rem solid $black;
+      border-bottom: 0.1rem solid $gray-200;
       text-decoration: none;
       color: $black;
       transition: all $ease;
 
-      &:last-child {
-        border-bottom: none;
-      }
+      &:last-child { border-bottom: none; }
 
       &:hover {
         background-color: $secondary;
@@ -666,7 +687,7 @@
         align-items: center;
         gap: 1.2rem;
         flex-shrink: 0;
-        color: $black;
+        color: $gray-400;
 
         .difficulty {
           display: flex;

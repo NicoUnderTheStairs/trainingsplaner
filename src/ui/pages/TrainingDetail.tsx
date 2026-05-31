@@ -7,6 +7,8 @@ import {
   deleteDoc,
   updateDoc,
   setDoc,
+  query,
+  where,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useNavigate, useParams, Link } from "react-router-dom";
@@ -15,6 +17,7 @@ import type { Training } from "../../types/Training";
 import type { SelectedExercise } from "../components/trainingwizard/exerciseSelection";
 import type { Players } from "../components/trainingwizard/playerSelection";
 import type { UserProfile } from "../../services/upload/registerUser";
+import type { SketchData } from "../../types/Sketch";
 import { notifyTrainingShared } from "../../services/notifications/notifications";
 import db from "../../firebase";
 
@@ -72,6 +75,366 @@ const PlayerDisplay = ({ players }: { players: Players }) => {
       <div className="trainingdetail__players__total">
         <span className="trainingdetail__players__total__num">{total}</span>
         <span className="trainingdetail__players__total__label">Total</span>
+      </div>
+    </div>
+  );
+};
+
+// ─── Sketch thumbnail (for add-exercise dialog) ───────────────────────────────
+
+const PLAYER_COLORS: Record<string, string> = {
+  attacker: "#E63C2F",
+  defender: "#3EC6D4",
+  setter: "#F5A623",
+  libero: "#4DB87A",
+};
+const PLAYER_LABELS: Record<string, string> = {
+  attacker: "A",
+  defender: "D",
+  setter: "S",
+  libero: "L",
+};
+
+const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
+  const players = sketch?.players ? Object.entries(sketch.players) : [];
+  const arrows = sketch?.arrows ? Object.entries(sketch.arrows) : [];
+  const objects = (sketch as any)?.objects
+    ? Object.entries((sketch as any).objects)
+    : [];
+  return (
+    <svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 560 440"
+      fill="none"
+      preserveAspectRatio="xMidYMid meet"
+    >
+      <path d="M560 0H0V440H560V0Z" fill="white" />
+      <path
+        d="M363.814 77H496.261V365H279.5L280 77H363.814ZM280 77L279.5 365H194.203V77H280ZM194.203 77V365H62.9062V77H194.203Z"
+        fill="#F4EDE0"
+      />
+      <path
+        d="M363.814 77V365M363.814 77H496.261V365H279.5M363.814 77H280M279.5 365L280 77M279.5 365H194.203M280 77H194.203M194.203 365V77M194.203 365H62.9062V77H194.203"
+        stroke="black"
+        strokeWidth="1"
+      />
+      {objects.map(([id, obj]: [string, any]) => (
+        <g key={id} transform={`translate(${obj.x}, ${obj.y})`}>
+          {obj.type === "pylon" && (
+            <polygon
+              points="0,-13 11,8 -11,8"
+              fill="#FF8C00"
+              stroke="#1E1E1E"
+              strokeWidth={1.5}
+            />
+          )}
+          {obj.type === "bench" && (
+            <>
+              <rect
+                x={-15}
+                y={-7}
+                width={30}
+                height={14}
+                fill="#8B5E3C"
+                stroke="#1E1E1E"
+                strokeWidth={1.5}
+                rx={2}
+              />
+              <line
+                x1={-11}
+                y1={7}
+                x2={-11}
+                y2={12}
+                stroke="#1E1E1E"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+              />
+              <line
+                x1={11}
+                y1={7}
+                x2={11}
+                y2={12}
+                stroke="#1E1E1E"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+              />
+            </>
+          )}
+        </g>
+      ))}
+      {arrows.map(([id, arrow]: [string, any]) => (
+        <line
+          key={id}
+          x1={arrow.x1}
+          y1={arrow.y1}
+          x2={arrow.x2}
+          y2={arrow.y2}
+          stroke="#1E1E1E"
+          strokeWidth="2"
+          strokeDasharray={arrow.style === "dashed" ? "6 4" : undefined}
+        />
+      ))}
+      {players.map(([id, player]: [string, any]) => (
+        <g key={id} transform={`translate(${player.x}, ${player.y})`}>
+          <circle r={11} fill={PLAYER_COLORS[player.type] ?? "#999"} />
+          <text
+            textAnchor="middle"
+            dominantBaseline="central"
+            fill="white"
+            fontSize={11}
+            fontWeight="bold"
+          >
+            {PLAYER_LABELS[player.type] ?? "?"}
+          </text>
+        </g>
+      ))}
+    </svg>
+  );
+};
+
+// ─── Add-exercise dialog ──────────────────────────────────────────────────────
+
+interface ExerciseDoc {
+  id: string;
+  title: string;
+  description: string;
+  difficulty: number;
+  tags: string[];
+  sketch: SketchData;
+}
+
+interface AddExerciseDialogProps {
+  userTeam: string;
+  alreadyAddedIds: Set<string>;
+  onAdd: (exercise: ExerciseDoc, duration: number) => void;
+  onClose: () => void;
+}
+
+const AddExerciseDialog = ({
+  userTeam,
+  alreadyAddedIds,
+  onAdd,
+  onClose,
+}: AddExerciseDialogProps) => {
+  const [exercises, setExercises] = useState<ExerciseDoc[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [activeTag, setActiveTag] = useState<string | null>(null);
+
+  // Two-step: pick exercise → set duration
+  const [step, setStep] = useState<"grid" | "duration">("grid");
+  const [pending, setPending] = useState<ExerciseDoc | null>(null);
+  const [duration, setDuration] = useState("");
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const q = userTeam
+          ? query(
+              collection(db, "Excercises"),
+              where("team", "array-contains", userTeam),
+            )
+          : collection(db, "Excercises");
+        const snap = await getDocs(q);
+        setExercises(
+          snap.docs.map((d) => ({
+            id: d.id,
+            ...(d.data() as Omit<ExerciseDoc, "id">),
+          })),
+        );
+      } catch (e) {
+        console.error("Error fetching exercises:", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetch();
+  }, [userTeam]);
+
+  const allTags = Array.from(
+    new Set(exercises.flatMap((e) => e.tags ?? [])),
+  ).sort();
+
+  const filtered = exercises.filter((ex) => {
+    const q = search.trim().toLowerCase();
+    const matchesSearch =
+      q === "" ||
+      ex.title?.toLowerCase().includes(q) ||
+      ex.description?.toLowerCase().includes(q);
+    const matchesTag =
+      activeTag === null || (ex.tags ?? []).includes(activeTag);
+    return matchesSearch && matchesTag;
+  });
+
+  const pickExercise = (ex: ExerciseDoc) => {
+    setPending(ex);
+    setDuration("");
+    setStep("duration");
+  };
+
+  const confirmDuration = () => {
+    if (!pending) return;
+    onAdd(pending, Math.max(0, parseInt(duration) || 0));
+    // Reset back to grid so they can keep adding
+    setPending(null);
+    setDuration("");
+    setStep("grid");
+  };
+
+  return (
+    <div className="exerciseSelection__lightbox__overlay" onClick={onClose}>
+      <div
+        className="exerciseSelection__lightbox"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="exerciseSelection__lightbox__header">
+          <h3>
+            {step === "grid"
+              ? "Add an exercise"
+              : `Set duration — ${pending?.title}`}
+          </h3>
+          <button
+            className="exerciseSelection__lightbox__header__close btn__primary"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ×
+          </button>
+        </div>
+
+        {step === "grid" && (
+          <>
+            <div className="exerciseSelection__lightbox__toolbar">
+              <div className="exerciseSelection__lightbox__toolbar__search">
+                <input
+                  type="text"
+                  placeholder="Search exercises..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="exerciseSelection__lightbox__toolbar__search__input"
+                  autoFocus
+                />
+              </div>
+              <div className="exerciseSelection__lightbox__toolbar__filter">
+                <button
+                  className={`exerciseSelection__lightbox__toolbar__filter__btn exerciseSelection__lightbox__toolbar__filter__btn--all ${
+                    activeTag === null
+                      ? "exerciseSelection__lightbox__toolbar__filter__btn--active"
+                      : ""
+                  }`}
+                  onClick={() => setActiveTag(null)}
+                >
+                  All
+                </button>
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    className={`exerciseSelection__lightbox__toolbar__filter__btn tags--${tag.toLowerCase()} ${
+                      activeTag === tag
+                        ? "exerciseSelection__lightbox__toolbar__filter__btn--active"
+                        : ""
+                    }`}
+                    onClick={() => setActiveTag(activeTag === tag ? null : tag)}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {loading ? (
+              <p className="exerciseSelection__status">Loading...</p>
+            ) : filtered.length === 0 ? (
+              <p className="exerciseSelection__status">No exercises found.</p>
+            ) : (
+              <div className="exerciseSelection__lightbox__grid">
+                {filtered.map((exercise) => {
+                  const added = alreadyAddedIds.has(exercise.id);
+                  return (
+                    <div
+                      key={exercise.id}
+                      className={`exerciseSelection__lightbox__card ${added ? "exerciseSelection__lightbox__card--added" : ""}`}
+                      onClick={() => pickExercise(exercise)}
+                    >
+                      <div className="exerciseSelection__lightbox__card__sketch">
+                        <SketchThumbnail sketch={exercise.sketch} />
+                      </div>
+                      <div className="exerciseSelection__lightbox__card__info">
+                        <h4>{exercise.title}</h4>
+                        <p>{exercise.description}</p>
+                        <div className="exerciseSelection__lightbox__card__tags">
+                          {(exercise.tags ?? []).map((tag) => (
+                            <span
+                              key={tag}
+                              className={`tags tags--${tag.toLowerCase()}`}
+                            >
+                              {tag}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      {added && (
+                        <div className="exerciseSelection__lightbox__card__added">
+                          Added
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </>
+        )}
+
+        {step === "duration" && pending && (
+          <div className="exerciseSelection__lightbox__duration">
+            <div className="exerciseSelection__lightbox__duration__sketch">
+              <SketchThumbnail sketch={pending.sketch} />
+            </div>
+            <div className="exerciseSelection__lightbox__duration__form">
+              <div className="exerciseSelection__lightbox__duration__form__title">
+                <label
+                  htmlFor="add-ex-duration"
+                  className="exerciseSelection__lightbox__duration__label"
+                >
+                  How many minutes for this exercise?
+                </label>
+              </div>
+              <div className="exerciseSelection__lightbox__duration__input__wrapper">
+                <input
+                  id="add-ex-duration"
+                  type="number"
+                  min={1}
+                  value={duration}
+                  placeholder="e.g. 15"
+                  className="exerciseSelection__lightbox__duration__input"
+                  onChange={(e) => setDuration(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && confirmDuration()}
+                  autoFocus
+                />
+                <span className="exerciseSelection__lightbox__duration__unit">
+                  min
+                </span>
+              </div>
+            </div>
+            <div className="exerciseSelection__lightbox__duration__actions">
+              <button
+                className="excercisewizard__btn excercisewizard__btn--secondary"
+                onClick={() => setStep("grid")}
+              >
+                ← Back
+              </button>
+              <button
+                className="excercisewizard__btn"
+                onClick={confirmDuration}
+                disabled={!duration || parseInt(duration) <= 0}
+              >
+                Add to training
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -157,7 +520,6 @@ const ShareDialog = ({
   const [sharing, setSharing] = useState(false);
   const [shared, setShared] = useState(false);
 
-  // Fetch all users except self
   useEffect(() => {
     const fetch = async () => {
       const snap = await getDocs(collection(db, "users"));
@@ -182,7 +544,6 @@ const ShareDialog = ({
     setSharing(true);
 
     try {
-      // 1. Write a copy of the training to each recipient's subcollection
       const recipientIds = Array.from(selected);
 
       await Promise.all(
@@ -194,6 +555,7 @@ const ShareDialog = ({
             difficulty: training.difficulty,
             tags: training.tags ?? [],
             exercises: training.exercises ?? [],
+            players: training.players ?? null,
             author: training.author,
             date: training.date,
             sharedBy: currentUserId,
@@ -202,7 +564,6 @@ const ShareDialog = ({
         ),
       );
 
-      // 2. Send a notification to each recipient
       try {
         await Promise.all(
           recipientIds.map((recipientId) =>
@@ -216,7 +577,6 @@ const ShareDialog = ({
           ),
         );
       } catch (notifError) {
-        // Non-critical — log but don't block the success state
         console.warn("Could not send share notifications:", notifError);
       }
 
@@ -353,6 +713,7 @@ const TrainingDetail = () => {
   const [training, setTraining] = useState<Training | null>(null);
   const [loading, setLoading] = useState(true);
   const [senderName, setSenderName] = useState<string>("");
+  const [userTeam, setUserTeam] = useState<string>("");
 
   // Edit info
   const [editing, setEditing] = useState(false);
@@ -362,6 +723,7 @@ const TrainingDetail = () => {
   // Edit exercises
   const [editingExercises, setEditingExercises] = useState(false);
   const [editExercises, setEditExercises] = useState<SelectedExercise[]>([]);
+  const [addOpen, setAddOpen] = useState(false);
 
   // Delete
   const [deleteConfirm, setDeleteConfirm] = useState(false);
@@ -390,18 +752,18 @@ const TrainingDetail = () => {
     fetch();
   }, [trainingId, currentUserId]);
 
-  // ── Resolve sender name for share dialog ────────────────────────────────────
+  // ── Resolve sender name + team ──────────────────────────────────────────────
   useEffect(() => {
     if (!currentUserId) return;
     const fetch = async () => {
       try {
         const snap = await getDoc(doc(db, "users", currentUserId));
         if (snap.exists()) {
+          const data = snap.data() as any;
           setSenderName(
-            (snap.data() as any).userName ??
-              currentUser?.email?.split("@")[0] ??
-              "Someone",
+            data.userName ?? currentUser?.email?.split("@")[0] ?? "Someone",
           );
+          setUserTeam(data.team ?? "");
         }
       } catch {
         setSenderName(currentUser?.email?.split("@")[0] ?? "Someone");
@@ -467,6 +829,7 @@ const TrainingDetail = () => {
   const handleEditExercisesCancel = () => {
     setEditingExercises(false);
     setEditExercises([]);
+    setAddOpen(false);
   };
   const handleExerciseDurationChange = (idx: number, val: string) =>
     setEditExercises((prev) =>
@@ -476,19 +839,31 @@ const TrainingDetail = () => {
     );
   const handleRemoveExercise = (idx: number) =>
     setEditExercises((prev) => prev.filter((_, i) => i !== idx));
+
+  // Add a freshly-picked exercise to the edit list
+  const handleAddExercise = (exercise: ExerciseDoc, duration: number) => {
+    setEditExercises((prev) => [
+      ...prev,
+      { exerciseId: exercise.id, title: exercise.title, duration },
+    ]);
+  };
+
   const handleSaveExercises = async () => {
     if (!trainingId || !training || !currentUserId) return;
     setSaving(true);
     try {
       await updateDoc(
         doc(db, "users", currentUserId, "trainings", trainingId),
-        { exercises: editExercises },
+        {
+          exercises: editExercises,
+        },
       );
       setTraining((prev) =>
         prev ? { ...prev, exercises: editExercises } : prev,
       );
       setEditingExercises(false);
       setEditExercises([]);
+      setAddOpen(false);
     } catch (e) {
       console.error("Error updating exercises:", e);
     } finally {
@@ -555,6 +930,7 @@ const TrainingDetail = () => {
     (sum, e) => sum + (e.duration ?? 0),
     0,
   );
+  const addedIds = new Set(editExercises.map((e) => e.exerciseId));
 
   return (
     <>
@@ -579,7 +955,6 @@ const TrainingDetail = () => {
             <div className="trainingdetail__header__accent" />
             <div className="trainingdetail__header__body">
               <div className="trainingdetail__header__main">
-                {/* Left: info */}
                 <div className="trainingdetail__header__text">
                   <div className="trainingdetail__meta">
                     <span className="trainingdetail__meta__date">
@@ -687,7 +1062,6 @@ const TrainingDetail = () => {
                   )}
                 </div>
 
-                {/* Right: actions */}
                 <div className="trainingdetail__header__actions">
                   {editing ? (
                     <>
@@ -877,7 +1251,11 @@ const TrainingDetail = () => {
               </div>
             </div>
 
-            {exercises.length === 0 ? (
+            {(
+              editingExercises
+                ? editExercises.length === 0
+                : exercises.length === 0
+            ) ? (
               <p className="trainingdetail__exercises__empty">
                 No exercises added yet.
               </p>
@@ -992,11 +1370,39 @@ const TrainingDetail = () => {
                       </Link>
                     ),
                 )}
+
+                {/* Add-exercise button — only in edit mode */}
+                {editingExercises && (
+                  <button
+                    className="trainingdetail__exercises__add btn__wired"
+                    onClick={() => setAddOpen(true)}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                      <path
+                        d="M7 1V13M1 7H13"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    Add exercise
+                  </button>
+                )}
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Add-exercise dialog */}
+      {addOpen && (
+        <AddExerciseDialog
+          userTeam={userTeam}
+          alreadyAddedIds={addedIds}
+          onAdd={handleAddExercise}
+          onClose={() => setAddOpen(false)}
+        />
+      )}
 
       {/* Share dialog */}
       {shareOpen && training && (
