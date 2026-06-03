@@ -3,7 +3,7 @@
 
   &__inner {
     padding: 0 11.2rem;
-  }
+  } 
 
   // ── Header ──────────────────────────────────────────────────────────────
 
@@ -547,10 +547,6 @@
   }
 
   @media (max-width: #{$screen-md-min}) {
-    &__inner {
-      padding: 0 1.6rem;
-    }
-
     &__filter__dropdown {
       position: fixed;
       bottom: 0;
@@ -582,10 +578,6 @@
 
   @media (max-width: #{$screen-sm-min}) {
     margin: 2.4rem 0;
-
-    &__inner {
-      padding: 0 1.2rem;
-    }
 
     &__menu h2 {
       font-size: 3.2rem;

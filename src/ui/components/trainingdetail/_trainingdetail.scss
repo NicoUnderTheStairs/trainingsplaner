@@ -713,7 +713,6 @@
   }
 
   @media (max-width: #{$screen-md-min}) {
-    &__inner { padding: 0 1.6rem; }
     &__title { font-size: 2.8rem; }
 
     &__exercises__item {
@@ -730,8 +729,6 @@
   }
 
   @media (max-width: #{$screen-sm-min}) {
-    &__inner { padding: 0 1.2rem; }
-
     &__exercises__item {
       // flex-wrap: wrap;
       &__title { order: 2; flex-basis: 100%; font-size: 1.8rem; }

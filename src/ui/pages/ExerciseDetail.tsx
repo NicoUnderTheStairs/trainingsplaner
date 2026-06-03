@@ -1134,7 +1134,7 @@ const ExerciseDetail = () => {
             {/* Left: info */}
             <div className="exercisedetail__info">
               <div className="exercisedetail__header">
-                <div className="exercisedetail__header__accent" />
+                
                 <div className="exercisedetail__header__body">
                   <div className="exercisedetail__meta">
                     <span className="exercisedetail__meta__author">

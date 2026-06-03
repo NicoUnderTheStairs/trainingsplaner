@@ -568,8 +568,6 @@
   }
 
   @media (max-width: #{$screen-md-min}) {
-    &__inner { padding: 0 1.6rem; }
-
     &__title { font-size: 2.8rem; }
 
     &__header__body {
@@ -578,7 +576,6 @@
   }
 
   @media (max-width: #{$screen-sm-min}) {
-    &__inner { padding: 0 1.2rem; }
     &__title { font-size: 2.4rem; }
   }
 

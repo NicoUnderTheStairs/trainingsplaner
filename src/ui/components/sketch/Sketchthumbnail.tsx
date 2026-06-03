@@ -27,7 +27,7 @@ const PLAYER_LABELS: Record<string, string> = {
 
 const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
   const players = sketch?.players ? Object.entries(sketch.players) : [];
-  const arrows = sketch?.arrows ? Object.entries(sketch.arrows) : [];
+  const arrows  = sketch?.arrows  ? Object.entries(sketch.arrows)  : [];
   const objects = (sketch as any)?.objects
     ? Object.entries((sketch as any).objects)
     : [];
@@ -40,6 +40,11 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
       fill="none"
       preserveAspectRatio="xMidYMid meet"
     >
+      <defs>
+        <marker id="thumb-arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+          <path d="M0,0 L0,6 L6,3 Z" fill="#1E1E1E" />
+        </marker>
+      </defs>
       {/* Court */}
       <path d="M560 0H0V440H560V0Z" fill="white" />
       <path
@@ -75,24 +80,8 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
                 strokeWidth={1.5}
                 rx={2}
               />
-              <line
-                x1={-11}
-                y1={7}
-                x2={-11}
-                y2={12}
-                stroke="#1E1E1E"
-                strokeWidth={1.5}
-                strokeLinecap="round"
-              />
-              <line
-                x1={11}
-                y1={7}
-                x2={11}
-                y2={12}
-                stroke="#1E1E1E"
-                strokeWidth={1.5}
-                strokeLinecap="round"
-              />
+              <line x1={-11} y1={7} x2={-11} y2={12} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
+              <line x1={11} y1={7} x2={11} y2={12} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
             </>
           )}
         </g>
@@ -109,6 +98,7 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
           stroke="#1E1E1E"
           strokeWidth="2"
           strokeDasharray={arrow.style === "dashed" ? "6 4" : undefined}
+          markerEnd="url(#thumb-arrow)"
         />
       ))}
 
