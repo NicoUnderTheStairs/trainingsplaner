@@ -86,7 +86,7 @@ const ExerciseSelection: React.FC<Props> = ({
 
   // ── Fetch exercises (scoped to user's team) ──────────────────────────────
   useEffect(() => {
-    if (userData === undefined) return; // wait for profile
+    if (userData === undefined) return;
 
     const fetch = async () => {
       try {
@@ -123,12 +123,15 @@ const ExerciseSelection: React.FC<Props> = ({
     return matchesSearch && matchesTag;
   });
 
-  // ── Simple reorder (up/down buttons) ────────────────────────────────────
+  // ── User preferences ────────────────────────────────────────────────────
   const isSimpleMobile =
     (userData as any)?.mobileMode === "simple" &&
     typeof window !== "undefined" &&
     window.matchMedia("(pointer: coarse)").matches;
 
+  const isBackwardPlanning = (userData as any)?.planningDirection === "backward";
+
+  // ── Simple reorder (up/down buttons) ────────────────────────────────────
   const moveUp = (index: number) => {
     if (index === 0) return;
     const arr = [...selectedExercises];
@@ -171,7 +174,7 @@ const ExerciseSelection: React.FC<Props> = ({
   };
 
   const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // required to allow drop
+    e.preventDefault();
   };
 
   // ── Lightbox handlers ────────────────────────────────────────────────────
@@ -202,18 +205,26 @@ const ExerciseSelection: React.FC<Props> = ({
     const alreadySelected = selectedExercises.some(
       (e) => e.exerciseId === pendingExercise.id,
     );
-    const updated: SelectedExercise[] = alreadySelected
-      ? selectedExercises.map((e) =>
-          e.exerciseId === pendingExercise.id ? { ...e, duration } : e,
-        )
-      : [
-          ...selectedExercises,
-          {
-            exerciseId: pendingExercise.id,
-            title: pendingExercise.title,
-            duration,
-          },
-        ];
+
+    const newEntry: SelectedExercise = {
+      exerciseId: pendingExercise.id,
+      title: pendingExercise.title,
+      duration,
+    };
+
+    let updated: SelectedExercise[];
+    if (alreadySelected) {
+      updated = selectedExercises.map((e) =>
+        e.exerciseId === pendingExercise.id ? { ...e, duration } : e,
+      );
+    } else if (isBackwardPlanning) {
+      // Backward: prepend so the last-added exercise ends up first
+      updated = [newEntry, ...selectedExercises];
+    } else {
+      // Forward: append normally
+      updated = [...selectedExercises, newEntry];
+    }
+
     onChange({ selectedExercises: updated });
     closeLightbox();
   };
@@ -261,6 +272,12 @@ const ExerciseSelection: React.FC<Props> = ({
         )}
       </p>
 
+      {isBackwardPlanning && (
+        <p className="exerciseSelection__direction">
+          Planning backwards — add the <strong>last</strong> exercise first. The order flips automatically.
+        </p>
+      )}
+
       {/* ── Selected exercises list ── */}
       <div className="exerciseSelection__selected">
         {selectedExercises.map((sel, index) => (
@@ -297,6 +314,8 @@ const ExerciseSelection: React.FC<Props> = ({
                 <DragHandleIcon />
               </div>
             )}
+
+            <span className="exerciseSelection__selected__item__index">{index + 1}</span>
 
             <h3 className="exerciseSelection__selected__item__name">
               {sel.title}
@@ -444,7 +463,9 @@ const ExerciseSelection: React.FC<Props> = ({
                           </div>
                           <div className="exerciseSelection__lightbox__card__info">
                             <h4>{exercise.title}</h4>
-                            <p>{exercise.description}</p>
+                            <p>{exercise.description?.length > 100
+                        ? exercise.description.substring(0, 100) + "..."
+                        : exercise.description}</p>
                             <div className="exerciseSelection__lightbox__card__tags">
                               {(exercise.tags ?? []).map((tag) => (
                                 <span
@@ -495,7 +516,7 @@ const ExerciseSelection: React.FC<Props> = ({
                       min={1}
                       max={totalDuration}
                       value={pendingDuration}
-                      placeholder="e.g. 15"
+                      placeholder=""
                       className="exerciseSelection__lightbox__duration__input"
                       onChange={(e) => setPendingDuration(e.target.value)}
                       onKeyDown={(e) =>
