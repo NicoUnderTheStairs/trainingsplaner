@@ -241,63 +241,70 @@
   &--warmup {
     background-color: rgba($primary-1, 0.2);
     border: 0.1rem solid $primary-1;
-
+    
     &--active {
-      background-color: rgba($primary-1, 1);
+      border: 0.1rem solid $primary-1 !important;
+      background-color: rgba($primary-1, 1) !important;
     }
   }
 
   &--defense {
     background-color: rgba($primary-2, 0.2);
     border: 0.1rem solid $primary-2;
-
+    
     &--active {
-      background-color: rgba($primary-2, 1);
+      background-color: rgba($primary-2, 1) !important;
+      border: 0.1rem solid $primary-2 !important;
     }
   }
 
   &--attack {
     background-color: rgba($primary-3, 0.2);
     border: 0.1rem solid $primary-3;
-
+    
     &--active {
-      background-color: rgba($primary-3, 1);
+      background-color: rgba($primary-3, 1) !important;
+      border: 0.1rem solid $primary-3 !important;
     }
   }
 
   &--block {
     background-color: rgba($primary-4, 0.2);
     border: 0.1rem solid $primary-4;
-
+    
     &--active {
-      background-color: rgba($primary-4, 1);
+      background-color: rgba($primary-4, 1) !important;
+      border: 0.1rem solid $primary-4 !important;
     }
   }
 
   &--reception {
     background-color: rgba($primary-5, 0.2);
     border: 0.1rem solid $primary-5;
-
+    
     &--active {
-      background-color: rgba($primary-5, 1);
+      background-color: rgba($primary-5, 1) !important;
+      border: 0.1rem solid $primary-5 !important;
     }
   }
 
   &--service {
     background-color: rgba($primary-6, 0.2);
     border: 0.1rem solid $primary-6;
-
+    
     &--active {
-      background-color: rgba($primary-6, 1);
+      background-color: rgba($primary-6, 1) !important;
+      border: 0.1rem solid $primary-6 !important;
     }
   }
 
   &--setting {
-    background-color: rgba(#e91e8c, 0.2);
-    border: 0.1rem solid #e91e8c;
-
+    background-color: rgba($primary-7, 0.2);
+    border: 0.1rem solid $primary-7;
+    
     &--active {
-      background-color: rgba(#e91e8c, 1);
+      background-color: rgba($primary-7, 1) !important;
+      border: 0.1rem solid $primary-7 !important;
     }
   }
 }

@@ -18,10 +18,16 @@ const DIFFICULTIES = [1, 2, 3, 4, 5];
 // ─── Sketch thumbnail ─────────────────────────────────────────────────────────
 
 const PLAYER_COLORS: Record<string, string> = {
-  attacker: "#E63C2F", defender: "#3EC6D4", setter: "#F5A623", libero: "#4DB87A",
+  outside: "#E63C2F", opposite: "#F5A623", middleBlocker: "#4DB87A",
+  setter: "#3EC6D4", libero: "#624DB8",
+  // Legacy backward compat
+  attacker: "#E63C2F", defender: "#3EC6D4",
 };
 const PLAYER_LABELS: Record<string, string> = {
-  attacker: "A", defender: "D", setter: "S", libero: "L",
+  outside: "OH", opposite: "OP", middleBlocker: "MB",
+  setter: "S", libero: "L",
+  // Legacy
+  attacker: "OH", defender: "S",
 };
 
 const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
@@ -170,7 +176,7 @@ const ExcerciseList = () => {
   const clearFilters     = () => { setActiveTags([]); setActiveDifficulties([]); setSearch(""); setShowFavourites(false); };
 
   const hasActiveFilters  = activeTags.length > 0 || activeDifficulties.length > 0 || search.trim() !== "" || showFavourites;
-  // const activeFilterCount = activeTags.length + activeDifficulties.length + (showFavourites ? 1 : 0);
+  const activeFilterCount = activeTags.length + activeDifficulties.length + (showFavourites ? 1 : 0);
 
   const filtered = exercises.filter((ex) => {
     const q             = search.trim().toLowerCase();
@@ -184,6 +190,7 @@ const ExcerciseList = () => {
   const favouriteCount = exercises.filter((ex) => favouriteIds.has(ex.id!)).length;
 
   return (
+    <>
     <div className="excerciselist section">
       <div className="excerciselist__inner">
 
@@ -239,7 +246,7 @@ const ExcerciseList = () => {
                 Filter
                 {/* Only count tags + difficulty in the filter badge — favourites has its own button */}
                 {(activeTags.length + activeDifficulties.length) > 0 && (
-                  <span className="excerciselist__filter__badge">{activeTags.length + activeDifficulties.length}</span>
+                  <span className="excerciselist__filter__badge">{activeFilterCount}</span>
                 )}
               </button>
 
@@ -356,11 +363,16 @@ const ExcerciseList = () => {
                     </p>
                     <div className="excerciselist__exercise__content--detail">
                       <div className="excerciselist__exercise__content__tags">
-                        {(exercise.tags ?? []).map((tag) => (
-                          <div key={tag} className={`excerciselist__exercise__content__tags tags tags--${tag.toLowerCase()}`}>
+                        {(exercise.tags ?? []).slice(0, 2).map((tag) => (
+                          <div key={tag} className={`tags tags--${tag.toLowerCase()}`}>
                             <span className="excerciselist__exercise__content__tags--tag">{tag}</span>
                           </div>
                         ))}
+                        {(exercise.tags ?? []).length > 2 && (
+                          <span className="excerciselist__exercise__content__tags--more">
+                            +{(exercise.tags ?? []).length - 2}
+                          </span>
+                        )}
                       </div>
                       <div className={`difficulty difficulty--${exercise.difficulty}`}>
                         <svg width="21" height="24" viewBox="0 0 21 24" fill="none">
@@ -390,30 +402,33 @@ const ExcerciseList = () => {
             {exercises.length === 0 && <p className="excerciselist__status">No exercises yet.</p>}
           </div>
         )}
-
-        {/* ── Shop teaser ── */}
-        <div className="excerciselist__shopteaser" onClick={() => navigate("/exercise-shop")}>
-          <div className="excerciselist__shopteaser__icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M6 2L3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6L18 2H6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M3 6H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M16 10C16 12.2091 14.2091 14 12 14C9.79086 14 8 12.2091 8 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <div className="excerciselist__shopteaser__text">
-            <span className="excerciselist__shopteaser__headline">Need fresh inspiration?</span>
-            <span className="excerciselist__shopteaser__sub">Snoop around the Exercise Shop and discover drills from other teams.</span>
-          </div>
-          <div className="excerciselist__shopteaser__cta">
-            Browse Shop
-            <svg width="16" height="10" viewBox="0 0 23 12" fill="none">
-              <path d="M1 5.25H0.25V6.75H1V5.25ZM22.53 6.53C22.82 6.24 22.82 5.76 22.53 5.47L17.76 0.697C17.46 0.404 16.99 0.404 16.697 0.697C16.404 0.99 16.404 1.465 16.697 1.757L20.94 6L16.697 10.243C16.404 10.536 16.404 11.01 16.697 11.303C16.99 11.596 17.465 11.596 17.757 11.303L22.53 6.53ZM1 6.75H22V5.25H1V6.75Z" fill="currentColor"/>
-            </svg>
-          </div>
+    {/* ── Shop teaser — outside inner to prevent any overlap with cards ── */}
+    <div className="excerciselist__shopteaser__wrapper">
+      <div className="excerciselist__shopteaser" onClick={() => navigate("/exercise-shop")}>
+        <div className="excerciselist__shopteaser__icon">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M6 2L3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6L18 2H6Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M3 6H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M16 10C16 12.2091 14.2091 14 12 14C9.79086 14 8 12.2091 8 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
         </div>
+        <div className="excerciselist__shopteaser__text">
+          <span className="excerciselist__shopteaser__headline">Need fresh inspiration?</span>
+          <span className="excerciselist__shopteaser__sub">Snoop around the Exercise Shop and discover drills from other teams.</span>
+        </div>
+        <div className="excerciselist__shopteaser__cta">
+          Browse Shop
+          <svg width="16" height="10" viewBox="0 0 23 12" fill="none">
+            <path d="M1 5.25H0.25V6.75H1V5.25ZM22.53 6.53C22.82 6.24 22.82 5.76 22.53 5.47L17.76 0.697C17.46 0.404 16.99 0.404 16.697 0.697C16.404 0.99 16.404 1.465 16.697 1.757L20.94 6L16.697 10.243C16.404 10.536 16.404 11.01 16.697 11.303C16.99 11.596 17.465 11.596 17.757 11.303L22.53 6.53ZM1 6.75H22V5.25H1V6.75Z" fill="currentColor"/>
+          </svg>
+        </div>
+      </div>
+    </div>
 
       </div>
     </div>
+
+    </>
   );
 };
 

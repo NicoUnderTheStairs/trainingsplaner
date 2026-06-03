@@ -199,13 +199,14 @@
         color: $black;
         min-height: 6rem;
       }
-
+      
       & p {
         font-size: 1.6rem;
         min-height: 6.5rem;
         color: $black;
         line-height: 1.5;
         margin: 0 0 1.6rem 0;
+        min-height: 7.2rem;
       }
 
       &__tags {
@@ -213,7 +214,17 @@
         flex-wrap: wrap;
         gap: 0.8rem;
         margin-bottom: 1.2rem;
+        align-items: center;
+
+        &--more {
+          font-size: 1.2rem;
+          font-weight: 700;
+          font-family: $font-family;
+          color: rgba($black, 0.4);
+          white-space: nowrap;
+        }
       }
+
 
       &--detail {
         display: flex;
@@ -605,7 +616,7 @@
     background-color: $secondary;
 
     &--difficulty {
-      background-color: rgba($secondary-2, 0.1);
+      background-color: $secondary;
     }
 
     & button {
