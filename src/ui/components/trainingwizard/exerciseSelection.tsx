@@ -43,9 +43,24 @@ const DragHandleIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
   >
-    <path d="M1 2H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    <path d="M1 7H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    <path d="M1 12H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path
+      d="M1 2H15"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M1 7H15"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
+    <path
+      d="M1 12H15"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+    />
   </svg>
 );
 
@@ -92,7 +107,10 @@ const ExerciseSelection: React.FC<Props> = ({
       try {
         const userTeam = userData?.team ?? "";
         const q = userTeam
-          ? query(collection(db, "Excercises"), where("team", "array-contains", userTeam))
+          ? query(
+              collection(db, "Excercises"),
+              where("team", "array-contains", userTeam),
+            )
           : collection(db, "Excercises");
         const snapshot = await getDocs(q);
         const data: Exercise[] = snapshot.docs.map((doc) => ({
@@ -129,7 +147,8 @@ const ExerciseSelection: React.FC<Props> = ({
     typeof window !== "undefined" &&
     window.matchMedia("(pointer: coarse)").matches;
 
-  const isBackwardPlanning = (userData as any)?.planningDirection === "backward";
+  const isBackwardPlanning =
+    (userData as any)?.planningDirection === "backward";
 
   // ── Simple reorder (up/down buttons) ────────────────────────────────────
   const moveUp = (index: number) => {
@@ -274,7 +293,8 @@ const ExerciseSelection: React.FC<Props> = ({
 
       {isBackwardPlanning && (
         <p className="exerciseSelection__direction">
-          Planning backwards — add the <strong>last</strong> exercise first. The order flips automatically.
+          Planning backwards — add the <strong>last</strong> exercise first. The
+          order flips automatically.
         </p>
       )}
 
@@ -285,12 +305,24 @@ const ExerciseSelection: React.FC<Props> = ({
             key={sel.exerciseId}
             className={[
               "exerciseSelection__selected__item",
-              !isSimpleMobile && draggingIndex === index ? "exerciseSelection__selected__item--dragging" : "",
-              !isSimpleMobile && dragOverIdx === index && draggingIndex !== index ? "exerciseSelection__selected__item--dragover" : "",
-            ].filter(Boolean).join(" ")}
+              !isSimpleMobile && draggingIndex === index
+                ? "exerciseSelection__selected__item--dragging"
+                : "",
+              !isSimpleMobile &&
+              dragOverIdx === index &&
+              draggingIndex !== index
+                ? "exerciseSelection__selected__item--dragover"
+                : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             draggable={!isSimpleMobile}
-            onDragStart={!isSimpleMobile ? () => handleDragStart(index) : undefined}
-            onDragEnter={!isSimpleMobile ? () => handleDragEnter(index) : undefined}
+            onDragStart={
+              !isSimpleMobile ? () => handleDragStart(index) : undefined
+            }
+            onDragEnter={
+              !isSimpleMobile ? () => handleDragEnter(index) : undefined
+            }
             onDragEnd={!isSimpleMobile ? handleDragEnd : undefined}
             onDragOver={!isSimpleMobile ? handleDragOver : undefined}
           >
@@ -301,21 +333,30 @@ const ExerciseSelection: React.FC<Props> = ({
                   onClick={() => moveUp(index)}
                   disabled={index === 0}
                   aria-label="Move up"
-                >▲</button>
+                >
+                  ▲
+                </button>
                 <button
                   className="exerciseSelection__selected__item__reorder__btn"
                   onClick={() => moveDown(index)}
                   disabled={index === selectedExercises.length - 1}
                   aria-label="Move down"
-                >▼</button>
+                >
+                  ▼
+                </button>
               </div>
             ) : (
-              <div className="exerciseSelection__selected__item__handle" title="Drag to reorder">
+              <div
+                className="exerciseSelection__selected__item__handle"
+                title="Drag to reorder"
+              >
                 <DragHandleIcon />
               </div>
             )}
 
-            <span className="exerciseSelection__selected__item__index">{index + 1}</span>
+            <span className="exerciseSelection__selected__item__index">
+              {index + 1}
+            </span>
 
             <h3 className="exerciseSelection__selected__item__name">
               {sel.title}
@@ -439,7 +480,9 @@ const ExerciseSelection: React.FC<Props> = ({
                 {loading ? (
                   <p className="exerciseSelection__status">Loading...</p>
                 ) : filteredExercises.length === 0 ? (
-                  <p className="exerciseSelection__status">No exercises found.</p>
+                  <p className="exerciseSelection__status">
+                    No exercises found.
+                  </p>
                 ) : (
                   <div className="exerciseSelection__lightbox__grid">
                     {filteredExercises.map((exercise) => {
@@ -463,18 +506,27 @@ const ExerciseSelection: React.FC<Props> = ({
                           </div>
                           <div className="exerciseSelection__lightbox__card__info">
                             <h4>{exercise.title}</h4>
-                            <p>{exercise.description?.length > 100
-                        ? exercise.description.substring(0, 100) + "..."
-                        : exercise.description}</p>
+                            <p>
+                              {exercise.description?.length > 100
+                                ? exercise.description.substring(0, 100) + "..."
+                                : exercise.description}
+                            </p>
                             <div className="exerciseSelection__lightbox__card__tags">
-                              {(exercise.tags ?? []).map((tag) => (
-                                <span
+                              {(exercise.tags ?? []).slice(0, 2).map((tag) => (
+                                <div
                                   key={tag}
                                   className={`tags tags--${tag.toLowerCase()}`}
                                 >
-                                  {tag}
-                                </span>
+                                  <span className="exerciseSelection__lightbox__card__tags--tag">
+                                    {tag}
+                                  </span>
+                                </div>
                               ))}
+                              {(exercise.tags ?? []).length > 2 && (
+                                <span className="exerciseSelection__lightbox__card__tags--more">
+                                  +{(exercise.tags ?? []).length - 2}
+                                </span>
+                              )}
                             </div>
                           </div>
                           {alreadyAdded && (
