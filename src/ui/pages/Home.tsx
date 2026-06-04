@@ -11,6 +11,7 @@ import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import Navigation from "../components/navigation/Navigation";
 import SketchThumbnail from "../components/sketch/Sketchthumbnail";
+import Tour from "../components/user/Tour";
 import { useAuth } from "../../auth/authContext";
 import { useGetUserData } from "../../hooks/useGetUserData";
 import db from "../../firebase";
@@ -69,6 +70,13 @@ export default function Home() {
   const [loadingEx, setLoadingEx] = useState(true);
   const [loadingTr, setLoadingTr] = useState(true);
   const [loadingSh, setLoadingSh] = useState(true);
+  const [showTour, setShowTour] = useState(false);
+
+  useEffect(() => {
+    if (userData && !userData.tourCompleted) {
+      setShowTour(true);
+    }
+  }, [userData]);
 
   // ── Fetch recent exercises + their variant counts ──────────────────────────
   useEffect(() => {
@@ -475,6 +483,8 @@ export default function Home() {
           </section>
         </div>
       </div>
+
+      {showTour && <Tour onComplete={() => setShowTour(false)} />}
     </>
   );
 }

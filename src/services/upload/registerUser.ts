@@ -15,6 +15,8 @@ export interface UserProfile {
   team: string | null; // optional team name
   bio: string | null;
   mobileMode?: "advanced" | "simple";
+  planningDirection?: "forward" | "backward";
+  tourCompleted?: boolean;
 }
 
 export const registerUser = async (

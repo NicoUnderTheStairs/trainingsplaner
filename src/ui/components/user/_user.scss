@@ -996,3 +996,306 @@ $transition-slow: 250ms ease;
     font-weight: 700;
   }
 }
+
+// ─── Tour ─────────────────────────────────────────────────────────────────────
+
+.tour__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba($black, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 300;
+  padding: $space-md;
+  backdrop-filter: blur(4px);
+  animation: overlay-in $transition-slow both;
+}
+
+.tour__avatar__dialog__overlay {
+  z-index: 400;
+}
+
+.tour {
+  background: $white;
+  border: 0.3rem solid $black;
+  border-radius: $radius-lg;
+  width: 560px;
+  max-width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  animation: dialog-in $transition-slow both;
+  box-shadow: $shadow-lg;
+}
+
+// ─── Decorative stripe bar ────────────────────────────────────────────────────
+
+.tour__stripe {
+  height: 5px;
+  flex-shrink: 0;
+  border-radius: $radius-lg $radius-lg 0 0;
+  background: linear-gradient(
+    to right,
+    $stripe-red 0%,
+    $stripe-red 20%,
+    $stripe-orange 20%,
+    $stripe-orange 40%,
+    $stripe-yellow 40%,
+    $stripe-yellow 60%,
+    $stripe-green 60%,
+    $stripe-green 80%,
+    $stripe-teal 80%,
+    $stripe-teal 100%
+  );
+}
+
+// ─── Progress dots ────────────────────────────────────────────────────────────
+
+.tour__header {
+  padding: $space-xl $space-xl $space-sm;
+}
+
+.tour__progress {
+  display: flex;
+  gap: $space-sm;
+}
+
+.tour__progress__dot {
+  height: 3px;
+  flex: 1;
+  background: rgba($black, 0.15);
+  border-radius: 2rem;
+  transition: background $transition-slow;
+
+  &--done {
+    background: $black;
+  }
+
+  &--active {
+    background: $stripe-yellow;
+  }
+}
+
+// ─── Body ─────────────────────────────────────────────────────────────────────
+
+.tour__body {
+  padding: $space-lg $space-xl $space-xl;
+  flex: 1;
+
+  &--centered {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: $space-2xl $space-xl $space-2xl;
+    gap: $space-md;
+  }
+}
+
+// ─── Typography ───────────────────────────────────────────────────────────────
+
+.tour__title {
+  font-size: 4rem;
+  font-weight: 900;
+  font-family: $font-family;
+  text-transform: uppercase;
+  letter-spacing: -0.1rem;
+  color: $black;
+  margin: 0;
+  line-height: 1.05;
+}
+
+.tour__subtitle {
+  font-size: 1.6rem;
+  font-family: $font-family;
+  color: $black;
+  margin: 0;
+  line-height: 1.6;
+  max-width: 38ch;
+}
+
+.tour__step__title {
+  font-size: 2.8rem;
+  font-weight: 900;
+  font-family: $font-family;
+  text-transform: uppercase;
+  letter-spacing: -0.05rem;
+  color: $black;
+  margin: 0 0 $space-sm;
+}
+
+.tour__step__hint {
+  font-size: 1.5rem;
+  font-family: $font-family;
+  color: rgba($black, 0.65);
+  margin: 0 0 $space-lg;
+  line-height: 1.5;
+}
+
+// ─── CTA button (welcome / done) ──────────────────────────────────────────────
+
+.tour__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: $space-sm;
+  margin-top: $space-sm;
+}
+
+// ─── Done checkmark ───────────────────────────────────────────────────────────
+
+.tour__check {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: rgba($black, 0.06);
+
+  svg {
+    width: 32px;
+    height: 32px;
+  }
+}
+
+// ─── Form fields ──────────────────────────────────────────────────────────────
+
+.tour__field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  margin-bottom: $space-lg;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.tour__label {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: $font-family;
+  color: $black;
+}
+
+.tour__field__hint {
+  font-size: 1.3rem;
+  font-family: $font-family;
+  color: rgba($black, 0.6);
+  line-height: 1.4;
+  margin-top: -0.4rem;
+}
+
+.tour__select {
+  width: 100%;
+  padding: 1rem $space-md;
+  font-size: 1.6rem;
+}
+
+.tour__textarea {
+  margin-top: 0;
+}
+
+// ─── Avatar preview ───────────────────────────────────────────────────────────
+
+.tour__avatar__preview {
+  display: flex;
+  align-items: center;
+  gap: $space-lg;
+  padding: $space-lg;
+  border: 0.3rem solid $black;
+  border-radius: $radius-md;
+  background: $off-white;
+}
+
+.tour__avatar__img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid $white;
+  box-shadow: $shadow-md;
+  flex-shrink: 0;
+}
+
+.tour__avatar__placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: $black;
+  border: 3px solid $white;
+  box-shadow: $shadow-md;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+
+  span {
+    font-size: 24px;
+    font-weight: 700;
+    color: $white;
+    font-family: inherit;
+    letter-spacing: -0.5px;
+  }
+}
+
+// ─── Footer navigation ────────────────────────────────────────────────────────
+
+.tour__footer {
+  padding: $space-md $space-xl;
+  border-top: 0.15rem solid rgba($black, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: $space-md;
+  flex-shrink: 0;
+}
+
+.tour__footer__right {
+  display: flex;
+  align-items: center;
+  gap: $space-md;
+}
+
+.tour__skip {
+  background: transparent;
+  border: none;
+  font-size: 1.5rem;
+  font-family: $font-family;
+  font-weight: 600;
+  color: rgba($black, 0.5);
+  cursor: pointer;
+  padding: 0.4rem $space-sm;
+  border-radius: $radius-sm;
+  transition: color $transition;
+
+  &:hover {
+    color: $black;
+  }
+}
+
+// ─── Responsive ───────────────────────────────────────────────────────────────
+
+@media (max-width: 600px) {
+  .tour {
+    max-height: 100dvh;
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    align-self: flex-end;
+    width: 100%;
+    border-radius: $radius-lg $radius-lg 0 0;
+  }
+
+  .tour__overlay {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .tour__title {
+    font-size: 3.2rem;
+  }
+}
