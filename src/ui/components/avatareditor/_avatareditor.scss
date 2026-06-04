@@ -162,13 +162,24 @@
     &__panel {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(7rem, 1fr));
+      grid-auto-rows: max-content; /* 1. FORCES Safari to calculate rows via content size */
+      align-items: start;          /* 2. Prevents unexpected vertical box-stretching */
       gap: 0.8rem;
       padding: 1.4rem;
       background: $secondary;
       max-height: 42rem;
       overflow-y: auto;
+      
+      /* Safari custom scrollbar fix (scrollbar-width/color are ignored by Safari) */
       scrollbar-width: thin;
       scrollbar-color: $black transparent;
+      &::-webkit-scrollbar {
+        width: 0.6rem;
+      }
+      &::-webkit-scrollbar-thumb {
+        background-color: $black;
+        border-radius: 1rem;
+      }
     }
 
     &__loading {
@@ -184,6 +195,7 @@
     &__thumb {
       position: relative;
       aspect-ratio: 1;
+      width: 100%; /* 3. Keeps dimensions stable when columns collapse */
       border: 0.25rem solid $black;
       border-radius: 0.8rem;
       background: $white;
@@ -191,15 +203,6 @@
       cursor: pointer;
       transition: all $ease;
       padding: 0;
-
-      // Force inline SVGs (and their wrapper divs) to fill the thumb
-      //   & > div,
-      //   & > div > div {
-      //     position: absolute;
-      //     inset: 0;
-      //     width: 100%;
-      //     height: 100%;
-      //   }
 
       & svg {
         position: absolute;
@@ -298,7 +301,6 @@
         border: 0.2rem solid $black;
         cursor: pointer;
         outline: none;
-        // Full rainbow gradient
         background: linear-gradient(
           to right,
           hsl(0, 70%, 45%),
