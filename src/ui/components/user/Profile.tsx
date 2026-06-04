@@ -58,7 +58,10 @@ const Profile = () => {
   useEffect(() => {
     const fetchProfile = async () => {
       const userId = auth.currentUser?.uid;
-      if (!userId) { navigate("/"); return; }
+      if (!userId) {
+        navigate("/");
+        return;
+      }
       const snap = await getDoc(doc(db, "users", userId));
       if (snap.exists()) setProfile(snap.data() as UserProfile);
 
@@ -127,7 +130,9 @@ const Profile = () => {
   if (!profile) return <p>Profile not found.</p>;
 
   const joinDate = (profile.createdAt as any)?.toDate?.()
-    ? (profile.createdAt as any).toDate().toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+    ? (profile.createdAt as any)
+        .toDate()
+        .toLocaleDateString("en-GB", { month: "long", year: "numeric" })
     : "—";
 
   return (
@@ -135,12 +140,15 @@ const Profile = () => {
       <Navigation />
       <div className="profile">
         <div className="profile__inner">
-
           {/* ── Hero ── */}
           <div className="profile__hero">
             <div className="profile__avatar__wrapper">
               {profile.profileImageUrl ? (
-                <img src={profile.profileImageUrl} alt={profile.userName} className="profile__avatar" />
+                <img
+                  src={profile.profileImageUrl}
+                  alt={profile.userName}
+                  className="profile__avatar"
+                />
               ) : (
                 <AvatarPlaceholder name={profile.userName} />
               )}
@@ -150,7 +158,13 @@ const Profile = () => {
                 title="Change avatar"
               >
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <path d="M9.917 1.75a1.237 1.237 0 0 1 1.75 1.75L4.083 11.083 1.167 11.75l.666-2.917L9.917 1.75Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                  <path
+                    d="M9.917 1.75a1.237 1.237 0 0 1 1.75 1.75L4.083 11.083 1.167 11.75l.666-2.917L9.917 1.75Z"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </button>
             </div>
@@ -160,14 +174,20 @@ const Profile = () => {
                 <input
                   className="profile__edit__input profile__edit__input--name"
                   value={editData.userName ?? ""}
-                  onChange={(e) => setEditData((p) => ({ ...p, userName: e.target.value }))}
+                  onChange={(e) =>
+                    setEditData((p) => ({ ...p, userName: e.target.value }))
+                  }
                   placeholder="Username"
                 />
               ) : (
                 <h1 className="profile__name">{profile.userName}</h1>
               )}
               <div className="profile__hero__meta">
-                <RoleBadge role={editing ? (editData.role ?? profile.role) : profile.role} />
+                <RoleBadge
+                  role={
+                    editing ? (editData.role ?? profile.role) : profile.role
+                  }
+                />
                 <span className="profile__joined">Member since {joinDate}</span>
               </div>
             </div>
@@ -175,15 +195,29 @@ const Profile = () => {
             <div className="profile__hero__actions">
               {editing ? (
                 <>
-                  <button className="btn__wired" onClick={handleEditCancel} disabled={saving}>Cancel</button>
-                  <button className="btn__primary" onClick={handleSave} disabled={saving}>
+                  <button
+                    className="btn__wired"
+                    onClick={handleEditCancel}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="btn__primary"
+                    onClick={handleSave}
+                    disabled={saving}
+                  >
                     {saving ? "Saving..." : "Save changes"}
                   </button>
                 </>
               ) : (
                 <>
-                  <button className="btn__wired" onClick={handleEditStart}>Edit profile</button>
-                  <button className="btn__danger" onClick={handleSignOut}>Sign out</button>
+                  <button className="btn__wired" onClick={handleEditStart}>
+                    Edit profile
+                  </button>
+                  <button className="btn__danger" onClick={handleSignOut}>
+                    Sign out
+                  </button>
                 </>
               )}
             </div>
@@ -198,13 +232,17 @@ const Profile = () => {
                 <textarea
                   className="profile__edit__input profile__edit__input--bio"
                   value={editData.bio ?? ""}
-                  onChange={(e) => setEditData((p) => ({ ...p, bio: e.target.value }))}
+                  onChange={(e) =>
+                    setEditData((p) => ({ ...p, bio: e.target.value }))
+                  }
                   placeholder="Tell us about yourself..."
                   rows={4}
                 />
               ) : (
                 <p className="profile__card__value">
-                  {profile.bio || <span className="profile__card__empty">No bio yet.</span>}
+                  {profile.bio || (
+                    <span className="profile__card__empty">No bio yet.</span>
+                  )}
                 </p>
               )}
             </div>
@@ -218,7 +256,9 @@ const Profile = () => {
               </div>
               <div className="profile__card__row">
                 <span className="profile__card__label">Phone</span>
-                <span className="profile__card__value">{profile.phone || "—"}</span>
+                <span className="profile__card__value">
+                  {profile.phone || "—"}
+                </span>
               </div>
             </div>
 
@@ -231,7 +271,9 @@ const Profile = () => {
                   <select
                     className="profile__edit__select"
                     value={editData.team ?? ""}
-                    onChange={(e) => setEditData((p) => ({ ...p, team: e.target.value }))}
+                    onChange={(e) =>
+                      setEditData((p) => ({ ...p, team: e.target.value }))
+                    }
                   >
                     <option value="">— no team —</option>
                     <option value="Herren 1">Herren 1</option>
@@ -245,7 +287,9 @@ const Profile = () => {
                     <option value="DU20/1">DU20/1</option>
                   </select>
                 ) : (
-                  <span className="profile__card__value">{profile.team || "—"}</span>
+                  <span className="profile__card__value">
+                    {profile.team || "—"}
+                  </span>
                 )}
               </div>
               <div className="profile__card__row">
@@ -254,7 +298,12 @@ const Profile = () => {
                   <select
                     className="profile__edit__select"
                     value={editData.role ?? profile.role}
-                    onChange={(e) => setEditData((p) => ({ ...p, role: e.target.value as UserProfile["role"] }))}
+                    onChange={(e) =>
+                      setEditData((p) => ({
+                        ...p,
+                        role: e.target.value as UserProfile["role"],
+                      }))
+                    }
                   >
                     <option value="coach">Coach</option>
                     <option value="player">Player</option>
@@ -270,30 +319,28 @@ const Profile = () => {
             <div className="profile__card">
               <h3 className="profile__card__title">Activity</h3>
               <div className="profile__card__row">
-                <span className="profile__card__label">Favourite exercises</span>
-                <span className="profile__card__value profile__card__value--accent">{favouriteExerciseCount}</span>
+                <span className="profile__card__label">
+                  Favourite exercises
+                </span>
+                <span className="profile__card__value profile__card__value--accent">
+                  {favouriteExerciseCount}
+                </span>
               </div>
             </div>
 
             {/* Quick links */}
             <div className="profile__card">
-              <h3 className="profile__card__title">Quick links</h3>
-              <button className="profile__quicklink" onClick={() => navigate("/preferences")}>
-                Preferences
+              <h3 className="profile__card__title">Preference Center</h3>
+              <button
+                className="profile__quicklink"
+                onClick={() => navigate("/preferences")}
+              >
+                How you want to use Trainingsplaner
                 <svg width="16" height="10" viewBox="0 0 23 12" fill="none">
-                  <path d="M1 5.25H0.25V6.75H1V5.25ZM22.5303 6.53C22.8232 6.237 22.8232 5.763 22.5303 5.47L17.757 0.697C17.465 0.404 16.99 0.404 16.697 0.697C16.404 0.99 16.404 1.465 16.697 1.757L20.939 6L16.697 10.243C16.404 10.536 16.404 11.01 16.697 11.303C16.99 11.596 17.465 11.596 17.757 11.303L22.5303 6.53ZM1 6.75H22V5.25H1V6.75Z" fill="currentColor" />
-                </svg>
-              </button>
-              <button className="profile__quicklink" onClick={() => navigate("/training-overview")}>
-                My Trainings
-                <svg width="16" height="10" viewBox="0 0 23 12" fill="none">
-                  <path d="M1 5.25H0.25V6.75H1V5.25ZM22.5303 6.53C22.8232 6.237 22.8232 5.763 22.5303 5.47L17.757 0.697C17.465 0.404 16.99 0.404 16.697 0.697C16.404 0.99 16.404 1.465 16.697 1.757L20.939 6L16.697 10.243C16.404 10.536 16.404 11.01 16.697 11.303C16.99 11.596 17.465 11.596 17.757 11.303L22.5303 6.53ZM1 6.75H22V5.25H1V6.75Z" fill="currentColor" />
-                </svg>
-              </button>
-              <button className="profile__quicklink" onClick={() => navigate("/exercise-overview")}>
-                Exercise Library
-                <svg width="16" height="10" viewBox="0 0 23 12" fill="none">
-                  <path d="M1 5.25H0.25V6.75H1V5.25ZM22.5303 6.53C22.8232 6.237 22.8232 5.763 22.5303 5.47L17.757 0.697C17.465 0.404 16.99 0.404 16.697 0.697C16.404 0.99 16.404 1.465 16.697 1.757L20.939 6L16.697 10.243C16.404 10.536 16.404 11.01 16.697 11.303C16.99 11.596 17.465 11.596 17.757 11.303L22.5303 6.53ZM1 6.75H22V5.25H1V6.75Z" fill="currentColor" />
+                  <path
+                    d="M1 5.25H0.25V6.75H1V5.25ZM22.5303 6.53C22.8232 6.237 22.8232 5.763 22.5303 5.47L17.757 0.697C17.465 0.404 16.99 0.404 16.697 0.697C16.404 0.99 16.404 1.465 16.697 1.757L20.939 6L16.697 10.243C16.404 10.536 16.404 11.01 16.697 11.303C16.99 11.596 17.465 11.596 17.757 11.303L22.5303 6.53ZM1 6.75H22V5.25H1V6.75Z"
+                    fill="currentColor"
+                  />
                 </svg>
               </button>
             </div>
@@ -303,11 +350,22 @@ const Profile = () => {
 
       {/* ── Avatar editor dialog ── */}
       {avatarEditorOpen && (
-        <div className="dialog__overlay" onClick={() => setAvatarEditorOpen(false)}>
-          <div className="dialog profile__avatar__editor__dialog" onClick={(e) => e.stopPropagation()}>
+        <div
+          className="dialog__overlay"
+          onClick={() => setAvatarEditorOpen(false)}
+        >
+          <div
+            className="dialog profile__avatar__editor__dialog"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="dialog__header">
               <h3 className="dialog__title">Customize your avatar</h3>
-              <button className="dialog__close" onClick={() => setAvatarEditorOpen(false)}>×</button>
+              <button
+                className="dialog__close"
+                onClick={() => setAvatarEditorOpen(false)}
+              >
+                ×
+              </button>
             </div>
             <AvatarEditor
               userId={auth.currentUser?.uid}

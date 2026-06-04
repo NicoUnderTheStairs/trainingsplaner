@@ -9,6 +9,7 @@ const PLAYER_COLORS: Record<string, string> = {
   middleBlocker: "#4DB87A",
   setter: "#3EC6D4",
   libero: "#624DB8",
+  coach: "#FFEE52",
   // Legacy types (color-preserved)
   attacker: "#E63C2F",
   defender: "#3EC6D4",
@@ -20,6 +21,7 @@ const PLAYER_LABELS: Record<string, string> = {
   middleBlocker: "MB",
   setter: "S",
   libero: "L",
+  coach: "C",
   // Legacy types get new labels
   attacker: "OH",
   defender: "S",
@@ -27,7 +29,7 @@ const PLAYER_LABELS: Record<string, string> = {
 
 const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
   const players = sketch?.players ? Object.entries(sketch.players) : [];
-  const arrows  = sketch?.arrows  ? Object.entries(sketch.arrows)  : [];
+  const arrows = sketch?.arrows ? Object.entries(sketch.arrows) : [];
   const objects = (sketch as any)?.objects
     ? Object.entries((sketch as any).objects)
     : [];
@@ -41,7 +43,14 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
       preserveAspectRatio="xMidYMid meet"
     >
       <defs>
-        <marker id="thumb-arrow" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+        <marker
+          id="thumb-arrow"
+          markerWidth="6"
+          markerHeight="6"
+          refX="3"
+          refY="3"
+          orient="auto"
+        >
           <path d="M0,0 L0,6 L6,3 Z" fill="#1E1E1E" />
         </marker>
       </defs>
@@ -80,9 +89,40 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
                 strokeWidth={1.5}
                 rx={2}
               />
-              <line x1={-11} y1={7} x2={-11} y2={12} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
-              <line x1={11} y1={7} x2={11} y2={12} stroke="#1E1E1E" strokeWidth={1.5} strokeLinecap="round" />
+              <line
+                x1={-11}
+                y1={7}
+                x2={-11}
+                y2={12}
+                stroke="#1E1E1E"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+              />
+              <line
+                x1={11}
+                y1={7}
+                x2={11}
+                y2={12}
+                stroke="#1E1E1E"
+                strokeWidth={1.5}
+                strokeLinecap="round"
+              />
             </>
+          )}
+          {obj.type === "matt" && (
+            <rect
+              x={-22}
+              y={-10}
+              width={44}
+              height={20}
+              fill="#4A90D9"
+              stroke="#1E1E1E"
+              strokeWidth={1.5}
+              rx={3}
+            />
+          )}
+          {obj.type === "ball" && (
+            <circle r={8} fill="#FFEE52" stroke="#1E1E1E" strokeWidth={1.5} />
           )}
         </g>
       ))}
@@ -109,7 +149,7 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
           <text
             textAnchor="middle"
             dominantBaseline="central"
-            fill="white"
+            fill={player.type === "coach" ? "#1E1E1E" : "white"}
             fontSize={11}
             fontWeight="bold"
           >

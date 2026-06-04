@@ -32,7 +32,6 @@ const AVAILABLE_TAGS = [
   "Block",
   "Reception",
   "Service",
-  "Setting",
 ];
 
 const SVG_W = 560;
@@ -43,9 +42,10 @@ type PlayerType =
   | "opposite"
   | "middleBlocker"
   | "setter"
-  | "libero";
+  | "libero"
+  | "coach";
 type SketchTool = "select" | "arrow";
-type ObjectType = "pylon" | "bench";
+type ObjectType = "pylon" | "bench" | "matt" | "ball";
 
 interface Player {
   id: string;
@@ -75,6 +75,7 @@ const PLAYER_COLORS: Record<PlayerType, string> = {
   middleBlocker: "#4DB87A",
   setter: "#3EC6D4",
   libero: "#624DB8",
+  coach: "#FFEE52",
 };
 const PLAYER_LABELS: Record<PlayerType, string> = {
   outside: "OH",
@@ -82,10 +83,13 @@ const PLAYER_LABELS: Record<PlayerType, string> = {
   middleBlocker: "MB",
   setter: "S",
   libero: "L",
+  coach: "C",
 };
 const OBJECT_COLORS: Record<ObjectType, string> = {
   pylon: "#FF8C00",
   bench: "#8B5E3C",
+  matt: "#4A90D9",
+  ball: "#FFEE52",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -211,6 +215,62 @@ const BenchShape = ({ selected }: { selected: boolean }) => (
   </>
 );
 
+const MattShape = ({ selected }: { selected: boolean }) => (
+  <>
+    {selected && (
+      <rect
+        x={-28}
+        y={-15}
+        width={56}
+        height={30}
+        fill="none"
+        stroke="#E63C2F"
+        strokeWidth={2}
+        strokeDasharray="4 2"
+        rx={3}
+      />
+    )}
+    <rect
+      x={-22}
+      y={-10}
+      width={44}
+      height={20}
+      fill={OBJECT_COLORS.matt}
+      stroke="#1E1E1E"
+      strokeWidth={1.5}
+      rx={3}
+    />
+  </>
+);
+
+const BallShape = ({ selected }: { selected: boolean }) => (
+  <>
+    {selected && (
+      <circle
+        r={14}
+        fill="none"
+        stroke="#E63C2F"
+        strokeWidth={2}
+        strokeDasharray="4 2"
+      />
+    )}
+    <circle
+      r={8}
+      fill={OBJECT_COLORS.ball}
+      stroke="#1E1E1E"
+      strokeWidth={1.5}
+    />
+  </>
+);
+
+const renderDescription = (text?: string) =>
+  text?.split("\n").map((line, i) => (
+    <span key={i}>
+      {line}
+      {i < text.split("\n").length - 1 && <br />}
+    </span>
+  ));
+
 // ─── Palette renderers ──────────────────────────────────────────────────────
 
 const PylonPalette = ({ active }: { active: boolean }) => (
@@ -253,6 +313,32 @@ const BenchPalette = ({ active }: { active: boolean }) => (
       stroke="#1E1E1E"
       strokeWidth={1.5}
       strokeLinecap="round"
+    />
+  </svg>
+);
+
+const MattPalette = ({ active }: { active: boolean }) => (
+  <svg width="36" height="20" viewBox="-18 -10 36 20">
+    <rect
+      x={-15}
+      y={-7}
+      width={30}
+      height={14}
+      fill={OBJECT_COLORS.matt}
+      stroke="#1E1E1E"
+      strokeWidth={active ? 2.5 : 1.5}
+      rx={3}
+    />
+  </svg>
+);
+
+const BallPalette = ({ active }: { active: boolean }) => (
+  <svg width="24" height="24" viewBox="-12 -12 24 24">
+    <circle
+      r={8}
+      fill={OBJECT_COLORS.ball}
+      stroke="#1E1E1E"
+      strokeWidth={active ? 2.5 : 1.5}
     />
   </svg>
 );
@@ -319,13 +405,10 @@ const SketchEditor = ({
 
   const fromMouse = (e: React.MouseEvent | MouseEvent) =>
     getPoint(e.clientX, e.clientY);
-  const fromTouch = useCallback(
-    (e: React.TouchEvent) => {
-      const t = e.touches[0] ?? e.changedTouches[0];
-      return getPoint(t.clientX, t.clientY);
-    },
-    [getPoint],
-  );
+  const fromTouch = (e: React.TouchEvent) => {
+    const t = e.touches[0] ?? e.changedTouches[0];
+    return getPoint(t.clientX, t.clientY);
+  };
 
   // ── Place helpers ──────────────────────────────────────────────────────────
   const placePlayer = (pt: { x: number; y: number }, type: PlayerType) => {
@@ -530,33 +613,9 @@ const SketchEditor = ({
         };
         return;
       }
-      // Hit-test arrows (point-to-segment distance)
-      const hitArrow = arrows.find((a) => {
-        const dx = a.x2 - a.x1,
-          dy = a.y2 - a.y1;
-        const lenSq = dx * dx + dy * dy;
-        if (lenSq === 0) return Math.hypot(pt.x - a.x1, pt.y - a.y1) < 18;
-        const t = Math.max(
-          0,
-          Math.min(1, ((pt.x - a.x1) * dx + (pt.y - a.y1) * dy) / lenSq),
-        );
-        return Math.hypot(pt.x - (a.x1 + t * dx), pt.y - (a.y1 + t * dy)) < 18;
-      });
-      if (hitArrow) {
-        setSelectedId(hitArrow.id);
-        return;
-      }
       setSelectedId(null);
     },
-    [
-      tool,
-      players,
-      objects,
-      arrows,
-      pendingPlayerType,
-      pendingObjectType,
-      fromTouch,
-    ],
+    [tool, players, objects, pendingPlayerType, pendingObjectType, getPoint],
   );
 
   const handleSVGTouchMove = useCallback(
@@ -583,15 +642,25 @@ const SketchEditor = ({
     typeof window !== "undefined" &&
     window.matchMedia("(pointer: coarse)").matches;
 
-  const handlePalettePlayer = (type: PlayerType) => {
-    if (!isCoarse()) return;
-    setPendingObjectType(null);
-    setPendingPlayerType((prev) => (prev === type ? null : type));
+  const handlePalettePlayer = (
+    type: PlayerType,
+    e: React.MouseEvent | React.TouchEvent,
+  ) => {
+    if (isCoarse()) {
+      e.preventDefault();
+      setPendingObjectType(null);
+      setPendingPlayerType((prev) => (prev === type ? null : type));
+    }
   };
-  const handlePaletteObject = (type: ObjectType) => {
-    if (!isCoarse()) return;
-    setPendingPlayerType(null);
-    setPendingObjectType((prev) => (prev === type ? null : type));
+  const handlePaletteObject = (
+    type: ObjectType,
+    e: React.MouseEvent | React.TouchEvent,
+  ) => {
+    if (isCoarse()) {
+      e.preventDefault();
+      setPendingPlayerType(null);
+      setPendingObjectType((prev) => (prev === type ? null : type));
+    }
   };
 
   // ── Delete ─────────────────────────────────────────────────────────────────
@@ -642,7 +711,8 @@ const SketchEditor = ({
               draggable
               title={type}
               onDragStart={(e) => e.dataTransfer.setData("playerType", type)}
-              onClick={() => handlePalettePlayer(type)}
+              onClick={(e) => handlePalettePlayer(type, e)}
+              onTouchStart={(e) => handlePalettePlayer(type, e)}
               style={{ background: PLAYER_COLORS[type] }}
             >
               {PLAYER_LABELS[type]}
@@ -658,7 +728,8 @@ const SketchEditor = ({
             draggable
             title="Pylon"
             onDragStart={(e) => e.dataTransfer.setData("objectType", "pylon")}
-            onClick={() => handlePaletteObject("pylon")}
+            onClick={(e) => handlePaletteObject("pylon", e)}
+            onTouchStart={(e) => handlePaletteObject("pylon", e)}
           >
             <PylonPalette active={pendingObjectType === "pylon"} />
           </div>
@@ -667,9 +738,30 @@ const SketchEditor = ({
             draggable
             title="Bench / elevated object"
             onDragStart={(e) => e.dataTransfer.setData("objectType", "bench")}
-            onClick={() => handlePaletteObject("bench")}
+            onClick={(e) => handlePaletteObject("bench", e)}
+            onTouchStart={(e) => handlePaletteObject("bench", e)}
           >
             <BenchPalette active={pendingObjectType === "bench"} />
+          </div>
+          <div
+            className={`sketch__palette__object ${pendingObjectType === "matt" ? "sketch__palette__object--active" : ""}`}
+            draggable
+            title="Matt"
+            onDragStart={(e) => e.dataTransfer.setData("objectType", "matt")}
+            onClick={(e) => handlePaletteObject("matt", e)}
+            onTouchStart={(e) => handlePaletteObject("matt", e)}
+          >
+            <MattPalette active={pendingObjectType === "matt"} />
+          </div>
+          <div
+            className={`sketch__palette__object ${pendingObjectType === "ball" ? "sketch__palette__object--active" : ""}`}
+            draggable
+            title="Ball"
+            onDragStart={(e) => e.dataTransfer.setData("objectType", "ball")}
+            onClick={(e) => handlePaletteObject("ball", e)}
+            onTouchStart={(e) => handlePaletteObject("ball", e)}
+          >
+            <BallPalette active={pendingObjectType === "ball"} />
           </div>
         </div>
 
@@ -809,6 +901,8 @@ const SketchEditor = ({
             {o.type === "bench" && (
               <BenchShape selected={selectedId === o.id} />
             )}
+            {o.type === "matt" && <MattShape selected={selectedId === o.id} />}
+            {o.type === "ball" && <BallShape selected={selectedId === o.id} />}
           </g>
         ))}
 
@@ -885,7 +979,7 @@ const SketchEditor = ({
             <text
               textAnchor="middle"
               dominantBaseline="central"
-              fill="white"
+              fill={p.type === "coach" ? "#1E1E1E" : "white"}
               fontSize={11}
               fontWeight="bold"
               fontFamily="Roboto, sans-serif"
@@ -907,14 +1001,6 @@ const SketchEditor = ({
     </div>
   );
 };
-
-const renderDescription = (text?: string) =>
-  text?.split("\n").map((line, i) => (
-    <span key={i}>
-      {line}
-      {i < text.split("\n").length - 1 && <br />}
-    </span>
-  ));
 
 // ─── Variant types ────────────────────────────────────────────────────────────
 
@@ -1134,7 +1220,7 @@ const ExerciseDetail = () => {
             {/* Left: info */}
             <div className="exercisedetail__info">
               <div className="exercisedetail__header">
-                
+                <div className="exercisedetail__header__accent" />
                 <div className="exercisedetail__header__body">
                   <div className="exercisedetail__meta">
                     <span className="exercisedetail__meta__author">

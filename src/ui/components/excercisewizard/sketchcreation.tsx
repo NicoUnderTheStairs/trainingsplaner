@@ -9,7 +9,7 @@ import type {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Tool = "select" | "arrow";
-type ObjectType = "pylon" | "bench";
+type ObjectType = "pylon" | "bench" | "matt" | "ball";
 
 interface SketchObject {
   id: string;
@@ -34,6 +34,7 @@ const PLAYER_COLORS: Record<PlayerType, string> = {
   middleBlocker: "#4DB87A",
   setter: "#3EC6D4",
   libero: "#624DB8",
+  coach: "#FFEE52",
 };
 const PLAYER_LABELS: Record<PlayerType, string> = {
   outside: "OH",
@@ -41,11 +42,14 @@ const PLAYER_LABELS: Record<PlayerType, string> = {
   middleBlocker: "MB",
   setter: "S",
   libero: "L",
+  coach: "C",
 };
 
 const OBJECT_COLORS: Record<ObjectType, string> = {
   pylon: "#FF8C00",
   bench: "#8B5E3C",
+  matt: "#4A90D9",
+  ball: "#FFEE52",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -175,6 +179,54 @@ const BenchShape = ({ selected }: { selected: boolean }) => (
   </>
 );
 
+const MattShape = ({ selected }: { selected: boolean }) => (
+  <>
+    {selected && (
+      <rect
+        x={-28}
+        y={-15}
+        width={56}
+        height={30}
+        fill="none"
+        stroke="#E63C2F"
+        strokeWidth={2}
+        strokeDasharray="4 2"
+        rx={3}
+      />
+    )}
+    <rect
+      x={-22}
+      y={-10}
+      width={44}
+      height={20}
+      fill={OBJECT_COLORS.matt}
+      stroke="#1E1E1E"
+      strokeWidth={1.5}
+      rx={3}
+    />
+  </>
+);
+
+const BallShape = ({ selected }: { selected: boolean }) => (
+  <>
+    {selected && (
+      <circle
+        r={14}
+        fill="none"
+        stroke="#E63C2F"
+        strokeWidth={2}
+        strokeDasharray="4 2"
+      />
+    )}
+    <circle
+      r={8}
+      fill={OBJECT_COLORS.ball}
+      stroke="#1E1E1E"
+      strokeWidth={1.5}
+    />
+  </>
+);
+
 // ─── Palette item renderers (for toolbar) ─────────────────────────────────────
 
 const PylonPalette = ({ active }: { active: boolean }) => (
@@ -217,6 +269,32 @@ const BenchPalette = ({ active }: { active: boolean }) => (
       stroke="#1E1E1E"
       strokeWidth={1.5}
       strokeLinecap="round"
+    />
+  </svg>
+);
+
+const MattPalette = ({ active }: { active: boolean }) => (
+  <svg width="36" height="20" viewBox="-18 -10 36 20">
+    <rect
+      x={-15}
+      y={-7}
+      width={30}
+      height={14}
+      fill={OBJECT_COLORS.matt}
+      stroke="#1E1E1E"
+      strokeWidth={active ? 2.5 : 1.5}
+      rx={3}
+    />
+  </svg>
+);
+
+const BallPalette = ({ active }: { active: boolean }) => (
+  <svg width="24" height="24" viewBox="-12 -12 24 24">
+    <circle
+      r={8}
+      fill={OBJECT_COLORS.ball}
+      stroke="#1E1E1E"
+      strokeWidth={active ? 2.5 : 1.5}
     />
   </svg>
 );
@@ -661,6 +739,28 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
             >
               <BenchPalette active={pendingObjectType === "bench"} />
             </div>
+            {/* Matt */}
+            <div
+              className={`sketch__palette__object ${pendingObjectType === "matt" ? "sketch__palette__object--active" : ""}`}
+              draggable
+              title="Matt"
+              onDragStart={(e) => e.dataTransfer.setData("objectType", "matt")}
+              onClick={(e) => handlePaletteObject("matt", e)}
+              onTouchStart={(e) => handlePaletteObject("matt", e)}
+            >
+              <MattPalette active={pendingObjectType === "matt"} />
+            </div>
+            {/* Ball */}
+            <div
+              className={`sketch__palette__object ${pendingObjectType === "ball" ? "sketch__palette__object--active" : ""}`}
+              draggable
+              title="Ball"
+              onDragStart={(e) => e.dataTransfer.setData("objectType", "ball")}
+              onClick={(e) => handlePaletteObject("ball", e)}
+              onTouchStart={(e) => handlePaletteObject("ball", e)}
+            >
+              <BallPalette active={pendingObjectType === "ball"} />
+            </div>
           </div>
         </div>
 
@@ -783,6 +883,12 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
             {obj.type === "bench" && (
               <BenchShape selected={selectedId === obj.id} />
             )}
+            {obj.type === "matt" && (
+              <MattShape selected={selectedId === obj.id} />
+            )}
+            {obj.type === "ball" && (
+              <BallShape selected={selectedId === obj.id} />
+            )}
           </g>
         ))}
 
@@ -860,7 +966,7 @@ const SketchCreation: React.FC<Props> = ({ sketch, onChange }) => {
             <text
               textAnchor="middle"
               dominantBaseline="central"
-              fill="white"
+              fill={player.type === "coach" ? "#1E1E1E" : "white"}
               fontSize={11}
               fontWeight="bold"
               fontFamily="Roboto, sans-serif"

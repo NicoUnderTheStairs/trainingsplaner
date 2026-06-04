@@ -185,7 +185,9 @@
       color: $black;
       background-color: $secondary;
       outline: none;
-      transition: border-color $ease, box-shadow $ease;
+      transition:
+        border-color $ease,
+        box-shadow $ease;
       display: block;
 
       &:focus {
@@ -193,7 +195,9 @@
         box-shadow: 0.2rem 0.2rem 0 $black;
       }
 
-      &::placeholder { color: $gray-400; }
+      &::placeholder {
+        color: $gray-400;
+      }
 
       &--title {
         font-size: 3.2rem;
@@ -286,7 +290,9 @@
       border-radius: 5.2rem;
       transition: width 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 
-      &--over { background-color: $primary-3; }
+      &--over {
+        background-color: $primary-3;
+      }
     }
 
     &__label {
@@ -296,10 +302,14 @@
       color: $black;
       white-space: nowrap;
 
-      &--over { color: $primary-3; }
+      &--over {
+        color: $primary-3;
+      }
     }
 
-    &__over { font-weight: 400; }
+    &__over {
+      font-weight: 400;
+    }
   }
 
   // ── Players section ───────────────────────────────────────────────────────
@@ -378,7 +388,7 @@
       }
 
       &__label {
-        font-size: 1.1rem;
+        font-size: 1.6rem;
         font-weight: 600;
         color: $black;
         font-family: $font-family;
@@ -420,9 +430,90 @@
       font-style: italic;
     }
 
+    &__edit {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border: 0.3rem solid $black;
+      border-radius: 1.4rem;
+      overflow: hidden;
+      background: $white;
+
+      &__row {
+        display: flex;
+        align-items: center;
+        gap: 1.2rem;
+        padding: 1rem 1.6rem;
+        border-bottom: 0.15rem solid rgba($black, 0.1);
+
+        &:last-child {
+          border-bottom: none;
+        }
+      }
+
+      &__label {
+        flex: 1;
+        font-size: 1.6rem;
+        font-weight: 700;
+        font-family: $font-family;
+        color: $black;
+      }
+
+      &__counter {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        border: 0.2rem solid $black;
+        border-radius: 0.8rem;
+        overflow: hidden;
+        background-color: $secondary;
+      }
+
+      &__btn {
+        width: 3.6rem;
+        height: 3.6rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: $secondary;
+        border: none;
+        font-size: 2rem;
+        font-weight: 700;
+        font-family: $font-family;
+        color: $black;
+        cursor: pointer;
+        transition: background $ease;
+        padding: 0;
+
+        &:hover:not(:disabled) {
+          background: $secondary-2;
+          color: $white;
+        }
+
+        &:disabled {
+          opacity: 0.25;
+          cursor: not-allowed;
+        }
+      }
+
+      &__value {
+        background-color: $secondary;
+        width: 4rem;
+        text-align: center;
+        font-size: 1.8rem;
+        font-weight: 800;
+        font-family: $font-family;
+        color: $black;
+      }
+    }
+
     @media (max-width: #{$screen-md-min}) {
-      &__total { margin-left: 0; }
-      &__grid  { gap: 0.8rem; }
+      &__total {
+        margin-left: 0;
+      }
+      &__grid {
+        gap: 0.8rem;
+      }
     }
   }
 
@@ -501,7 +592,9 @@
       position: relative;
       color: $black;
       text-decoration: none;
-      transition: transform $ease, box-shadow $ease;
+      transition:
+        transform $ease,
+        box-shadow $ease;
 
       &:not(&--edit):hover {
         transform: translate(-0.4rem, -0.4rem);
@@ -541,10 +634,17 @@
         flex-shrink: 0;
         padding: 0.4rem;
         border-radius: 0.6rem;
-        transition: color $ease, background $ease;
+        transition:
+          color $ease,
+          background $ease;
 
-        &:hover { color: $black; background-color: $secondary; }
-        &:active { cursor: grabbing; }
+        &:hover {
+          color: $black;
+          background-color: $secondary;
+        }
+        &:active {
+          cursor: grabbing;
+        }
       }
 
       &__reorder {
@@ -565,7 +665,10 @@
           font-size: 1rem;
           color: $gray-600;
           cursor: pointer;
-          transition: background $ease, border-color $ease, color $ease;
+          transition:
+            background $ease,
+            border-color $ease,
+            color $ease;
 
           &:hover:not(:disabled) {
             background: $secondary;
@@ -631,10 +734,15 @@
           padding: 0.2rem 0;
           transition: border-color $ease;
 
-          &:focus { border-bottom-color: $primary-5; }
+          &:focus {
+            border-bottom-color: $primary-5;
+          }
 
           &::-webkit-outer-spin-button,
-          &::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+          &::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+          }
         }
 
         & span {
@@ -648,7 +756,9 @@
       &__arrow {
         color: $gray-400;
         flex-shrink: 0;
-        transition: transform $ease, color $ease;
+        transition:
+          transform $ease,
+          color $ease;
       }
 
       &__remove {
@@ -672,7 +782,11 @@
         padding: 0;
         transition: all $ease;
 
-        &:hover { background-color: $error; border-color: $error; color: $white; }
+        &:hover {
+          background-color: $error;
+          border-color: $error;
+          color: $white;
+        }
       }
     }
   }
@@ -680,61 +794,92 @@
   // ── Responsive ────────────────────────────────────────────────────────────
 
   @media (max-width: #{$screen-xl-min}) {
-    &__inner { padding: 0 4.8rem; }
+    &__inner {
+      padding: 0 4.8rem;
+    }
   }
 
   @media (max-width: #{$screen-lg-min}) {
-    &__inner { padding: 0 2.4rem; }
+    &__inner {
+      padding: 0 2.4rem;
+    }
 
     &__header {
-      &__main { flex-direction: column; gap: 2.4rem; }
+      &__main {
+        flex-direction: column;
+        gap: 2.4rem;
+      }
 
       &__actions {
         flex-direction: row;
         min-width: unset;
         width: 100%;
 
-        .trainingdetail__btn, .btn__wired, .btn__primary {
+        .trainingdetail__btn,
+        .btn__wired,
+        .btn__primary {
           flex: 1;
           justify-content: center;
         }
       }
     }
 
-    &__title { font-size: 3.6rem; }
+    &__title {
+      font-size: 3.6rem;
+    }
 
     &__exercises__header {
       flex-direction: column;
       align-items: flex-start;
       gap: 1.6rem;
 
-      &__actions { width: 100%; justify-content: flex-end; }
+      &__actions {
+        width: 100%;
+        justify-content: flex-end;
+      }
     }
   }
 
   @media (max-width: #{$screen-md-min}) {
-    &__title { font-size: 2.8rem; }
+    &__title {
+      font-size: 2.8rem;
+    }
 
     &__exercises__item {
       &:not(&--edit):hover {
         transform: translate(-0.2rem, -0.2rem);
         box-shadow: 0.4rem 0.4rem 0 $black;
       }
-      &__title { font-size: 1.8rem; }
+      &__title {
+        font-size: 1.8rem;
+      }
     }
 
     &__header {
-      &__body { padding: 2rem 1.6rem; }
+      &__body {
+        padding: 2rem 1.6rem;
+      }
     }
   }
 
   @media (max-width: #{$screen-sm-min}) {
     &__exercises__item {
       // flex-wrap: wrap;
-      &__title { order: 2; flex-basis: 100%; font-size: 1.8rem; }
-      &__index { order: 1; }
-      &__duration__pill, &__duration { order: 3; }
-      &__arrow { order: 4; }
+      &__title {
+        order: 2;
+        flex-basis: 100%;
+        font-size: 1.8rem;
+      }
+      &__index {
+        order: 1;
+      }
+      &__duration__pill,
+      &__duration {
+        order: 3;
+      }
+      &__arrow {
+        order: 4;
+      }
     }
   }
 }
@@ -768,8 +913,13 @@
   padding-right: 0.4rem;
 
   // Thin scrollbar
-  &::-webkit-scrollbar { width: 0.4rem; }
-  &::-webkit-scrollbar-thumb { background: $primary-1; border-radius: 1rem; }
+  &::-webkit-scrollbar {
+    width: 0.4rem;
+  }
+  &::-webkit-scrollbar-thumb {
+    background: $primary-1;
+    border-radius: 1rem;
+  }
 }
 
 .share__user {
@@ -944,7 +1094,9 @@
     line-height: 1.6;
     margin: 0 0 2.4rem 0;
 
-    strong { color: $black; }
+    strong {
+      color: $black;
+    }
   }
 
   &__actions {
@@ -976,15 +1128,30 @@
     box-shadow: 0.3rem 0.3rem 0 darken($error, 15%);
   }
 
-  &:disabled { opacity: 0.5; cursor: not-allowed; transform: none; box-shadow: none; }
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
 }
 
 @keyframes dialog-overlay-in {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes dialog-in {
-  from { opacity: 0; transform: translateY(1.2rem) scale(0.97); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
+  from {
+    opacity: 0;
+    transform: translateY(1.2rem) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }

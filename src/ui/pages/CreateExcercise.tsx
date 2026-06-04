@@ -26,7 +26,7 @@ interface FormData {
   sketch?: {
     players: Record<string, any>;
     arrows: Record<string, any>;
-    objects: Record<string, any>; // ← was missing, caused objects to be dropped
+    objects?: Record<string, any>; // allow undefined sketch objects from SketchData
   };
   variantIds?: string[];
 }

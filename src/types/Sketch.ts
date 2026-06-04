@@ -1,7 +1,14 @@
-// src/types/Sketch.ts
+// ─── Sketch types ─────────────────────────────────────────────────────────────
+// Shared types for sketch editor, sketch creation wizard, and sketch thumbnails.
 
-export type PlayerType = "outside" | "opposite" | "middleBlocker" | "setter" | "libero";
-export type ObjectType = "pylon" | "bench";
+export type PlayerType =
+  | "outside"
+  | "opposite"
+  | "middleBlocker"
+  | "setter"
+  | "libero"
+  | "coach";
+export type ObjectType = "pylon" | "bench" | "matt" | "ball";
 
 export interface Player {
   id: string;
@@ -30,5 +37,5 @@ export interface SketchObject {
 export interface SketchData {
   players: Record<string, Omit<Player, "id">>;
   arrows: Record<string, Omit<Arrow, "id">>;
-  objects: Record<string, Omit<SketchObject, "id">>; // ← add this line
+  objects?: Record<string, Omit<SketchObject, "id">>;
 }

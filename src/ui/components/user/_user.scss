@@ -338,7 +338,10 @@ $transition-slow: 250ms ease;
     background: $white;
     cursor: pointer;
     text-align: left;
-    transition: border-color $transition, background $transition, box-shadow $transition;
+    transition:
+      border-color $transition,
+      background $transition,
+      box-shadow $transition;
 
     strong {
       font-size: 1.4rem;
@@ -362,7 +365,9 @@ $transition-slow: 250ms ease;
       background: $secondary;
       box-shadow: 0.3rem 0.3rem 0 $text;
 
-      strong { color: $text; }
+      strong {
+        color: $text;
+      }
     }
   }
 }
@@ -373,12 +378,12 @@ $transition-slow: 250ms ease;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 1.2rem 0;
   width: 100%;
-  padding: $space-sm + 2px $space-sm;
   border: none;
   background: transparent;
   border-bottom: 1px solid $border;
-  font-size: 13.5px;
+  font-size: 1.8rem;
   font-family: inherit;
   font-weight: 500;
   color: $text;
@@ -785,7 +790,6 @@ $transition-slow: 250ms ease;
     border-radius: 0;
   }
 }
-
 
 .preference {
   margin: 4.4rem 0;
