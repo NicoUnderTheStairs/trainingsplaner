@@ -141,8 +141,7 @@ const Tour = ({ onComplete }: TourProps) => {
             <div className="tour__body tour__body--centered">
               <h1 className="tour__title">Welcome to Trainingsplaner</h1>
               <p className="tour__subtitle">
-                Let's set up your profile in a few quick steps so the app works
-                perfectly for you.
+                Let's set up your profile in a few quick steps!
               </p>
               <button className="btn__primary tour__cta" onClick={next}>
                 Get started
@@ -153,6 +152,7 @@ const Tour = ({ onComplete }: TourProps) => {
                   />
                 </svg>
               </button>
+              <span className="tour__span">by Nico Fortino</span>
             </div>
           </>
         )}
