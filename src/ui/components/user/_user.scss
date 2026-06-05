@@ -67,6 +67,13 @@ $transition-slow: 250ms ease;
     flex-direction: column;
     gap: $space-xl;
   }
+
+  &__version {
+    font-size: 1.4rem;
+    color: $gray-600;
+    margin-top: $space-sm;
+    text-align: center;
+  }
 }
 
 // ─── Hero section ─────────────────────────────────────────────────────────────

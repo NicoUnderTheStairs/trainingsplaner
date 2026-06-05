@@ -159,17 +159,29 @@ const ProfileSkeleton = () => (
       <div className="profile__inner">
         {/* hero */}
         <div className="profile__hero">
-          <span className="sk sk--circle" style={{ width: "9.6rem", height: "9.6rem", flexShrink: 0 }} />
+          <span
+            className="sk sk--circle"
+            style={{ width: "9.6rem", height: "9.6rem", flexShrink: 0 }}
+          />
           <div className="sk-stack" style={{ flex: 1, gap: "0.8rem" }}>
             <span className="sk sk--line-xl sk--w40" />
             <div className="sk-row" style={{ gap: "0.8rem" }}>
-              <span className="sk sk--rect" style={{ width: "5rem", height: "2rem" }} />
+              <span
+                className="sk sk--rect"
+                style={{ width: "5rem", height: "2rem" }}
+              />
               <span className="sk sk--line sk--w30" />
             </div>
           </div>
           <div className="sk-row" style={{ flexShrink: 0, gap: "0.8rem" }}>
-            <span className="sk sk--rect" style={{ width: "9rem", height: "3.4rem" }} />
-            <span className="sk sk--rect" style={{ width: "8rem", height: "3.4rem" }} />
+            <span
+              className="sk sk--rect"
+              style={{ width: "9rem", height: "3.4rem" }}
+            />
+            <span
+              className="sk sk--rect"
+              style={{ width: "8rem", height: "3.4rem" }}
+            />
           </div>
         </div>
 
@@ -503,6 +515,8 @@ const Profile = () => {
               </button>
             </div>
           </div>
+
+          <p className="profile__version">TRAININGSPLANER by Nico | v1.1.52</p>
 
           {profile.role === "admin" && <AdminSection />}
         </div>
