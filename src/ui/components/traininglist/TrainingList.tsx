@@ -33,6 +33,13 @@ const toDateKey = (date: any): string => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 };
 
+const getWeekDays = (monday: Date): Date[] =>
+  Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    return d;
+  });
+
 const getCalendarDays = (monthDate: Date): { date: Date; currentMonth: boolean }[] => {
   const year = monthDate.getFullYear();
   const month = monthDate.getMonth();
@@ -137,6 +144,16 @@ const TrainingList = () => {
     return d;
   });
   const [selectedDay, setSelectedDay] = useState<string | null>(null);
+  const [calendarView, setCalendarView] = useState<"weekly" | "monthly" | "yearly">("monthly");
+  const [weekStart, setWeekStart] = useState(() => {
+    const today = new Date();
+    const day = today.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    const mon = new Date(today);
+    mon.setDate(today.getDate() + diff);
+    mon.setHours(0, 0, 0, 0);
+    return mon;
+  });
 
   // ── Search & filter ───────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
@@ -241,6 +258,15 @@ const TrainingList = () => {
       if (key) keys.add(key);
     });
     return keys;
+  }, [trainings]);
+
+  const trainingMonths = useMemo(() => {
+    const months = new Set<string>();
+    trainings.forEach((tr) => {
+      const key = toDateKey(tr.date);
+      if (key) months.add(key.slice(0, 7));
+    });
+    return months;
   }, [trainings]);
 
   const todayKey = toDateKey(new Date());
@@ -480,82 +506,234 @@ const TrainingList = () => {
 
                 {/* ── Sidebar: calendar ──────────────────────────────────── */}
                 <aside className="traininglist__sidebar">
-                  <section className="traininglist__calendar">
-                    <div className="traininglist__calendar__header">
-                      <button
-                        className="traininglist__calendar__nav"
-                        onClick={() =>
-                          setCalendarMonth(
-                            (m) => new Date(m.getFullYear(), m.getMonth() - 1, 1),
-                          )
-                        }
-                        aria-label="Previous month"
-                      >
-                        <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
-                          <path d="M8.5 1L1.5 8L8.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                      <span className="traininglist__calendar__title">
-                        {calendarMonth.toLocaleDateString("en-GB", {
-                          month: "long",
-                          year: "numeric",
-                        })}
-                      </span>
-                      <button
-                        className="traininglist__calendar__nav"
-                        onClick={() =>
-                          setCalendarMonth(
-                            (m) => new Date(m.getFullYear(), m.getMonth() + 1, 1),
-                          )
-                        }
-                        aria-label="Next month"
-                      >
-                        <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
-                          <path d="M1.5 1L8.5 8L1.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                        </svg>
-                      </button>
-                    </div>
 
-                    <div className="traininglist__calendar__grid">
-                      {WEEKDAYS.map((d) => (
-                        <div key={d} className="traininglist__calendar__weekday">
-                          {d}
-                        </div>
-                      ))}
-                      {calendarDays.map(({ date, currentMonth }, i) => {
-                        const key = toDateKey(date);
-                        const hasTraining = trainingDays.has(key);
-                        const isToday = key === todayKey;
-                        return (
+                  {/* View selector */}
+                  <div className="traininglist__view-selector">
+                    {(["weekly", "monthly", "yearly"] as const).map((v) => (
+                      <button
+                        key={v}
+                        className={`traininglist__view-selector__btn${calendarView === v ? " traininglist__view-selector__btn--active" : ""}`}
+                        onClick={() => setCalendarView(v)}
+                      >
+                        {v.charAt(0).toUpperCase() + v.slice(1)}
+                      </button>
+                    ))}
+                  </div>
+
+                  <section className="traininglist__calendar">
+
+                    {/* ── Weekly ── */}
+                    {calendarView === "weekly" && (() => {
+                      const weekDays = getWeekDays(weekStart);
+                      const weekEnd = weekDays[6];
+                      const sameMonth = weekStart.getMonth() === weekEnd.getMonth();
+                      const weekLabel = sameMonth
+                        ? `${weekStart.getDate()} – ${weekEnd.getDate()} ${weekStart.toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`
+                        : `${weekStart.getDate()} ${weekStart.toLocaleDateString("en-GB", { month: "short" })} – ${weekEnd.getDate()} ${weekEnd.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`;
+                      return (
+                        <>
+                          <div className="traininglist__calendar__header">
+                            <button
+                              className="traininglist__calendar__nav"
+                              onClick={() => setWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() - 7); return d; })}
+                              aria-label="Previous week"
+                            >
+                              <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                                <path d="M8.5 1L1.5 8L8.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                            <span className="traininglist__calendar__title">{weekLabel}</span>
+                            <button
+                              className="traininglist__calendar__nav"
+                              onClick={() => setWeekStart((w) => { const d = new Date(w); d.setDate(d.getDate() + 7); return d; })}
+                              aria-label="Next week"
+                            >
+                              <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                                <path d="M1.5 1L8.5 8L1.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                              </svg>
+                            </button>
+                          </div>
+                          <div className="traininglist__calendar__grid">
+                            {WEEKDAYS.map((d) => (
+                              <div key={d} className="traininglist__calendar__weekday">{d}</div>
+                            ))}
+                            {weekDays.map((date, i) => {
+                              const key = toDateKey(date);
+                              const hasTraining = trainingDays.has(key);
+                              const isToday = key === todayKey;
+                              return (
+                                <button
+                                  key={i}
+                                  className={[
+                                    "traininglist__calendar__day",
+                                    "traininglist__calendar__day--current",
+                                    isToday ? "traininglist__calendar__day--today" : "",
+                                    hasTraining ? "traininglist__calendar__day--has-training" : "",
+                                    key === selectedDay ? "traininglist__calendar__day--selected" : "",
+                                  ].filter(Boolean).join(" ")}
+                                  onClick={() => handleCalendarDayClick(key)}
+                                  aria-label={`${date.getDate()}${hasTraining ? " – training planned" : ""}`}
+                                >
+                                  <span>{date.getDate()}</span>
+                                  {hasTraining && <i className="traininglist__calendar__day__dot" />}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </>
+                      );
+                    })()}
+
+                    {/* ── Monthly ── */}
+                    {calendarView === "monthly" && (
+                      <>
+                        <div className="traininglist__calendar__header">
                           <button
-                            key={i}
-                            className={[
-                              "traininglist__calendar__day",
-                              currentMonth
-                                ? "traininglist__calendar__day--current"
-                                : "traininglist__calendar__day--other",
-                              isToday ? "traininglist__calendar__day--today" : "",
-                              hasTraining
-                                ? "traininglist__calendar__day--has-training"
-                                : "",
-                              key === selectedDay
-                                ? "traininglist__calendar__day--selected"
-                                : "",
-                            ]
-                              .filter(Boolean)
-                              .join(" ")}
-                            onClick={() => currentMonth && handleCalendarDayClick(key)}
-                            disabled={!currentMonth}
-                            aria-label={`${date.getDate()}${hasTraining ? " – training planned" : ""}`}
+                            className="traininglist__calendar__nav"
+                            onClick={() =>
+                              setCalendarMonth(
+                                (m) => new Date(m.getFullYear(), m.getMonth() - 1, 1),
+                              )
+                            }
+                            aria-label="Previous month"
                           >
-                            <span>{date.getDate()}</span>
-                            {hasTraining && (
-                              <i className="traininglist__calendar__day__dot" />
-                            )}
+                            <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                              <path d="M8.5 1L1.5 8L8.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
                           </button>
-                        );
-                      })}
-                    </div>
+                          <span className="traininglist__calendar__title">
+                            {calendarMonth.toLocaleDateString("en-GB", {
+                              month: "long",
+                              year: "numeric",
+                            })}
+                          </span>
+                          <button
+                            className="traininglist__calendar__nav"
+                            onClick={() =>
+                              setCalendarMonth(
+                                (m) => new Date(m.getFullYear(), m.getMonth() + 1, 1),
+                              )
+                            }
+                            aria-label="Next month"
+                          >
+                            <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                              <path d="M1.5 1L8.5 8L1.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+
+                        <div className="traininglist__calendar__grid">
+                          {WEEKDAYS.map((d) => (
+                            <div key={d} className="traininglist__calendar__weekday">
+                              {d}
+                            </div>
+                          ))}
+                          {calendarDays.map(({ date, currentMonth }, i) => {
+                            const key = toDateKey(date);
+                            const hasTraining = trainingDays.has(key);
+                            const isToday = key === todayKey;
+                            return (
+                              <button
+                                key={i}
+                                className={[
+                                  "traininglist__calendar__day",
+                                  currentMonth
+                                    ? "traininglist__calendar__day--current"
+                                    : "traininglist__calendar__day--other",
+                                  isToday ? "traininglist__calendar__day--today" : "",
+                                  hasTraining
+                                    ? "traininglist__calendar__day--has-training"
+                                    : "",
+                                  key === selectedDay
+                                    ? "traininglist__calendar__day--selected"
+                                    : "",
+                                ]
+                                  .filter(Boolean)
+                                  .join(" ")}
+                                onClick={() => currentMonth && handleCalendarDayClick(key)}
+                                disabled={!currentMonth}
+                                aria-label={`${date.getDate()}${hasTraining ? " – training planned" : ""}`}
+                              >
+                                <span>{date.getDate()}</span>
+                                {hasTraining && (
+                                  <i className="traininglist__calendar__day__dot" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+
+                    {/* ── Yearly ── */}
+                    {calendarView === "yearly" && (
+                      <>
+                        <div className="traininglist__calendar__header">
+                          <button
+                            className="traininglist__calendar__nav"
+                            onClick={() =>
+                              setCalendarMonth(
+                                (m) => new Date(m.getFullYear() - 1, m.getMonth(), 1),
+                              )
+                            }
+                            aria-label="Previous year"
+                          >
+                            <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                              <path d="M8.5 1L1.5 8L8.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                          <span className="traininglist__calendar__title">
+                            {calendarMonth.getFullYear()}
+                          </span>
+                          <button
+                            className="traininglist__calendar__nav"
+                            onClick={() =>
+                              setCalendarMonth(
+                                (m) => new Date(m.getFullYear() + 1, m.getMonth(), 1),
+                              )
+                            }
+                            aria-label="Next year"
+                          >
+                            <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                              <path d="M1.5 1L8.5 8L1.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                            </svg>
+                          </button>
+                        </div>
+                        <div className="traininglist__calendar__year-grid">
+                          {Array.from({ length: 12 }, (_, i) => {
+                            const monthKey = `${calendarMonth.getFullYear()}-${String(i + 1).padStart(2, "0")}`;
+                            const hasTrainings = trainingMonths.has(monthKey);
+                            const monthDate = new Date(calendarMonth.getFullYear(), i, 1);
+                            const now = new Date();
+                            const isCurrentMonth =
+                              now.getFullYear() === calendarMonth.getFullYear() &&
+                              now.getMonth() === i;
+                            return (
+                              <button
+                                key={i}
+                                className={[
+                                  "traininglist__calendar__month-btn",
+                                  hasTrainings ? "traininglist__calendar__month-btn--has-training" : "",
+                                  isCurrentMonth ? "traininglist__calendar__month-btn--current" : "",
+                                ].filter(Boolean).join(" ")}
+                                onClick={() => {
+                                  setCalendarMonth(monthDate);
+                                  setCalendarView("monthly");
+                                }}
+                              >
+                                <span>
+                                  {monthDate.toLocaleDateString("en-GB", { month: "short" })}
+                                </span>
+                                {hasTrainings && (
+                                  <i className="traininglist__calendar__day__dot" />
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+
                   </section>
                 </aside>
 

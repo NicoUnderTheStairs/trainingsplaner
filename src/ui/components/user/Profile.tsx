@@ -516,7 +516,7 @@ const Profile = () => {
             </div>
           </div>
 
-          <p className="profile__version">TRAININGSPLANER by Nico | v1.1.52</p>
+          <p className="profile__version">TRAININGSPLANER by Nico | v1.1.53</p>
 
           {profile.role === "admin" && <AdminSection />}
         </div>
