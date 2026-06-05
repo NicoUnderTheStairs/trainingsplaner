@@ -150,6 +150,49 @@ const AdminSection = () => {
   );
 };
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+const ProfileSkeleton = () => (
+  <>
+    <Navigation />
+    <div className="profile">
+      <div className="profile__inner">
+        {/* hero */}
+        <div className="profile__hero">
+          <span className="sk sk--circle" style={{ width: "9.6rem", height: "9.6rem", flexShrink: 0 }} />
+          <div className="sk-stack" style={{ flex: 1, gap: "0.8rem" }}>
+            <span className="sk sk--line-xl sk--w40" />
+            <div className="sk-row" style={{ gap: "0.8rem" }}>
+              <span className="sk sk--rect" style={{ width: "5rem", height: "2rem" }} />
+              <span className="sk sk--line sk--w30" />
+            </div>
+          </div>
+          <div className="sk-row" style={{ flexShrink: 0, gap: "0.8rem" }}>
+            <span className="sk sk--rect" style={{ width: "9rem", height: "3.4rem" }} />
+            <span className="sk sk--rect" style={{ width: "8rem", height: "3.4rem" }} />
+          </div>
+        </div>
+
+        {/* grid cards */}
+        <div className="profile__grid">
+          <div className="sk-card profile__card--wide">
+            <span className="sk sk--line sk--w20" />
+            <span className="sk sk--line sk--w100" />
+            <span className="sk sk--line sk--w75" />
+          </div>
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="sk-card">
+              <span className="sk sk--line sk--w30" />
+              <span className="sk sk--line sk--w55" />
+              <span className="sk sk--line sk--w40" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </>
+);
+
 // ─── Main component ────────────────────────────────────────────────────────────
 
 const Profile = () => {
@@ -242,13 +285,13 @@ const Profile = () => {
     navigate("/");
   };
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <ProfileSkeleton />;
   if (!profile) return <p>Profile not found.</p>;
 
   const joinDate = (profile.createdAt as any)?.toDate?.()
     ? (profile.createdAt as any)
         .toDate()
-        .toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+        .toLocaleDateString("de-CH", { month: "long", year: "numeric" })
     : "—";
 
   return (

@@ -99,6 +99,11 @@
     font-family: "Roboto Condensed";
     border-radius: 1rem;
 
+    &--secondary {
+      background-color: $white;
+      color: $black;
+    }
+
     &__wrapper {
       display: flex;
       justify-content: space-between !important;
@@ -419,6 +424,130 @@
     }
   }
 
+  // ── Editor wrapper ────────────────────────────────────────────────────────
+  &__editor {
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    overflow: hidden;
+    background-color: $white;
+    margin-bottom: 2.4rem;
+  }
+
+  // ── Top toolbar (undo · redo · delete · clear) ───────────────────────────
+  &__topbar {
+    background-color: $secondary;
+    border-bottom: 0.2rem solid rgba($black, 0.15);
+    padding: 0.8rem 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+
+    &__spacer { flex: 1; }
+  }
+
+  // ── Bottom toolbar ────────────────────────────────────────────────────────
+  &__bottombar {
+    background-color: $secondary;
+    border-top: 0.2rem solid rgba($black, 0.15);
+    padding: 1.2rem 1.6rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+
+    &__palette {
+      display: flex;
+      align-items: center;
+      gap: 2rem;
+      flex-wrap: wrap;
+
+      &__group {
+        display: flex;
+        align-items: center;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+      }
+    }
+
+    &__controls {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      flex-wrap: wrap;
+    }
+
+    &__spacer { flex: 1; }
+
+    &__label {
+      font-size: 1.2rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15rem;
+      color: $gray-600;
+      font-family: $font-family;
+      white-space: nowrap;
+    }
+  }
+
+  // ── Tool pill toggle ──────────────────────────────────────────────────────
+  &__pill {
+    display: inline-flex;
+    border: 0.2rem solid $black;
+    border-radius: 0.8rem;
+    overflow: hidden;
+    flex-shrink: 0;
+
+    &__btn {
+      padding: 0.35rem 1rem;
+      background: $white;
+      border: none;
+      cursor: pointer;
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      transition: background $ease, color $ease;
+      white-space: nowrap;
+
+      & + & {
+        border-left: 0.2rem solid $black;
+      }
+
+      &--active {
+        background-color: $secondary-2;
+        color: $primary-1;
+      }
+
+      &:hover:not(&--active) {
+        background-color: rgba($black, 0.06);
+      }
+    }
+  }
+
+  // ── Tool buttons (delete / clear / undo / redo) ───────────────────────────
+  &__tool__btn {
+    padding: 0.4rem 1.2rem;
+    cursor: pointer;
+    border: 0.2rem solid $black;
+    border-radius: 0.8rem;
+    background-color: $white;
+    font-size: 1.4rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $black;
+    transition: all $ease;
+    white-space: nowrap;
+
+    &:hover:not(:disabled) {
+      transform: translate(-0.1rem, -0.1rem);
+      box-shadow: 0.2rem 0.2rem 0 $black;
+    }
+
+    &:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+  }
+
   &__palette {
     &__player {
       width: 3.2rem;
@@ -433,24 +562,12 @@
     }
   }
 
-  &__tool {
-    &__btn {
-      &--active {
-        background-color: $secondary-2 !important;
-        color: $white !important;
-        border-color: $black !important;
-      }
-    }
-  }
-
   // ── Canvas ──────────────────────────────────────────────────────────────
   &__canvas {
     display: block;
     width: 100%;
     height: auto;
-    border: 0.3rem solid $black;
-    border-radius: 1rem;
-    touch-action: none; // prevent page scroll while drawing
+    touch-action: none;
     user-select: none;
 
     &--tool-select {
@@ -535,44 +652,27 @@
     }
   }
 
-  // ── Delete / clear action area ────────────────────────────────────────────
-  &__tool__btn {
-    // Base — already defined; add danger modifier
-    &--danger {
-      border-color: $error;
-      color: $error;
+  // ── Danger modifier for tool buttons ─────────────────────────────────────
+  &__tool__btn--danger {
+    border-color: $error;
+    color: $error;
 
-      &:hover {
-        background-color: $error;
-        color: $white;
-      }
+    &:hover {
+      background-color: $error;
+      color: $white;
+      box-shadow: 0.2rem 0.2rem 0 darken($error, 15%);
     }
   }
 
   // ── Responsive ────────────────────────────────────────────────────────────
 
   @media (max-width: #{$screen-lg-min}) {
-    &__toolbar {
-      &__group {
-        padding: 1.6rem;
-
-        &--tools {
-          flex-wrap: wrap;
-          gap: 0.8rem;
-        }
-      }
-    }
-
     &__palette__player {
-      // Bigger touch targets on mobile
-      width: 4rem;
-      height: 4rem;
       font-size: 1.6rem;
     }
 
-    &__tool__btn {
-      padding: 0.8rem 1.4rem;
-      font-size: 1.6rem;
+    &__bottombar {
+      padding: 1rem 1.2rem 0.6rem;
     }
   }
 }

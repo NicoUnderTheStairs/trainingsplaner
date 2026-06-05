@@ -173,6 +173,38 @@ const SketchThumbnail = ({ sketch }: { sketch: SketchData }) => {
   );
 };
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+const ExerciseListSkeleton = () => (
+  <div className="excerciselist__exercise__wrapper">
+    {[0, 1, 2, 3, 4, 5].map((i) => (
+      <div
+        key={i}
+        style={{
+          minWidth: "28rem",
+          maxWidth: "28rem",
+          border: "0.5rem solid rgba(30,30,30,0.1)",
+          borderRadius: "2rem",
+          overflow: "hidden",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <span className="sk sk--rect" style={{ height: "22rem", width: "100%", borderRadius: 0 }} />
+        <div className="sk-stack" style={{ padding: "1.6rem 1.8rem", gap: "0.8rem" }}>
+          <span className="sk sk--line-xl sk--w75" />
+          <span className="sk sk--line sk--w100" />
+          <span className="sk sk--line sk--w65" />
+          <div className="sk-row" style={{ marginTop: "0.4rem" }}>
+            <span className="sk sk--rect" style={{ width: "7rem", height: "2rem" }} />
+            <span className="sk sk--rect" style={{ width: "2.4rem", height: "2.4rem" }} />
+          </div>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 const ExcerciseList = () => {
@@ -524,7 +556,7 @@ const ExcerciseList = () => {
             </div>
           )}
 
-          {loading && <p className="excerciselist__status">Loading...</p>}
+          {loading && <ExerciseListSkeleton />}
           {error && (
             <p className="excerciselist__status excerciselist__status--error">
               {error}

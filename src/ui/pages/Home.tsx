@@ -31,10 +31,11 @@ interface SharedTraining extends Training {
 const formatDate = (date: any): string => {
   if (!date) return "—";
   const d = typeof date.toDate === "function" ? date.toDate() : new Date(date);
-  return d.toLocaleDateString("en-GB", {
+  return d.toLocaleDateString("de-CH", {
     weekday: "short",
     day: "2-digit",
-    month: "short",
+    month: "2-digit",
+    year: "numeric",
   });
 };
 
@@ -45,11 +46,44 @@ const getGreeting = (): string => {
   return "Good evening";
 };
 
-const Skeleton = () => (
-  <div className="home__skeleton">
-    <div className="home__skeleton__line home__skeleton__line--short" />
-    <div className="home__skeleton__line" />
-    <div className="home__skeleton__line home__skeleton__line--medium" />
+const TrainingWidgetSkeleton = () => (
+  <div className="sk-stack" style={{ gap: "1rem" }}>
+    <div className="sk-row" style={{ padding: "1.4rem 1.6rem", border: "0.2rem solid rgba(30,30,30,0.1)", borderRadius: "1.2rem" }}>
+      <span className="sk sk--rect" style={{ width: "0.5rem", height: "4.4rem", flexShrink: 0 }} />
+      <div className="sk-stack" style={{ flex: 1, gap: "0.5rem" }}>
+        <span className="sk sk--line sk--w65" />
+        <span className="sk sk--line sk--w40" />
+      </div>
+      <span className="sk sk--rect" style={{ width: "5.6rem", height: "2rem", flexShrink: 0 }} />
+    </div>
+  </div>
+);
+
+const ExerciseWidgetSkeleton = () => (
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1.2rem" }}>
+    {[0, 1, 2].map((i) => (
+      <div key={i} style={{ display: "flex", flexDirection: "column", border: "0.2rem solid rgba(30,30,30,0.1)", borderRadius: "1.4rem", overflow: "hidden" }}>
+        <span className="sk sk--rect" style={{ height: "9rem", width: "100%", borderRadius: 0 }} />
+        <div className="sk-stack" style={{ padding: "0.8rem 1.2rem 1.2rem", gap: "0.5rem" }}>
+          <span className="sk sk--line sk--w75" />
+          <span className="sk sk--line sk--w40" />
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+const SharedWidgetSkeleton = () => (
+  <div className="sk-stack" style={{ gap: "1rem" }}>
+    {[0, 1].map((i) => (
+      <div key={i} className="sk-row" style={{ padding: "1.4rem 1.6rem", border: "0.2rem solid rgba(30,30,30,0.1)", borderRadius: "1.2rem" }}>
+        <span className="sk sk--circle" style={{ width: "3.6rem", height: "3.6rem", flexShrink: 0 }} />
+        <div className="sk-stack" style={{ flex: 1, gap: "0.5rem" }}>
+          <span className="sk sk--line sk--w55" />
+          <span className="sk sk--line sk--w30" />
+        </div>
+      </div>
+    ))}
   </div>
 );
 
@@ -306,7 +340,7 @@ export default function Home() {
               </button>
             </div>
             {loadingTr ? (
-              <Skeleton />
+              <TrainingWidgetSkeleton />
             ) : trainings.length === 0 ? (
               <div className="home__widget__empty">
                 <p>No upcoming trainings planned</p>
@@ -368,7 +402,7 @@ export default function Home() {
               </button>
             </div>
             {loadingEx ? (
-              <Skeleton />
+              <ExerciseWidgetSkeleton />
             ) : exercises.length === 0 ? (
               <div className="home__widget__empty">
                 <p>No exercises yet.</p>
@@ -437,7 +471,7 @@ export default function Home() {
               Trainings your teammates have shared with you.
             </p>
             {loadingSh ? (
-              <Skeleton />
+              <SharedWidgetSkeleton />
             ) : sharedTrainings.length === 0 ? (
               <div className="home__widget__empty">
                 <p>No shared trainings yet.</p>
@@ -445,6 +479,10 @@ export default function Home() {
                   When a teammate shares a training with you it will appear
                   here.
                 </p>
+                <p></p>
+                <p></p>
+                <p></p>
+                <p></p>
               </div>
             ) : (
               <div className="home__shared__list">

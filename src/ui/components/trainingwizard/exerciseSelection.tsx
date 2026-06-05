@@ -43,24 +43,9 @@ const DragHandleIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     aria-hidden="true"
   >
-    <path
-      d="M1 2H15"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
-    <path
-      d="M1 7H15"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
-    <path
-      d="M1 12H15"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-    />
+    <path d="M1 2H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M1 7H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    <path d="M1 12H15" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
   </svg>
 );
 
@@ -81,8 +66,9 @@ const ExerciseSelection: React.FC<Props> = ({
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxStep, setLightboxStep] = useState<LightboxStep>("grid");
-  const [pendingExercise, setPendingExercise] = useState<Exercise | null>(null);
-  const [pendingDuration, setPendingDuration] = useState<string>("");
+  const [pendingExerciseIds, setPendingExerciseIds] = useState<Set<string>>(new Set());
+  const [pendingExerciseMap, setPendingExerciseMap] = useState<Record<string, Exercise>>({});
+  const [pendingDurations, setPendingDurations] = useState<Record<string, string>>({});
 
   // Search & filter
   const [search, setSearch] = useState("");
@@ -99,7 +85,17 @@ const ExerciseSelection: React.FC<Props> = ({
     0,
   );
 
-  // ── Fetch exercises (scoped to user's team) ──────────────────────────────
+  // Budget computed values for duration step
+  const pendingTotal = Array.from(pendingExerciseIds).reduce(
+    (sum, id) => sum + (parseInt(pendingDurations[id] || "0") || 0),
+    0,
+  );
+  const totalPlanned = plannedMinutes + pendingTotal;
+  const budgetRemaining = totalDuration - totalPlanned;
+  const fillPercent =
+    totalDuration > 0 ? Math.min(100, (totalPlanned / totalDuration) * 100) : 0;
+
+  // ── Fetch exercises ──────────────────────────────────────────────────────
   useEffect(() => {
     if (userData === undefined) return;
 
@@ -107,10 +103,7 @@ const ExerciseSelection: React.FC<Props> = ({
       try {
         const userTeam = userData?.team ?? "";
         const q = userTeam
-          ? query(
-              collection(db, "Excercises"),
-              where("team", "array-contains", userTeam),
-            )
+          ? query(collection(db, "Excercises"), where("team", "array-contains", userTeam))
           : collection(db, "Excercises");
         const snapshot = await getDocs(q);
         const data: Exercise[] = snapshot.docs.map((doc) => ({
@@ -127,17 +120,14 @@ const ExerciseSelection: React.FC<Props> = ({
     fetch();
   }, [userData]);
 
-  const allTags = Array.from(
-    new Set(exercises.flatMap((e) => e.tags ?? [])),
-  ).sort();
+  const allTags = Array.from(new Set(exercises.flatMap((e) => e.tags ?? []))).sort();
 
   const filteredExercises = exercises.filter((ex) => {
     const matchesSearch =
       search.trim() === "" ||
       ex.title.toLowerCase().includes(search.toLowerCase()) ||
       ex.description?.toLowerCase().includes(search.toLowerCase());
-    const matchesTag =
-      activeTag === null || (ex.tags ?? []).includes(activeTag);
+    const matchesTag = activeTag === null || (ex.tags ?? []).includes(activeTag);
     return matchesSearch && matchesTag;
   });
 
@@ -147,10 +137,9 @@ const ExerciseSelection: React.FC<Props> = ({
     typeof window !== "undefined" &&
     window.matchMedia("(pointer: coarse)").matches;
 
-  const isBackwardPlanning =
-    (userData as any)?.planningDirection === "backward";
+  const isBackwardPlanning = (userData as any)?.planningDirection === "backward";
 
-  // ── Simple reorder (up/down buttons) ────────────────────────────────────
+  // ── Simple reorder ───────────────────────────────────────────────────────
   const moveUp = (index: number) => {
     if (index === 0) return;
     const arr = [...selectedExercises];
@@ -178,14 +167,12 @@ const ExerciseSelection: React.FC<Props> = ({
   const handleDragEnd = () => {
     const from = dragIndex.current;
     const to = dragOverIndex.current;
-
     if (from !== null && to !== null && from !== to) {
       const reordered = [...selectedExercises];
       const [moved] = reordered.splice(from, 1);
       reordered.splice(to, 0, moved);
       onChange({ selectedExercises: reordered });
     }
-
     dragIndex.current = null;
     dragOverIndex.current = null;
     setDraggingIndex(null);
@@ -199,8 +186,9 @@ const ExerciseSelection: React.FC<Props> = ({
   // ── Lightbox handlers ────────────────────────────────────────────────────
   const openLightbox = () => {
     setLightboxStep("grid");
-    setPendingExercise(null);
-    setPendingDuration("");
+    setPendingExerciseIds(new Set());
+    setPendingExerciseMap({});
+    setPendingDurations({});
     setSearch("");
     setActiveTag(null);
     setLightboxOpen(true);
@@ -208,40 +196,52 @@ const ExerciseSelection: React.FC<Props> = ({
 
   const closeLightbox = () => {
     setLightboxOpen(false);
-    setPendingExercise(null);
-    setPendingDuration("");
+    setPendingExerciseIds(new Set());
+    setPendingExerciseMap({});
+    setPendingDurations({});
+    setLightboxStep("grid");
   };
 
-  const handleSelectExercise = (exercise: Exercise) => {
-    setPendingExercise(exercise);
-    setPendingDuration("");
+  const handleToggleExercise = (exercise: Exercise) => {
+    const alreadyAdded = selectedExercises.some((e) => e.exerciseId === exercise.id);
+    if (alreadyAdded) return;
+
+    setPendingExerciseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(exercise.id)) {
+        next.delete(exercise.id);
+      } else {
+        next.add(exercise.id);
+      }
+      return next;
+    });
+    setPendingExerciseMap((prev) => ({ ...prev, [exercise.id]: exercise }));
+  };
+
+  const handleContinueToDuration = () => {
+    if (pendingExerciseIds.size === 0) return;
+    setPendingDurations((prev) => {
+      const next = { ...prev };
+      pendingExerciseIds.forEach((id) => {
+        if (!(id in next)) next[id] = "";
+      });
+      return next;
+    });
     setLightboxStep("duration");
   };
 
-  const handleConfirmDuration = () => {
-    if (!pendingExercise) return;
-    const duration = Math.max(0, parseInt(pendingDuration) || 0);
-    const alreadySelected = selectedExercises.some(
-      (e) => e.exerciseId === pendingExercise.id,
-    );
+  const handleConfirmAll = () => {
+    const newEntries: SelectedExercise[] = Array.from(pendingExerciseIds).map((id) => {
+      const exercise = pendingExerciseMap[id];
+      const duration = Math.max(0, parseInt(pendingDurations[id] || "0") || 0);
+      return { exerciseId: id, title: exercise.title, duration };
+    });
 
-    const newEntry: SelectedExercise = {
-      exerciseId: pendingExercise.id,
-      title: pendingExercise.title,
-      duration,
-    };
-
-    let updated: SelectedExercise[];
-    if (alreadySelected) {
-      updated = selectedExercises.map((e) =>
-        e.exerciseId === pendingExercise.id ? { ...e, duration } : e,
-      );
-    } else if (isBackwardPlanning) {
-      // Backward: prepend so the last-added exercise ends up first
-      updated = [newEntry, ...selectedExercises];
+    let updated = [...selectedExercises];
+    if (isBackwardPlanning) {
+      updated = [...newEntries, ...updated];
     } else {
-      // Forward: append normally
-      updated = [...selectedExercises, newEntry];
+      updated = [...updated, ...newEntries];
     }
 
     onChange({ selectedExercises: updated });
@@ -250,9 +250,7 @@ const ExerciseSelection: React.FC<Props> = ({
 
   const handleRemove = (exerciseId: string) => {
     onChange({
-      selectedExercises: selectedExercises.filter(
-        (e) => e.exerciseId !== exerciseId,
-      ),
+      selectedExercises: selectedExercises.filter((e) => e.exerciseId !== exerciseId),
     });
   };
 
@@ -285,16 +283,15 @@ const ExerciseSelection: React.FC<Props> = ({
         </strong>
         {plannedMinutes > totalDuration && (
           <span className="exerciseSelection__hint__warning">
-            {" "}
-            — exceeds by {plannedMinutes - totalDuration} min
+            {" "}— exceeds by {plannedMinutes - totalDuration} min
           </span>
         )}
       </p>
 
       {isBackwardPlanning && (
         <p className="exerciseSelection__direction">
-          Planning backwards — add the <strong>last</strong> exercise first. The
-          order flips automatically.
+          Planning backwards — add the <strong>last</strong> exercise first. The order flips
+          automatically.
         </p>
       )}
 
@@ -308,21 +305,15 @@ const ExerciseSelection: React.FC<Props> = ({
               !isSimpleMobile && draggingIndex === index
                 ? "exerciseSelection__selected__item--dragging"
                 : "",
-              !isSimpleMobile &&
-              dragOverIdx === index &&
-              draggingIndex !== index
+              !isSimpleMobile && dragOverIdx === index && draggingIndex !== index
                 ? "exerciseSelection__selected__item--dragover"
                 : "",
             ]
               .filter(Boolean)
               .join(" ")}
             draggable={!isSimpleMobile}
-            onDragStart={
-              !isSimpleMobile ? () => handleDragStart(index) : undefined
-            }
-            onDragEnter={
-              !isSimpleMobile ? () => handleDragEnter(index) : undefined
-            }
+            onDragStart={!isSimpleMobile ? () => handleDragStart(index) : undefined}
+            onDragEnter={!isSimpleMobile ? () => handleDragEnter(index) : undefined}
             onDragEnd={!isSimpleMobile ? handleDragEnd : undefined}
             onDragOver={!isSimpleMobile ? handleDragOver : undefined}
           >
@@ -346,21 +337,14 @@ const ExerciseSelection: React.FC<Props> = ({
                 </button>
               </div>
             ) : (
-              <div
-                className="exerciseSelection__selected__item__handle"
-                title="Drag to reorder"
-              >
+              <div className="exerciseSelection__selected__item__handle" title="Drag to reorder">
                 <DragHandleIcon />
               </div>
             )}
 
-            <span className="exerciseSelection__selected__item__index">
-              {index + 1}
-            </span>
+            <span className="exerciseSelection__selected__item__index">{index + 1}</span>
 
-            <h3 className="exerciseSelection__selected__item__name">
-              {sel.title}
-            </h3>
+            <h3 className="exerciseSelection__selected__item__name">{sel.title}</h3>
 
             <div className="exerciseSelection__selected__item__duration">
               <input
@@ -369,9 +353,7 @@ const ExerciseSelection: React.FC<Props> = ({
                 value={sel.duration || ""}
                 placeholder="0"
                 className="exerciseSelection__selected__item__input"
-                onChange={(e) =>
-                  handleDurationChange(sel.exerciseId, e.target.value)
-                }
+                onChange={(e) => handleDurationChange(sel.exerciseId, e.target.value)}
                 onClick={(e) => e.stopPropagation()}
               />
               <span>min</span>
@@ -387,23 +369,9 @@ const ExerciseSelection: React.FC<Props> = ({
           </div>
         ))}
 
-        <button
-          className="exerciseSelection__add__btn btn__wired"
-          onClick={openLightbox}
-        >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 14 14"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M7 1V13M1 7H13"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
+        <button className="exerciseSelection__add__btn btn__wired" onClick={openLightbox}>
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 1V13M1 7H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
           </svg>
           Add exercise
         </button>
@@ -411,19 +379,14 @@ const ExerciseSelection: React.FC<Props> = ({
 
       {/* ── Lightbox ── */}
       {lightboxOpen && (
-        <div
-          className="exerciseSelection__lightbox__overlay"
-          onClick={closeLightbox}
-        >
-          <div
-            className="exerciseSelection__lightbox"
-            onClick={(e) => e.stopPropagation()}
-          >
+        <div className="exerciseSelection__lightbox__overlay" onClick={closeLightbox}>
+          <div className="exerciseSelection__lightbox" onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
             <div className="exerciseSelection__lightbox__header">
               <h3>
                 {lightboxStep === "grid"
-                  ? "Select an exercise"
-                  : `Set duration — ${pendingExercise?.title}`}
+                  ? "Select exercises"
+                  : `Set duration — ${pendingExerciseIds.size} exercise${pendingExerciseIds.size !== 1 ? "s" : ""}`}
               </h3>
               <button
                 className="exerciseSelection__lightbox__header__close btn__primary"
@@ -436,7 +399,7 @@ const ExerciseSelection: React.FC<Props> = ({
 
             {/* Step 1: grid */}
             {lightboxStep === "grid" && (
-              <>
+              <div className="exerciseSelection__lightbox__step">
                 <div className="exerciseSelection__lightbox__toolbar">
                   <div className="exerciseSelection__lightbox__toolbar__search">
                     <input
@@ -467,9 +430,7 @@ const ExerciseSelection: React.FC<Props> = ({
                             ? "exerciseSelection__lightbox__toolbar__filter__btn--active"
                             : ""
                         }`}
-                        onClick={() =>
-                          setActiveTag(activeTag === tag ? null : tag)
-                        }
+                        onClick={() => setActiveTag(activeTag === tag ? null : tag)}
                       >
                         {tag}
                       </button>
@@ -480,26 +441,25 @@ const ExerciseSelection: React.FC<Props> = ({
                 {loading ? (
                   <p className="exerciseSelection__status">Loading...</p>
                 ) : filteredExercises.length === 0 ? (
-                  <p className="exerciseSelection__status">
-                    No exercises found.
-                  </p>
+                  <p className="exerciseSelection__status">No exercises found.</p>
                 ) : (
                   <div className="exerciseSelection__lightbox__grid">
                     {filteredExercises.map((exercise) => {
                       const alreadyAdded = selectedExercises.some(
                         (e) => e.exerciseId === exercise.id,
                       );
+                      const isPending = pendingExerciseIds.has(exercise.id);
                       return (
                         <div
                           key={exercise.id}
-                          className={`exerciseSelection__lightbox__card ${
-                            alreadyAdded
-                              ? "exerciseSelection__lightbox__card--added"
-                              : ""
-                          }`}
-                          onClick={() =>
-                            !alreadyAdded && handleSelectExercise(exercise)
-                          }
+                          className={[
+                            "exerciseSelection__lightbox__card",
+                            alreadyAdded ? "exerciseSelection__lightbox__card--added" : "",
+                            isPending ? "exerciseSelection__lightbox__card--selected" : "",
+                          ]
+                            .filter(Boolean)
+                            .join(" ")}
+                          onClick={() => !alreadyAdded && handleToggleExercise(exercise)}
                         >
                           <div className="exerciseSelection__lightbox__card__sketch">
                             <SketchThumbnail sketch={exercise.sketch} />
@@ -513,10 +473,7 @@ const ExerciseSelection: React.FC<Props> = ({
                             </p>
                             <div className="exerciseSelection__lightbox__card__tags">
                               {(exercise.tags ?? []).slice(0, 2).map((tag) => (
-                                <div
-                                  key={tag}
-                                  className={`tags tags--${tag.toLowerCase()}`}
-                                >
+                                <div key={tag} className={`tags tags--${tag.toLowerCase()}`}>
                                   <span className="exerciseSelection__lightbox__card__tags--tag">
                                     {tag}
                                   </span>
@@ -530,58 +487,103 @@ const ExerciseSelection: React.FC<Props> = ({
                             </div>
                           </div>
                           {alreadyAdded && (
-                            <div className="exerciseSelection__lightbox__card__added">
-                              Added
-                            </div>
+                            <div className="exerciseSelection__lightbox__card__added">Added</div>
+                          )}
+                          {isPending && (
+                            <div className="exerciseSelection__lightbox__card__check">✓</div>
                           )}
                         </div>
                       );
                     })}
                   </div>
                 )}
-              </>
+
+                {/* Footer: selection count + continue CTA */}
+                {pendingExerciseIds.size > 0 && (
+                  <div className="exerciseSelection__lightbox__footer">
+                    <span>
+                      {pendingExerciseIds.size} exercise
+                      {pendingExerciseIds.size !== 1 ? "s" : ""} selected
+                    </span>
+                    <button
+                      className="excercisewizard__btn"
+                      onClick={handleContinueToDuration}
+                    >
+                      Set duration →
+                    </button>
+                  </div>
+                )}
+              </div>
             )}
 
-            {/* Step 2: duration */}
-            {lightboxStep === "duration" && pendingExercise && (
-              <div className="exerciseSelection__lightbox__duration">
-                <div className="exerciseSelection__lightbox__duration__sketch">
-                  <SketchThumbnail sketch={pendingExercise.sketch} />
-                </div>
-
-                <div className="exerciseSelection__lightbox__duration__form">
-                  <div className="exerciseSelection__lightbox__duration__form__title">
-                    <label
-                      htmlFor="exercise-duration"
-                      className="exerciseSelection__lightbox__duration__label"
-                    >
-                      How many minutes for this exercise?
-                    </label>
-                    <p className="exerciseSelection__lightbox__duration__remaining">
-                      Remaining budget: {totalDuration - plannedMinutes} min
-                    </p>
-                  </div>
-                  <div className="exerciseSelection__lightbox__duration__input__wrapper">
-                    <input
-                      id="exercise-duration"
-                      type="number"
-                      min={1}
-                      max={totalDuration}
-                      value={pendingDuration}
-                      placeholder=""
-                      className="exerciseSelection__lightbox__duration__input"
-                      onChange={(e) => setPendingDuration(e.target.value)}
-                      onKeyDown={(e) =>
-                        e.key === "Enter" && handleConfirmDuration()
-                      }
-                      autoFocus
+            {/* Step 2: duration list */}
+            {lightboxStep === "duration" && (
+              <div className="exerciseSelection__lightbox__step">
+                {/* Budget bar */}
+                <div className="exerciseSelection__lightbox__duration__budget">
+                  <div className="exerciseSelection__lightbox__duration__budget__bar">
+                    <div
+                      className={`exerciseSelection__lightbox__duration__budget__bar__fill${
+                        budgetRemaining < 0
+                          ? " exerciseSelection__lightbox__duration__budget__bar__fill--over"
+                          : ""
+                      }`}
+                      style={{ width: `${fillPercent}%` }}
                     />
-                    <span className="exerciseSelection__lightbox__duration__unit">
-                      min
+                  </div>
+                  <div className="exerciseSelection__lightbox__duration__budget__info">
+                    <span>{totalPlanned} min planned</span>
+                    <span>{totalDuration} min total</span>
+                    <span
+                      className={
+                        budgetRemaining < 0
+                          ? "exerciseSelection__lightbox__duration__budget__info__remaining--over"
+                          : ""
+                      }
+                    >
+                      {budgetRemaining < 0
+                        ? `${-budgetRemaining} min over budget`
+                        : `${budgetRemaining} min remaining`}
                     </span>
                   </div>
                 </div>
 
+                {/* Exercise duration rows */}
+                <div className="exerciseSelection__lightbox__duration__list">
+                  {Array.from(pendingExerciseIds).map((id, idx) => {
+                    const exercise = pendingExerciseMap[id];
+                    if (!exercise) return null;
+                    return (
+                      <div key={id} className="exerciseSelection__lightbox__duration__row">
+                        <div className="exerciseSelection__lightbox__duration__row__thumb">
+                          <SketchThumbnail sketch={exercise.sketch} />
+                        </div>
+                        <span className="exerciseSelection__lightbox__duration__row__title">
+                          {exercise.title}
+                        </span>
+                        <div className="exerciseSelection__lightbox__duration__row__input">
+                          <input
+                            type="number"
+                            min={0}
+                            value={pendingDurations[id] ?? ""}
+                            placeholder="0"
+                            autoFocus={idx === 0}
+                            onChange={(e) =>
+                              setPendingDurations((prev) => ({
+                                ...prev,
+                                [id]: e.target.value,
+                              }))
+                            }
+                            onKeyDown={(e) => e.key === "Enter" && handleConfirmAll()}
+                          />
+                          <span>min</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Actions */}
                 <div className="exerciseSelection__lightbox__duration__actions">
                   <button
                     className="excercisewizard__btn excercisewizard__btn--secondary"
@@ -589,14 +591,8 @@ const ExerciseSelection: React.FC<Props> = ({
                   >
                     ← Back
                   </button>
-                  <button
-                    className="excercisewizard__btn"
-                    onClick={handleConfirmDuration}
-                    disabled={
-                      !pendingDuration || parseInt(pendingDuration) <= 0
-                    }
-                  >
-                    Add to training
+                  <button className="excercisewizard__btn" onClick={handleConfirmAll}>
+                    Add {pendingExerciseIds.size} to training
                   </button>
                 </div>
               </div>

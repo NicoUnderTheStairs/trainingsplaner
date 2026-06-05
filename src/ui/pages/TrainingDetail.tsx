@@ -253,14 +253,18 @@ interface ExerciseDoc {
 interface AddExerciseDialogProps {
   userTeam: string;
   alreadyAddedIds: Set<string>;
-  onAdd: (exercise: ExerciseDoc, duration: number) => void;
+  totalDuration: number;
+  alreadyPlannedMinutes: number;
+  onAddMultiple: (entries: Array<{ exercise: ExerciseDoc; duration: number }>) => void;
   onClose: () => void;
 }
 
 const AddExerciseDialog = ({
   userTeam,
   alreadyAddedIds,
-  onAdd,
+  totalDuration,
+  alreadyPlannedMinutes,
+  onAddMultiple,
   onClose,
 }: AddExerciseDialogProps) => {
   const [exercises, setExercises] = useState<ExerciseDoc[]>([]);
@@ -268,27 +272,19 @@ const AddExerciseDialog = ({
   const [search, setSearch] = useState("");
   const [activeTag, setActiveTag] = useState<string | null>(null);
 
-  // Two-step: pick exercise → set duration
   const [step, setStep] = useState<"grid" | "duration">("grid");
-  const [pending, setPending] = useState<ExerciseDoc | null>(null);
-  const [duration, setDuration] = useState("");
+  const [pendingExerciseIds, setPendingExerciseIds] = useState<Set<string>>(new Set());
+  const [pendingExerciseMap, setPendingExerciseMap] = useState<Record<string, ExerciseDoc>>({});
+  const [pendingDurations, setPendingDurations] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const fetch = async () => {
       try {
         const q = userTeam
-          ? query(
-              collection(db, "Excercises"),
-              where("team", "array-contains", userTeam),
-            )
+          ? query(collection(db, "Excercises"), where("team", "array-contains", userTeam))
           : collection(db, "Excercises");
         const snap = await getDocs(q);
-        setExercises(
-          snap.docs.map((d) => ({
-            id: d.id,
-            ...(d.data() as Omit<ExerciseDoc, "id">),
-          })),
-        );
+        setExercises(snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<ExerciseDoc, "id">) })));
       } catch (e) {
         console.error("Error fetching exercises:", e);
       } finally {
@@ -298,47 +294,63 @@ const AddExerciseDialog = ({
     fetch();
   }, [userTeam]);
 
-  const allTags = Array.from(
-    new Set(exercises.flatMap((e) => e.tags ?? [])),
-  ).sort();
+  const allTags = Array.from(new Set(exercises.flatMap((e) => e.tags ?? []))).sort();
 
   const filtered = exercises.filter((ex) => {
     const q = search.trim().toLowerCase();
     const matchesSearch =
-      q === "" ||
-      ex.title?.toLowerCase().includes(q) ||
-      ex.description?.toLowerCase().includes(q);
-    const matchesTag =
-      activeTag === null || (ex.tags ?? []).includes(activeTag);
+      q === "" || ex.title?.toLowerCase().includes(q) || ex.description?.toLowerCase().includes(q);
+    const matchesTag = activeTag === null || (ex.tags ?? []).includes(activeTag);
     return matchesSearch && matchesTag;
   });
 
-  const pickExercise = (ex: ExerciseDoc) => {
-    setPending(ex);
-    setDuration("");
+  // Budget computation for duration step
+  const pendingTotal = Array.from(pendingExerciseIds).reduce(
+    (sum, id) => sum + (parseInt(pendingDurations[id] || "0") || 0),
+    0,
+  );
+  const totalPlanned = alreadyPlannedMinutes + pendingTotal;
+  const budgetRemaining = totalDuration - totalPlanned;
+  const fillPercent = totalDuration > 0 ? Math.min(100, (totalPlanned / totalDuration) * 100) : 0;
+
+  const handleToggleExercise = (ex: ExerciseDoc) => {
+    if (alreadyAddedIds.has(ex.id)) return;
+    setPendingExerciseIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(ex.id)) next.delete(ex.id);
+      else next.add(ex.id);
+      return next;
+    });
+    setPendingExerciseMap((prev) => ({ ...prev, [ex.id]: ex }));
+  };
+
+  const handleContinueToDuration = () => {
+    if (pendingExerciseIds.size === 0) return;
+    setPendingDurations((prev) => {
+      const next = { ...prev };
+      pendingExerciseIds.forEach((id) => { if (!(id in next)) next[id] = ""; });
+      return next;
+    });
     setStep("duration");
   };
 
-  const confirmDuration = () => {
-    if (!pending) return;
-    onAdd(pending, Math.max(0, parseInt(duration) || 0));
-    // Reset back to grid so they can keep adding
-    setPending(null);
-    setDuration("");
-    setStep("grid");
+  const handleConfirmAll = () => {
+    const entries = Array.from(pendingExerciseIds).map((id) => ({
+      exercise: pendingExerciseMap[id],
+      duration: Math.max(0, parseInt(pendingDurations[id] || "0") || 0),
+    }));
+    onAddMultiple(entries);
+    onClose();
   };
 
   return (
     <div className="exerciseSelection__lightbox__overlay" onClick={onClose}>
-      <div
-        className="exerciseSelection__lightbox"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="exerciseSelection__lightbox" onClick={(e) => e.stopPropagation()}>
         <div className="exerciseSelection__lightbox__header">
           <h3>
             {step === "grid"
-              ? "Add an exercise"
-              : `Set duration — ${pending?.title}`}
+              ? "Add exercises"
+              : `Set duration — ${pendingExerciseIds.size} exercise${pendingExerciseIds.size !== 1 ? "s" : ""}`}
           </h3>
           <button
             className="exerciseSelection__lightbox__header__close btn__primary"
@@ -349,8 +361,9 @@ const AddExerciseDialog = ({
           </button>
         </div>
 
+        {/* Step 1: grid */}
         {step === "grid" && (
-          <>
+          <div className="exerciseSelection__lightbox__step">
             <div className="exerciseSelection__lightbox__toolbar">
               <div className="exerciseSelection__lightbox__toolbar__search">
                 <input
@@ -365,9 +378,7 @@ const AddExerciseDialog = ({
               <div className="exerciseSelection__lightbox__toolbar__filter">
                 <button
                   className={`exerciseSelection__lightbox__toolbar__filter__btn exerciseSelection__lightbox__toolbar__filter__btn--all ${
-                    activeTag === null
-                      ? "exerciseSelection__lightbox__toolbar__filter__btn--active"
-                      : ""
+                    activeTag === null ? "exerciseSelection__lightbox__toolbar__filter__btn--active" : ""
                   }`}
                   onClick={() => setActiveTag(null)}
                 >
@@ -377,9 +388,7 @@ const AddExerciseDialog = ({
                   <button
                     key={tag}
                     className={`exerciseSelection__lightbox__toolbar__filter__btn tags--${tag.toLowerCase()} ${
-                      activeTag === tag
-                        ? "exerciseSelection__lightbox__toolbar__filter__btn--active"
-                        : ""
+                      activeTag === tag ? "exerciseSelection__lightbox__toolbar__filter__btn--active" : ""
                     }`}
                     onClick={() => setActiveTag(activeTag === tag ? null : tag)}
                   >
@@ -396,74 +405,128 @@ const AddExerciseDialog = ({
             ) : (
               <div className="exerciseSelection__lightbox__grid">
                 {filtered.map((exercise) => {
-                  const added = alreadyAddedIds.has(exercise.id);
+                  const alreadyAdded = alreadyAddedIds.has(exercise.id);
+                  const isPending = pendingExerciseIds.has(exercise.id);
                   return (
                     <div
                       key={exercise.id}
-                      className={`exerciseSelection__lightbox__card ${added ? "exerciseSelection__lightbox__card--added" : ""}`}
-                      onClick={() => pickExercise(exercise)}
+                      className={[
+                        "exerciseSelection__lightbox__card",
+                        alreadyAdded ? "exerciseSelection__lightbox__card--added" : "",
+                        isPending ? "exerciseSelection__lightbox__card--selected" : "",
+                      ].filter(Boolean).join(" ")}
+                      onClick={() => !alreadyAdded && handleToggleExercise(exercise)}
                     >
                       <div className="exerciseSelection__lightbox__card__sketch">
                         <SketchThumbnail sketch={exercise.sketch} />
                       </div>
                       <div className="exerciseSelection__lightbox__card__info">
                         <h4>{exercise.title}</h4>
-                        <p>{exercise.description}</p>
+                        <p>
+                          {exercise.description?.length > 100
+                            ? exercise.description.substring(0, 100) + "..."
+                            : exercise.description}
+                        </p>
                         <div className="exerciseSelection__lightbox__card__tags">
-                          {(exercise.tags ?? []).map((tag) => (
-                            <span
-                              key={tag}
-                              className={`tags tags--${tag.toLowerCase()}`}
-                            >
-                              {tag}
-                            </span>
+                          {(exercise.tags ?? []).slice(0, 2).map((tag) => (
+                            <div key={tag} className={`tags tags--${tag.toLowerCase()}`}>
+                              <span className="exerciseSelection__lightbox__card__tags--tag">{tag}</span>
+                            </div>
                           ))}
+                          {(exercise.tags ?? []).length > 2 && (
+                            <span className="exerciseSelection__lightbox__card__tags--more">
+                              +{(exercise.tags ?? []).length - 2}
+                            </span>
+                          )}
                         </div>
                       </div>
-                      {added && (
-                        <div className="exerciseSelection__lightbox__card__added">
-                          Added
-                        </div>
+                      {alreadyAdded && (
+                        <div className="exerciseSelection__lightbox__card__added">Added</div>
+                      )}
+                      {isPending && (
+                        <div className="exerciseSelection__lightbox__card__check">✓</div>
                       )}
                     </div>
                   );
                 })}
               </div>
             )}
-          </>
+
+            {pendingExerciseIds.size > 0 && (
+              <div className="exerciseSelection__lightbox__footer">
+                <span>
+                  {pendingExerciseIds.size} exercise{pendingExerciseIds.size !== 1 ? "s" : ""} selected
+                </span>
+                <button className="excercisewizard__btn" onClick={handleContinueToDuration}>
+                  Set duration →
+                </button>
+              </div>
+            )}
+          </div>
         )}
 
-        {step === "duration" && pending && (
-          <div className="exerciseSelection__lightbox__duration">
-            <div className="exerciseSelection__lightbox__duration__sketch">
-              <SketchThumbnail sketch={pending.sketch} />
-            </div>
-            <div className="exerciseSelection__lightbox__duration__form">
-              <div className="exerciseSelection__lightbox__duration__form__title">
-                <label
-                  htmlFor="add-ex-duration"
-                  className="exerciseSelection__lightbox__duration__label"
-                >
-                  How many minutes for this exercise?
-                </label>
-              </div>
-              <div className="exerciseSelection__lightbox__duration__input__wrapper">
-                <input
-                  id="add-ex-duration"
-                  type="number"
-                  min={1}
-                  value={duration}
-                  placeholder="e.g. 15"
-                  className="exerciseSelection__lightbox__duration__input"
-                  onChange={(e) => setDuration(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && confirmDuration()}
-                  autoFocus
+        {/* Step 2: duration list */}
+        {step === "duration" && (
+          <div className="exerciseSelection__lightbox__step">
+            <div className="exerciseSelection__lightbox__duration__budget">
+              <div className="exerciseSelection__lightbox__duration__budget__bar">
+                <div
+                  className={`exerciseSelection__lightbox__duration__budget__bar__fill${
+                    budgetRemaining < 0
+                      ? " exerciseSelection__lightbox__duration__budget__bar__fill--over"
+                      : ""
+                  }`}
+                  style={{ width: `${fillPercent}%` }}
                 />
-                <span className="exerciseSelection__lightbox__duration__unit">
-                  min
+              </div>
+              <div className="exerciseSelection__lightbox__duration__budget__info">
+                <span>{totalPlanned} min planned</span>
+                <span>{totalDuration} min total</span>
+                <span
+                  className={
+                    budgetRemaining < 0
+                      ? "exerciseSelection__lightbox__duration__budget__info__remaining--over"
+                      : ""
+                  }
+                >
+                  {budgetRemaining < 0
+                    ? `${-budgetRemaining} min over budget`
+                    : `${budgetRemaining} min remaining`}
                 </span>
               </div>
             </div>
+
+            <div className="exerciseSelection__lightbox__duration__list">
+              {Array.from(pendingExerciseIds).map((id, idx) => {
+                const exercise = pendingExerciseMap[id];
+                if (!exercise) return null;
+                return (
+                  <div key={id} className="exerciseSelection__lightbox__duration__row">
+                    <div className="exerciseSelection__lightbox__duration__row__thumb">
+                      <SketchThumbnail sketch={exercise.sketch} />
+                    </div>
+                    <span className="exerciseSelection__lightbox__duration__row__title">
+                      {exercise.title}
+                    </span>
+                    <div className="exerciseSelection__lightbox__duration__row__input">
+                      <input
+                        type="number"
+                        min={0}
+                        value={pendingDurations[id] ?? ""}
+                        placeholder="0"
+                        autoFocus={idx === 0}
+                        onChange={(e) =>
+                          setPendingDurations((prev) => ({ ...prev, [id]: e.target.value }))
+                        }
+                        onKeyDown={(e) => e.key === "Enter" && handleConfirmAll()}
+                      />
+                      <span>min</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="exerciseSelection__lightbox__duration__actions">
               <button
                 className="excercisewizard__btn excercisewizard__btn--secondary"
@@ -471,12 +534,8 @@ const AddExerciseDialog = ({
               >
                 ← Back
               </button>
-              <button
-                className="excercisewizard__btn"
-                onClick={confirmDuration}
-                disabled={!duration || parseInt(duration) <= 0}
-              >
-                Add to training
+              <button className="excercisewizard__btn" onClick={handleConfirmAll}>
+                Add {pendingExerciseIds.size} to training
               </button>
             </div>
           </div>
@@ -497,12 +556,55 @@ const AVAILABLE_TAGS = [
   "Service",
 ];
 
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+const TrainingDetailSkeleton = () => (
+  <>
+    <Navigation />
+    <div className="trainingdetail section">
+      <div className="trainingdetail__inner">
+        {/* back */}
+        <div className="trainingdetail__back">
+          <span className="sk sk--rect" style={{ width: "8rem", height: "3.4rem" }} />
+        </div>
+
+        {/* header card */}
+        <div className="sk-card" style={{ gap: "1.4rem" }}>
+          <div className="sk-row">
+            <span className="sk sk--line sk--w30" />
+            <span className="sk sk--line sk--w20" />
+          </div>
+          <span className="sk sk--line-xl sk--w65" />
+          <span className="sk sk--line sk--w40" />
+          <div className="sk-row" style={{ marginTop: "0.4rem" }}>
+            <span className="sk sk--rect" style={{ width: "7rem", height: "2.4rem" }} />
+            <span className="sk sk--rect" style={{ width: "7rem", height: "2.4rem" }} />
+            <span className="sk sk--rect" style={{ width: "10rem", height: "2.4rem" }} />
+          </div>
+        </div>
+
+        {/* exercise rows */}
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="sk-card" style={{ flexDirection: "row", gap: "1.6rem", alignItems: "center" }}>
+            <span className="sk sk--rect" style={{ width: "10rem", height: "8rem", flexShrink: 0 }} />
+            <div className="sk-stack" style={{ flex: 1, gap: "0.6rem" }}>
+              <span className="sk sk--line sk--w30" />
+              <span className="sk sk--line-lg sk--w65" />
+              <span className="sk sk--line sk--w40" />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </>
+);
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const formatDate = (date: any): string => {
   if (!date) return "—";
   const d = typeof date.toDate === "function" ? date.toDate() : new Date(date);
-  const weekday = d.toLocaleDateString("en-GB", { weekday: "long" });
+  const weekday = d.toLocaleDateString("de-CH", { weekday: "long" });
   const dayMonth = d.toLocaleDateString("de-CH", {
     day: "2-digit",
     month: "2-digit",
@@ -896,11 +998,17 @@ const TrainingDetail = () => {
   const handleRemoveExercise = (idx: number) =>
     setEditExercises((prev) => prev.filter((_, i) => i !== idx));
 
-  // Add a freshly-picked exercise to the edit list
-  const handleAddExercise = (exercise: ExerciseDoc, duration: number) => {
+  // Add a batch of exercises to the edit list
+  const handleAddMultipleExercises = (
+    entries: Array<{ exercise: ExerciseDoc; duration: number }>,
+  ) => {
     setEditExercises((prev) => [
       ...prev,
-      { exerciseId: exercise.id, title: exercise.title, duration },
+      ...entries.map(({ exercise, duration }) => ({
+        exerciseId: exercise.id,
+        title: exercise.title,
+        duration,
+      })),
     ]);
   };
 
@@ -984,13 +1092,7 @@ const TrainingDetail = () => {
     }
   };
 
-  if (loading)
-    return (
-      <>
-        <Navigation />
-        <p style={{ padding: "4rem 11.2rem" }}>Loading...</p>
-      </>
-    );
+  if (loading) return <TrainingDetailSkeleton />;
   if (!training)
     return (
       <>
@@ -1589,7 +1691,9 @@ const TrainingDetail = () => {
         <AddExerciseDialog
           userTeam={userTeam}
           alreadyAddedIds={addedIds}
-          onAdd={handleAddExercise}
+          totalDuration={training.duration}
+          alreadyPlannedMinutes={editPlanned}
+          onAddMultiple={handleAddMultipleExercises}
           onClose={() => setAddOpen(false)}
         />
       )}

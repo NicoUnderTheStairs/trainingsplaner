@@ -58,12 +58,61 @@ const formatDate = (date: any): string => {
   if (!date) return "—";
   const d = typeof date.toDate === "function" ? date.toDate() : new Date(date);
   const weekday = d.toLocaleDateString("en-GB", { weekday: "long" });
-  const dayMonth = d.toLocaleDateString("de-CH", {
+  const dayMonth = d.toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "2-digit",
+    year: "numeric",
   });
   return `${weekday}, ${dayMonth}`;
 };
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+const TrainingListSkeleton = () => (
+  <div className="traininglist__layout">
+    <aside className="traininglist__sidebar">
+      <section className="traininglist__calendar">
+        {/* calendar header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.6rem" }}>
+          <span className="sk sk--circle" style={{ width: "2.4rem", height: "2.4rem" }} />
+          <span className="sk sk--line-lg sk--w40" />
+          <span className="sk sk--circle" style={{ width: "2.4rem", height: "2.4rem" }} />
+        </div>
+        {/* weekday row */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "0.4rem", marginBottom: "0.4rem" }}>
+          {["M","T","W","T","F","S","S"].map((d, i) => (
+            <span key={i} style={{ textAlign: "center", fontSize: "1.2rem", color: "rgba(30,30,30,0.3)" }}>{d}</span>
+          ))}
+        </div>
+        {/* day cells */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: "0.4rem" }}>
+          {Array.from({ length: 35 }).map((_, i) => (
+            <span key={i} className="sk sk--rect" style={{ height: "3.6rem" }} />
+          ))}
+        </div>
+      </section>
+    </aside>
+
+    <div className="traininglist__content">
+      <div className="sk-stack" style={{ gap: "1.6rem" }}>
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="sk-card">
+            <div className="sk-row">
+              <span className="sk sk--line sk--w30" style={{ flex: 1 }} />
+              <span className="sk sk--rect" style={{ width: "5rem", height: "1.6rem" }} />
+            </div>
+            <span className="sk sk--line-xl sk--w65" />
+            <span className="sk sk--line sk--w40" />
+            <div className="sk-row" style={{ marginTop: "0.4rem" }}>
+              <span className="sk sk--rect" style={{ width: "6rem", height: "2rem" }} />
+              <span className="sk sk--rect" style={{ width: "6rem", height: "2rem" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -370,7 +419,7 @@ const TrainingList = () => {
         )}
 
         {/* Loading / error */}
-        {loading && <p className="traininglist__status">Loading...</p>}
+        {loading && <TrainingListSkeleton />}
         {error && (
           <p className="traininglist__status traininglist__status--error">
             {error}

@@ -387,10 +387,60 @@ const SketchEditor = ({
   } | null>(null);
   const arrowRef = useRef<{ x1: number; y1: number } | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
+  const didDragRef = useRef(false);
+
+  // ── History (undo / redo) ─────────────────────────────────────────────────
+  type HistSnap = { players: Player[]; arrows: Arrow[]; objects: SketchObject[] };
+  const historyStack = useRef<HistSnap[]>([{ players: initP, arrows: initA, objects: initO }]);
+  const historyIdx = useRef(0);
+  const [historyVersion, setHistoryVersion] = useState(0);
+
+  // Mirrors of state kept in sync so callbacks can snapshot without stale closures
+  const playersRef = useRef(players);
+  const arrowsRef = useRef(arrows);
+  const objectsRef = useRef(objects);
+  useEffect(() => { playersRef.current = players; }, [players]);
+  useEffect(() => { arrowsRef.current = arrows; }, [arrows]);
+  useEffect(() => { objectsRef.current = objects; }, [objects]);
 
   useEffect(() => {
     onChange(toSketchData(players, arrows, objects));
   }, [players, arrows, objects]);
+
+  // ── History helpers ───────────────────────────────────────────────────────
+  const doSnapshot = (p: Player[], a: Arrow[], o: SketchObject[]) => {
+    historyStack.current = historyStack.current.slice(0, historyIdx.current + 1);
+    historyStack.current.push({ players: p, arrows: a, objects: o });
+    historyIdx.current = historyStack.current.length - 1;
+    setHistoryVersion((v) => v + 1);
+  };
+
+  const undo = useCallback(() => {
+    if (historyIdx.current <= 0) return;
+    historyIdx.current--;
+    const s = historyStack.current[historyIdx.current];
+    setPlayers(s.players); playersRef.current = s.players;
+    setArrows(s.arrows);   arrowsRef.current = s.arrows;
+    setObjects(s.objects); objectsRef.current = s.objects;
+    setSelectedId(null);
+    setHistoryVersion((v) => v + 1);
+  }, []);
+
+  const redo = useCallback(() => {
+    if (historyIdx.current >= historyStack.current.length - 1) return;
+    historyIdx.current++;
+    const s = historyStack.current[historyIdx.current];
+    setPlayers(s.players); playersRef.current = s.players;
+    setArrows(s.arrows);   arrowsRef.current = s.arrows;
+    setObjects(s.objects); objectsRef.current = s.objects;
+    setSelectedId(null);
+    setHistoryVersion((v) => v + 1);
+  }, []);
+
+  // historyVersion >= 0 is always true — it's referenced so canUndo/canRedo
+  // recompute on every history change without a stale-closure problem.
+  const canUndo = historyVersion >= 0 && historyIdx.current > 0;
+  const canRedo = historyVersion >= 0 && historyIdx.current < historyStack.current.length - 1;
 
   // ── Coordinate helper (works for mouse + touch) ──────────────────────────
   const getPoint = useCallback((clientX: number, clientY: number) => {
@@ -412,27 +462,29 @@ const SketchEditor = ({
 
   // ── Place helpers ──────────────────────────────────────────────────────────
   const placePlayer = (pt: { x: number; y: number }, type: PlayerType) => {
-    setPlayers((prev) => [
-      ...prev,
-      {
-        id: uid(),
-        x: Math.max(10, Math.min(SVG_W - 10, pt.x)),
-        y: Math.max(10, Math.min(SVG_H - 10, pt.y)),
-        type,
-        label: PLAYER_LABELS[type],
-      },
-    ]);
+    const newP: Player = {
+      id: uid(),
+      x: Math.max(10, Math.min(SVG_W - 10, pt.x)),
+      y: Math.max(10, Math.min(SVG_H - 10, pt.y)),
+      type,
+      label: PLAYER_LABELS[type],
+    };
+    const nextP = [...playersRef.current, newP];
+    setPlayers(nextP);
+    playersRef.current = nextP;
+    doSnapshot(nextP, arrowsRef.current, objectsRef.current);
   };
   const placeObject = (pt: { x: number; y: number }, type: ObjectType) => {
-    setObjects((prev) => [
-      ...prev,
-      {
-        id: uid(),
-        x: Math.max(15, Math.min(SVG_W - 15, pt.x)),
-        y: Math.max(15, Math.min(SVG_H - 15, pt.y)),
-        type,
-      },
-    ]);
+    const newO: SketchObject = {
+      id: uid(),
+      x: Math.max(15, Math.min(SVG_W - 15, pt.x)),
+      y: Math.max(15, Math.min(SVG_H - 15, pt.y)),
+      type,
+    };
+    const nextO = [...objectsRef.current, newO];
+    setObjects(nextO);
+    objectsRef.current = nextO;
+    doSnapshot(playersRef.current, arrowsRef.current, nextO);
   };
 
   // ── Mouse handlers ─────────────────────────────────────────────────────────
@@ -474,9 +526,10 @@ const SketchEditor = ({
 
   const moveDragged = (pt: { x: number; y: number }) => {
     const { id, offsetX, offsetY, kind } = dragRef.current!;
+    didDragRef.current = true;
     if (kind === "player") {
-      setPlayers((prev) =>
-        prev.map((p) =>
+      setPlayers((prev) => {
+        const next = prev.map((p) =>
           p.id === id
             ? {
                 ...p,
@@ -484,11 +537,13 @@ const SketchEditor = ({
                 y: Math.max(10, Math.min(SVG_H - 10, pt.y - offsetY)),
               }
             : p,
-        ),
-      );
+        );
+        playersRef.current = next;
+        return next;
+      });
     } else {
-      setObjects((prev) =>
-        prev.map((o) =>
+      setObjects((prev) => {
+        const next = prev.map((o) =>
           o.id === id
             ? {
                 ...o,
@@ -496,8 +551,10 @@ const SketchEditor = ({
                 y: Math.max(15, Math.min(SVG_H - 15, pt.y - offsetY)),
               }
             : o,
-        ),
-      );
+        );
+        objectsRef.current = next;
+        return next;
+      });
     }
   };
 
@@ -516,13 +573,18 @@ const SketchEditor = ({
       const dx = draftArrow.x2 - draftArrow.x1,
         dy = draftArrow.y2 - draftArrow.y1;
       if (Math.sqrt(dx * dx + dy * dy) > 20) {
-        setArrows((prev) => [
-          ...prev,
-          { id: uid(), ...draftArrow, style: arrowStyle },
-        ]);
+        const newArrow: Arrow = { id: uid(), ...draftArrow, style: arrowStyle };
+        const nextA = [...arrowsRef.current, newArrow];
+        setArrows(nextA);
+        arrowsRef.current = nextA;
+        doSnapshot(playersRef.current, nextA, objectsRef.current);
       }
       arrowRef.current = null;
       setDraftArrow(null);
+    }
+    if (didDragRef.current) {
+      doSnapshot(playersRef.current, arrowsRef.current, objectsRef.current);
+      didDragRef.current = false;
     }
     dragRef.current = null;
   }, [draftArrow, arrowStyle]);
@@ -666,27 +728,43 @@ const SketchEditor = ({
   // ── Delete ─────────────────────────────────────────────────────────────────
   const handleDelete = useCallback(() => {
     if (!selectedId) return;
-    setPlayers((p) => p.filter((x) => x.id !== selectedId));
-    setArrows((a) => a.filter((x) => x.id !== selectedId));
-    setObjects((o) => o.filter((x) => x.id !== selectedId));
+    const nextP = playersRef.current.filter((x) => x.id !== selectedId);
+    const nextA = arrowsRef.current.filter((x) => x.id !== selectedId);
+    const nextO = objectsRef.current.filter((x) => x.id !== selectedId);
+    setPlayers(nextP); playersRef.current = nextP;
+    setArrows(nextA);  arrowsRef.current = nextA;
+    setObjects(nextO); objectsRef.current = nextO;
     setSelectedId(null);
+    doSnapshot(nextP, nextA, nextO);
   }, [selectedId]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Delete" || e.key === "Backspace") handleDelete();
+      const tag = (e.target as HTMLElement).tagName;
+      if ((e.key === "Delete" || e.key === "Backspace") && tag !== "INPUT" && tag !== "TEXTAREA") {
+        handleDelete();
+      }
+      if (e.key === "z" && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
+        e.preventDefault();
+        undo();
+      }
+      if ((e.key === "z" && (e.ctrlKey || e.metaKey) && e.shiftKey) || (e.key === "y" && (e.ctrlKey || e.metaKey))) {
+        e.preventDefault();
+        redo();
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [handleDelete]);
+  }, [handleDelete, undo, redo]);
 
   const clearAll = () => {
-    setPlayers([]);
-    setArrows([]);
-    setObjects([]);
+    setPlayers([]); playersRef.current = [];
+    setArrows([]);   arrowsRef.current = [];
+    setObjects([]); objectsRef.current = [];
     setSelectedId(null);
     setPendingPlayerType(null);
     setPendingObjectType(null);
+    doSnapshot([], [], []);
   };
 
   const pendingAny = pendingPlayerType ?? pendingObjectType;
@@ -698,139 +776,44 @@ const SketchEditor = ({
         ? "bench/elevated object"
         : null;
 
+  // true on touch-screen devices — used to gate draggable and fix double-fire
+  const coarsePointer = typeof window !== "undefined" && window.matchMedia("(pointer: coarse)").matches;
+
   return (
     <div className="sketch__editor">
-      <div className="sketch__toolbar">
-        {/* Players */}
-        <div className="sketch__toolbar__group">
-          <span className="sketch__toolbar__label">Players</span>
-          {(Object.keys(PLAYER_COLORS) as PlayerType[]).map((type) => (
-            <div
-              key={type}
-              className={`sketch__palette__player ${pendingPlayerType === type ? "sketch__palette__player--active" : ""}`}
-              draggable
-              title={type}
-              onDragStart={(e) => e.dataTransfer.setData("playerType", type)}
-              onClick={(e) => handlePalettePlayer(type, e)}
-              onTouchStart={(e) => handlePalettePlayer(type, e)}
-              style={{ background: PLAYER_COLORS[type] }}
-            >
-              {PLAYER_LABELS[type]}
-            </div>
-          ))}
-        </div>
-
-        {/* Objects */}
-        <div className="sketch__toolbar__group">
-          <span className="sketch__toolbar__label">Objects</span>
-          <div
-            className={`sketch__palette__object ${pendingObjectType === "pylon" ? "sketch__palette__object--active" : ""}`}
-            draggable
-            title="Pylon"
-            onDragStart={(e) => e.dataTransfer.setData("objectType", "pylon")}
-            onClick={(e) => handlePaletteObject("pylon", e)}
-            onTouchStart={(e) => handlePaletteObject("pylon", e)}
-          >
-            <PylonPalette active={pendingObjectType === "pylon"} />
-          </div>
-          <div
-            className={`sketch__palette__object ${pendingObjectType === "bench" ? "sketch__palette__object--active" : ""}`}
-            draggable
-            title="Bench / elevated object"
-            onDragStart={(e) => e.dataTransfer.setData("objectType", "bench")}
-            onClick={(e) => handlePaletteObject("bench", e)}
-            onTouchStart={(e) => handlePaletteObject("bench", e)}
-          >
-            <BenchPalette active={pendingObjectType === "bench"} />
-          </div>
-          <div
-            className={`sketch__palette__object ${pendingObjectType === "matt" ? "sketch__palette__object--active" : ""}`}
-            draggable
-            title="Matt"
-            onDragStart={(e) => e.dataTransfer.setData("objectType", "matt")}
-            onClick={(e) => handlePaletteObject("matt", e)}
-            onTouchStart={(e) => handlePaletteObject("matt", e)}
-          >
-            <MattPalette active={pendingObjectType === "matt"} />
-          </div>
-          <div
-            className={`sketch__palette__object ${pendingObjectType === "ball" ? "sketch__palette__object--active" : ""}`}
-            draggable
-            title="Ball"
-            onDragStart={(e) => e.dataTransfer.setData("objectType", "ball")}
-            onClick={(e) => handlePaletteObject("ball", e)}
-            onTouchStart={(e) => handlePaletteObject("ball", e)}
-          >
-            <BallPalette active={pendingObjectType === "ball"} />
-          </div>
-        </div>
-
-        {/* Tools */}
-        <div className="sketch__toolbar__group">
-          <span className="sketch__toolbar__label">Tool</span>
+      {/* ── Top controls: undo · redo · delete · clear ── */}
+      <div className="sketch__topbar">
+        <button
+          className="sketch__tool__btn"
+          onClick={undo}
+          disabled={!canUndo}
+          title="Undo (Ctrl+Z)"
+        >
+          ⟲ Undo
+        </button>
+        <button
+          className="sketch__tool__btn"
+          onClick={redo}
+          disabled={!canRedo}
+          title="Redo (Ctrl+Shift+Z)"
+        >
+          ⟳ Redo
+        </button>
+        <div className="sketch__topbar__spacer" />
+        {selectedId && (
           <button
-            className={`sketch__tool__btn ${tool === "select" ? "sketch__tool__btn--active" : ""}`}
-            onClick={() => {
-              setTool("select");
-              setPendingPlayerType(null);
-              setPendingObjectType(null);
-            }}
+            className="sketch__tool__btn sketch__tool__btn--danger"
+            onClick={handleDelete}
           >
-            ↖ Select
+            × Delete
           </button>
-          <button
-            className={`sketch__tool__btn ${tool === "arrow" ? "sketch__tool__btn--active" : ""}`}
-            onClick={() => {
-              setTool("arrow");
-              setPendingPlayerType(null);
-              setPendingObjectType(null);
-            }}
-          >
-            → Arrow
-          </button>
-        </div>
-
-        {tool === "arrow" && (
-          <div className="sketch__toolbar__group">
-            <span className="sketch__toolbar__label">Style</span>
-            <button
-              className={`sketch__tool__btn ${arrowStyle === "solid" ? "sketch__tool__btn--active" : ""}`}
-              onClick={() => setArrowStyle("solid")}
-            >
-              — Solid
-            </button>
-            <button
-              className={`sketch__tool__btn ${arrowStyle === "dashed" ? "sketch__tool__btn--active" : ""}`}
-              onClick={() => setArrowStyle("dashed")}
-            >
-              ╌ Dashed
-            </button>
-          </div>
         )}
-
-        <div className="sketch__toolbar__group sketch__toolbar__group--right">
-          {selectedId && (
-            <button
-              className="sketch__tool__btn sketch__tool__btn--danger"
-              onClick={handleDelete}
-            >
-              × Delete
-            </button>
-          )}
-          <button className="sketch__tool__btn" onClick={clearAll}>
-            ✕ Clear all
-          </button>
-        </div>
+        <button className="sketch__tool__btn" onClick={clearAll}>
+          ✕ Clear
+        </button>
       </div>
 
-      {/* Pending placement hint */}
-      {pendingAny && (
-        <p className="sketch__hint sketch__hint--pending">
-          Tap anywhere on the court to place <strong>{pendingLabel}</strong> —
-          tap the badge again to cancel
-        </p>
-      )}
-
+      {/* ── Canvas ── */}
       <svg
         ref={svgRef}
         width={SVG_W}
@@ -991,15 +974,114 @@ const SketchEditor = ({
         ))}
       </svg>
 
-      <p className="sketch__hint">
-        {pendingAny
-          ? ""
-          : tool === "select"
-            ? "Desktop: drag items onto court. Mobile: tap a badge then tap the court. Click to select · Del to remove"
-            : "Click / drag on the court to draw an arrow"}
-      </p>
+      {/* ── Bottom toolbar ── */}
+      <div className="sketch__bottombar">
+        {/* Palette row: players + objects side by side */}
+        <div className="sketch__bottombar__palette">
+          <div className="sketch__bottombar__palette__group">
+            <span className="sketch__bottombar__label">Players</span>
+            {(Object.keys(PLAYER_COLORS) as PlayerType[]).map((type) => (
+              <div
+                key={type}
+                className={`sketch__palette__player ${pendingPlayerType === type ? "sketch__palette__player--active" : ""}`}
+                draggable={!coarsePointer}
+                title={type}
+                onDragStart={(e) => e.dataTransfer.setData("playerType", type)}
+                onTouchStart={(e) => { e.preventDefault(); handlePalettePlayer(type, e); }}
+                style={{ background: PLAYER_COLORS[type] }}
+              >
+                {PLAYER_LABELS[type]}
+              </div>
+            ))}
+          </div>
+          <div className="sketch__bottombar__palette__group">
+            <span className="sketch__bottombar__label">Objects</span>
+            <div
+              className={`sketch__palette__object ${pendingObjectType === "pylon" ? "sketch__palette__object--active" : ""}`}
+              draggable={!coarsePointer} title="Pylon"
+              onDragStart={(e) => e.dataTransfer.setData("objectType", "pylon")}
+              onTouchStart={(e) => { e.preventDefault(); handlePaletteObject("pylon", e); }}
+            >
+              <PylonPalette active={pendingObjectType === "pylon"} />
+            </div>
+            <div
+              className={`sketch__palette__object ${pendingObjectType === "bench" ? "sketch__palette__object--active" : ""}`}
+              draggable={!coarsePointer} title="Bench / elevated object"
+              onDragStart={(e) => e.dataTransfer.setData("objectType", "bench")}
+              onTouchStart={(e) => { e.preventDefault(); handlePaletteObject("bench", e); }}
+            >
+              <BenchPalette active={pendingObjectType === "bench"} />
+            </div>
+            <div
+              className={`sketch__palette__object ${pendingObjectType === "matt" ? "sketch__palette__object--active" : ""}`}
+              draggable={!coarsePointer} title="Matt"
+              onDragStart={(e) => e.dataTransfer.setData("objectType", "matt")}
+              onTouchStart={(e) => { e.preventDefault(); handlePaletteObject("matt", e); }}
+            >
+              <MattPalette active={pendingObjectType === "matt"} />
+            </div>
+            <div
+              className={`sketch__palette__object ${pendingObjectType === "ball" ? "sketch__palette__object--active" : ""}`}
+              draggable={!coarsePointer} title="Ball"
+              onDragStart={(e) => e.dataTransfer.setData("objectType", "ball")}
+              onTouchStart={(e) => { e.preventDefault(); handlePaletteObject("ball", e); }}
+            >
+              <BallPalette active={pendingObjectType === "ball"} />
+            </div>
+          </div>
+        </div>
+
+        {/* Controls row: tool toggle · undo/redo · delete/clear */}
+        <div className="sketch__bottombar__controls">
+          <div className="sketch__pill">
+            <button
+              className={`sketch__pill__btn ${tool === "select" ? "sketch__pill__btn--active" : ""}`}
+              title="Move and select items (drag to reposition)"
+              onClick={() => { setTool("select"); setPendingPlayerType(null); setPendingObjectType(null); }}
+            >
+              ▶ Move
+            </button>
+            <button
+              className={`sketch__pill__btn ${tool === "arrow" ? "sketch__pill__btn--active" : ""}`}
+              title="Draw arrows on the court"
+              onClick={() => { setTool("arrow"); setPendingPlayerType(null); setPendingObjectType(null); }}
+            >
+              → Draw
+            </button>
+          </div>
+
+          {tool === "arrow" && (
+            <div className="sketch__pill">
+              <button
+                className={`sketch__pill__btn ${arrowStyle === "solid" ? "sketch__pill__btn--active" : ""}`}
+                onClick={() => setArrowStyle("solid")}
+                title="Solid line"
+              >
+                — Solid
+              </button>
+              <button
+                className={`sketch__pill__btn ${arrowStyle === "dashed" ? "sketch__pill__btn--active" : ""}`}
+                onClick={() => setArrowStyle("dashed")}
+                title="Dashed line"
+              >
+                ╌ Dashed
+              </button>
+            </div>
+          )}
+
+        </div>
+
+        <p className={`sketch__hint${pendingAny ? " sketch__hint--pending" : ""}`}>
+          {pendingAny
+            ? `Tap the court to place ${pendingLabel} — tap the badge again to cancel`
+            : tool === "select"
+              ? "Drag items to reposition · click to select · Del to delete"
+              : "Click and drag on the court to draw an arrow"}
+        </p>
+      </div>
     </div>
   );
+
 };
 
 // ─── Variant types ────────────────────────────────────────────────────────────
@@ -1010,6 +1092,49 @@ interface VariantExercise {
   difficulty: number;
   tags: string[];
 }
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+
+const ExerciseDetailSkeleton = () => (
+  <>
+    <Navigation />
+    <div className="exercisedetail section">
+      <div className="exercisedetail__inner">
+        {/* back */}
+        <div className="exercisedetail__back">
+          <span className="sk sk--rect" style={{ width: "8rem", height: "3.4rem" }} />
+        </div>
+
+        <div className="exercisedetail__layout">
+          {/* left: info */}
+          <div className="exercisedetail__info">
+            <div className="sk-card" style={{ gap: "1.4rem" }}>
+              <span className="sk sk--line sk--w30" />
+              <span className="sk sk--line-xl sk--w65" />
+              <div className="sk-row">
+                <span className="sk sk--rect" style={{ width: "7rem", height: "2.4rem" }} />
+                <span className="sk sk--rect" style={{ width: "7rem", height: "2.4rem" }} />
+              </div>
+              <div className="sk-row" style={{ marginTop: "0.4rem" }}>
+                <span className="sk sk--rect" style={{ width: "9rem", height: "3.2rem" }} />
+                <span className="sk sk--rect" style={{ width: "9rem", height: "3.2rem" }} />
+              </div>
+            </div>
+            {[0, 1].map((i) => (
+              <div key={i} className="sk-card">
+                <span className="sk sk--line sk--w30" />
+                <span className="sk sk--line sk--w55" />
+              </div>
+            ))}
+          </div>
+
+          {/* right: sketch */}
+          <span className="sk sk--rect" style={{ width: "100%", aspectRatio: "560/440" }} />
+        </div>
+      </div>
+    </div>
+  </>
+);
 
 // ─── Main component ───────────────────────────────────────────────────────────
 
@@ -1165,9 +1290,16 @@ const ExerciseDetail = () => {
     }
   };
 
+  // ── Delete permission ──────────────────────────────────────────────────────
+  const exerciseTeams: string[] = (() => {
+    const t = (exercise as any)?.team;
+    return Array.isArray(t) ? t : t ? [t] : [];
+  })();
+  const canDelete = !!(userTeam && exerciseTeams.includes(userTeam));
+
   // ── Delete ─────────────────────────────────────────────────────────────────
   const handleDelete = async () => {
-    if (!exerciseId) return;
+    if (!exerciseId || !canDelete) return;
     setDeleting(true);
     try {
       await removeFromVariantGroup(exerciseId);
@@ -1182,10 +1314,7 @@ const ExerciseDetail = () => {
 
   if (loading)
     return (
-      <>
-        <Navigation />
-        <p style={{ padding: "4rem 11.2rem" }}>Loading...</p>
-      </>
+      <ExerciseDetailSkeleton />
     );
   if (!exercise)
     return (
@@ -1417,12 +1546,14 @@ const ExerciseDetail = () => {
                       </svg>
                       Edit
                     </button>
-                    <button
-                      className="exercisedetail__btn exercisedetail__btn--danger"
-                      onClick={() => setDeleteConfirm(true)}
-                    >
-                      Delete
-                    </button>
+                    {canDelete && (
+                      <button
+                        className="exercisedetail__btn exercisedetail__btn--danger"
+                        onClick={() => setDeleteConfirm(true)}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </>
                 )}
               </div>

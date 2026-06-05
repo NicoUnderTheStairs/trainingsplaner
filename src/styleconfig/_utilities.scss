@@ -301,10 +301,71 @@
   &--setting {
     background-color: rgba($primary-7, 0.2);
     border: 0.1rem solid $primary-7;
-    
+
     &--active {
       background-color: rgba($primary-7, 1) !important;
       border: 0.1rem solid $primary-7 !important;
     }
   }
+}
+
+// ─── Skeleton loading ─────────────────────────────────────────────────────────
+
+@keyframes sk-shimmer {
+  0%   { background-position: -80rem 0; }
+  100% { background-position:  80rem 0; }
+}
+
+// Base shimmer — always apply .sk, then add shape/width modifiers
+.sk {
+  display: block;
+  border-radius: 0.6rem;
+  background: linear-gradient(
+    90deg,
+    rgba(30, 30, 30, 0.06) 25%,
+    rgba(30, 30, 30, 0.11) 50%,
+    rgba(30, 30, 30, 0.06) 75%
+  );
+  background-size: 80rem 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+}
+
+// Shape modifiers
+.sk--line    { height: 1.4rem; }
+.sk--line-lg { height: 2rem;   }
+.sk--line-xl { height: 3.2rem; }
+.sk--circle  { border-radius: 50%; }
+.sk--rect    { border-radius: 1rem; }
+
+// Width modifiers
+.sk--w20  { width: 20%;  }
+.sk--w30  { width: 30%;  }
+.sk--w40  { width: 40%;  }
+.sk--w55  { width: 55%;  }
+.sk--w65  { width: 65%;  }
+.sk--w75  { width: 75%;  }
+.sk--w100 { width: 100%; }
+
+// Layout helpers used inside skeleton compositions
+.sk-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.sk-row {
+  display: flex;
+  align-items: center;
+  gap: 1.2rem;
+}
+
+// Generic skeleton card container
+.sk-card {
+  border: 0.3rem solid rgba(30, 30, 30, 0.08);
+  border-radius: 1.6rem;
+  padding: 2rem 2.4rem;
+  background: rgba(30, 30, 30, 0.02);
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
 }

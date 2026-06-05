@@ -24,7 +24,7 @@
       gap: 0.4rem;
 
       & span {
-        font-size: 1.4rem;
+        font-size: 1.6rem;
         margin-top: -0.4rem;
         color: $black;
         font-weight: 400;
@@ -195,7 +195,7 @@
 
     .tags {
       cursor: pointer;
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       transition: all $ease;
 
       &:hover {
@@ -218,7 +218,7 @@
   &__filter__clear {
     background: transparent;
     border: none;
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     font-weight: 700;
     font-family: $font-family;
     color: $black;
@@ -238,7 +238,7 @@
   }
 
   &__filter__apply {
-    font-size: 1.4rem !important;
+    font-size: 1.6rem !important;
     padding: 0.6rem 1.6rem !important;
   }
 
@@ -275,7 +275,7 @@
     padding: 0.4rem 0.6rem 0.4rem 1.2rem;
     border: 0.2rem solid $black;
     border-radius: 5.2rem;
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     font-weight: 700;
     font-family: $font-family;
     background-color: $secondary;
@@ -312,7 +312,7 @@
   &__filter__chip__clear {
     background: transparent;
     border: none;
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     font-weight: 700;
     font-family: $font-family;
     color: $black;
@@ -433,7 +433,7 @@
       border-radius: 1rem;
       background: transparent;
       cursor: default;
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       font-weight: 700;
       font-family: $font-family;
       color: $black;
@@ -476,13 +476,14 @@
         &:not(.traininglist__calendar__day--has-training):hover::after {
           content: "+";
           position: absolute;
-          top: 0.1rem;
-          right: 0.3rem;
-          font-size: 1rem;
+          top: 0.3rem;
+          right: 0.5rem;
+          font-size: 1.6rem;
           font-weight: 900;
           font-family: $font-family;
           color: rgba($black, 0.35);
           line-height: 1;
+          transition: all $ease;
         }
       }
 
@@ -609,7 +610,7 @@
     }
 
     &__author {
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       font-weight: 700;
       font-family: $font-family;
       color: $black;
@@ -618,7 +619,7 @@
     }
 
     &__date {
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       font-weight: 400;
       font-family: $font-family;
       color: $black;
@@ -632,7 +633,7 @@
     }
 
     &__duration {
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       font-weight: 700;
       font-family: $font-family;
       color: $black;
@@ -678,7 +679,7 @@
       display: flex;
       align-items: center;
       gap: 0.8rem;
-      font-size: 1.4rem;
+      font-size: 1.6rem;
       font-weight: 700;
       font-family: $font-family;
       color: $black;
