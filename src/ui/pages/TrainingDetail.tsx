@@ -17,7 +17,10 @@ import Navigation from "../components/navigation/Navigation";
 import type { Training } from "../../types/Training";
 import type { SelectedExercise } from "../components/trainingwizard/exerciseSelection";
 import type { Players } from "../components/trainingwizard/playerSelection";
-import type { UserProfile, SharedTrainingRef } from "../../services/upload/registerUser";
+import type {
+  UserProfile,
+  SharedTrainingRef,
+} from "../../services/upload/registerUser";
 import type { SketchData } from "../../types/Sketch";
 import { notifyTrainingShared } from "../../services/notifications/notifications";
 import db from "../../firebase";
@@ -981,7 +984,10 @@ const ShareDialog = ({
 // ─── Main component ───────────────────────────────────────────────────────────
 
 const TrainingDetail = () => {
-  const { ownerId = "", trainingId } = useParams<{ ownerId: string; trainingId: string }>();
+  const { ownerId = "", trainingId } = useParams<{
+    ownerId: string;
+    trainingId: string;
+  }>();
   const navigate = useNavigate();
 
   const { currentUser } = useAuth() || { currentUser: null };
@@ -1097,7 +1103,7 @@ const TrainingDetail = () => {
         players: editData.players ?? training.players ?? null,
       };
       await updateDoc(
-        doc(db, "users", currentUserId, "trainings", trainingId),
+        doc(db, "users", ownerId, "trainings", trainingId),
         updatedFields,
       );
       setTraining((prev) => (prev ? { ...prev, ...editData } : prev));
@@ -1147,10 +1153,9 @@ const TrainingDetail = () => {
     if (!trainingId || !training || !currentUserId) return;
     setSaving(true);
     try {
-      await updateDoc(
-        doc(db, "users", currentUserId, "trainings", trainingId),
-        { exercises: editExercises },
-      );
+      await updateDoc(doc(db, "users", ownerId, "trainings", trainingId), {
+        exercises: editExercises,
+      });
       setTraining((prev) =>
         prev ? { ...prev, exercises: editExercises } : prev,
       );
@@ -1216,7 +1221,8 @@ const TrainingDetail = () => {
         // Remove the reference from the current user's sharedWithMe array
         const snap = await getDoc(doc(db, "users", currentUserId));
         if (snap.exists()) {
-          const sharedWithMe: SharedTrainingRef[] = snap.data().sharedWithMe ?? [];
+          const sharedWithMe: SharedTrainingRef[] =
+            snap.data().sharedWithMe ?? [];
           const entry = sharedWithMe.find(
             (r) => r.trainingId === trainingId && r.ownerId === ownerId,
           );
@@ -1227,7 +1233,9 @@ const TrainingDetail = () => {
           }
         }
       } else {
-        await deleteDoc(doc(db, "users", currentUserId, "trainings", trainingId));
+        await deleteDoc(
+          doc(db, "users", currentUserId, "trainings", trainingId),
+        );
       }
       navigate(-1);
     } catch (e) {
