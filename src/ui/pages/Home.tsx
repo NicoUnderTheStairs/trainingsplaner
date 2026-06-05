@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   collection,
   getDocs,
@@ -307,6 +307,26 @@ export default function Home() {
 
   const firstName = userData?.userName?.split(" ")[0] ?? "Coach";
 
+  const now = new Date();
+  const combinedUpcoming = useMemo(() => {
+    const toDate = (d: any): Date =>
+      typeof d?.toDate === "function" ? d.toDate() : new Date(d ?? 0);
+
+    const ownUpcoming = trainings.filter((t) => toDate(t.date) >= now);
+
+    const sharedUpcoming = sharedTrainings.filter(
+      (t) => toDate(t.date) >= now,
+    ) as (SharedTraining & { ownerId: string })[];
+
+    const combined = [
+      ...ownUpcoming.map((t) => ({ ...t, ownerId: undefined as string | undefined })),
+      ...sharedUpcoming,
+    ];
+
+    combined.sort((a, b) => toDate(a.date).getTime() - toDate(b.date).getTime());
+    return combined;
+  }, [trainings, sharedTrainings]);
+
   return (
     <>
       <Navigation />
@@ -343,9 +363,9 @@ export default function Home() {
                 View all →
               </button>
             </div>
-            {loadingTr ? (
+            {loadingTr || loadingSh ? (
               <TrainingWidgetSkeleton />
-            ) : trainings.length === 0 ? (
+            ) : combinedUpcoming.length === 0 ? (
               <div className="home__widget__empty">
                 <p>No upcoming trainings planned</p>
                 <button
@@ -357,16 +377,19 @@ export default function Home() {
               </div>
             ) : (
               <div className="home__trainings__list">
-                {trainings.map((tr) => (
+                {combinedUpcoming.map((tr) => (
                   <div
-                    key={tr.id}
+                    key={`${tr.ownerId ?? currentUser?.uid}-${tr.id}`}
                     className="home__training__row"
-                    onClick={() => navigate(`/training-detail/${currentUser?.uid}/${tr.id}`)}
+                    onClick={() => navigate(`/training-detail/${tr.ownerId ?? currentUser?.uid}/${tr.id}`)}
                   >
                     <div className="home__training__row__accent" />
                     <div className="home__training__row__info">
                       <span className="home__training__row__title">
                         {tr.title}
+                        {tr.ownerId && (
+                          <span className="home__shared__inline-badge">Shared</span>
+                        )}
                       </span>
                       <span className="home__training__row__meta">
                         {formatDate(tr.date)} · {tr.duration} min

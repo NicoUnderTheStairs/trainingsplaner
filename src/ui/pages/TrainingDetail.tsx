@@ -11,8 +11,8 @@ import {
   query,
   where,
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
 import { useNavigate, useParams, Link } from "react-router-dom";
+import { useAuth } from "../../auth/authContext";
 import Navigation from "../components/navigation/Navigation";
 import type { Training } from "../../types/Training";
 import type { SelectedExercise } from "../components/trainingwizard/exerciseSelection";
@@ -984,9 +984,9 @@ const TrainingDetail = () => {
   const { ownerId = "", trainingId } = useParams<{ ownerId: string; trainingId: string }>();
   const navigate = useNavigate();
 
-  const currentUser = getAuth().currentUser;
+  const { currentUser } = useAuth() || { currentUser: null };
   const currentUserId = currentUser?.uid ?? "";
-  const isSharedWithMe = ownerId !== currentUserId;
+  const isSharedWithMe = currentUserId !== "" && ownerId !== currentUserId;
 
   const [training, setTraining] = useState<Training | null>(null);
   const [loading, setLoading] = useState(true);

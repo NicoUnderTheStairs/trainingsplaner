@@ -381,6 +381,9 @@
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
     }
 
     &__meta {
@@ -406,6 +409,20 @@
         color: $black;
       }
     }
+  }
+
+  &__shared__inline-badge {
+    font-size: 1rem;
+    font-weight: 700;
+    font-family: $font-family;
+    text-transform: uppercase;
+    letter-spacing: 0.06rem;
+    color: $primary-6;
+    border: 0.2rem solid $primary-6;
+    border-radius: 10rem;
+    padding: 0.1rem 0.7rem;
+    white-space: nowrap;
+    flex-shrink: 0;
   }
 
   &__trainings__new {

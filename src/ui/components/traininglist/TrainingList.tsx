@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { collection, getDocs } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import db from "../../../firebase";
 import type { Training } from "../../../types/Training";
+import type { SharedTrainingRef } from "../../../services/upload/registerUser";
+
+interface ListTraining extends Training {
+  ownerId?: string;
+}
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -121,7 +126,7 @@ const TrainingList = () => {
   const currentUserId = getAuth().currentUser?.uid ?? "";
 
   // ── Data ─────────────────────────────────────────────────────────────────
-  const [trainings, setTrainings] = useState<Training[]>([]);
+  const [trainings, setTrainings] = useState<ListTraining[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -150,18 +155,47 @@ const TrainingList = () => {
         const snapshot = await getDocs(
           collection(db, "users", userId, "trainings"),
         );
-        const data: Training[] = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...(doc.data() as Omit<Training, "id">),
+        const ownTrainings: ListTraining[] = snapshot.docs.map((d) => ({
+          id: d.id,
+          ...(d.data() as Omit<Training, "id">),
         }));
 
-        data.sort((a, b) => {
+        // Fetch shared trainings from sharedWithMe refs
+        const userSnap = await getDoc(doc(db, "users", userId));
+        const sharedRefs: SharedTrainingRef[] = userSnap.exists()
+          ? (userSnap.data().sharedWithMe ?? [])
+          : [];
+
+        const sharedResults = await Promise.all(
+          sharedRefs.map(async (ref) => {
+            try {
+              const snap = await getDoc(
+                doc(db, "users", ref.ownerId, "trainings", ref.trainingId),
+              );
+              if (!snap.exists()) return null;
+              return {
+                id: snap.id,
+                ...(snap.data() as Omit<Training, "id">),
+                ownerId: ref.ownerId,
+              } as ListTraining;
+            } catch {
+              return null;
+            }
+          }),
+        );
+
+        const all: ListTraining[] = [
+          ...ownTrainings,
+          ...(sharedResults.filter(Boolean) as ListTraining[]),
+        ];
+
+        all.sort((a, b) => {
           const dateA = (a.date as any)?.toDate?.() ?? new Date(a.date);
           const dateB = (b.date as any)?.toDate?.() ?? new Date(b.date);
           return dateB.getTime() - dateA.getTime();
         });
 
-        setTrainings(data);
+        setTrainings(all);
       } catch (e) {
         console.error("Error fetching trainings:", e);
         setError("Failed to load trainings.");
@@ -541,7 +575,7 @@ const TrainingList = () => {
                           key={training.id}
                           id={`training-card-${training.id}`}
                           className={`traininglist__card${toDateKey(training.date) === selectedDay ? " traininglist__card--selected" : ""}`}
-                          onClick={() => navigate(`/training-detail/${currentUserId}/${training.id}`)}
+                          onClick={() => navigate(`/training-detail/${training.ownerId ?? currentUserId}/${training.id}`)}
                         >
                     <div className="traininglist__card__accent" />
 
@@ -562,6 +596,9 @@ const TrainingList = () => {
 
                       <h3 className="traininglist__card__title">
                         {training.title || "Untitled"}
+                        {training.ownerId && (
+                          <span className="traininglist__card__shared-badge">Shared</span>
+                        )}
                       </h3>
 
                       {training.description && (
