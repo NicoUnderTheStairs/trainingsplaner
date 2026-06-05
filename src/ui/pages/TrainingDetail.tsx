@@ -653,6 +653,7 @@ const DurationBar = ({
 interface ShareDialogProps {
   training: Training;
   currentUserId: string;
+  currentUserTeam: string;
   senderName: string;
   onClose: () => void;
 }
@@ -660,6 +661,7 @@ interface ShareDialogProps {
 const ShareDialog = ({
   training,
   currentUserId,
+  currentUserTeam,
   senderName,
   onClose,
 }: ShareDialogProps) => {
@@ -771,54 +773,80 @@ const ShareDialog = ({
           <div className="share__empty">No other users found.</div>
         ) : (
           <div className="share__user__list">
-            {users.map((user) => {
-              const isSelected = selected.has(user.uid);
-              return (
-                <button
-                  key={user.uid}
-                  className={`share__user ${isSelected ? "share__user--selected" : ""}`}
-                  onClick={() => toggleUser(user.uid)}
-                >
-                  {user.profileImageUrl ? (
-                    <img
-                      src={user.profileImageUrl}
-                      alt={user.userName}
-                      className="share__user__avatar"
-                    />
-                  ) : (
-                    <div className="share__user__avatar share__user__avatar--initials">
-                      {user.userName?.slice(0, 2).toUpperCase() ?? "?"}
-                    </div>
-                  )}
-                  <div className="share__user__info">
-                    <span className="share__user__name">{user.userName}</span>
-                    {user.team && (
-                      <span className="share__user__team">{user.team}</span>
-                    )}
-                  </div>
-                  <div
-                    className={`share__user__check ${isSelected ? "share__user__check--active" : ""}`}
+            {(() => {
+              const inTeam = currentUserTeam
+                ? users.filter((u) => u.team === currentUserTeam)
+                : [];
+              const others = currentUserTeam
+                ? users.filter((u) => u.team !== currentUserTeam)
+                : users;
+              const showLabels = inTeam.length > 0 && others.length > 0;
+
+              const renderUser = (user: UserProfile) => {
+                const isSelected = selected.has(user.uid);
+                return (
+                  <button
+                    key={user.uid}
+                    className={`share__user ${isSelected ? "share__user--selected" : ""}`}
+                    onClick={() => toggleUser(user.uid)}
                   >
-                    {isSelected && (
-                      <svg
-                        width="12"
-                        height="10"
-                        viewBox="0 0 14 11"
-                        fill="none"
-                      >
-                        <path
-                          d="M1 5L5 9L13 1"
-                          stroke="currentColor"
-                          strokeWidth="2.2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        />
-                      </svg>
+                    {user.profileImageUrl ? (
+                      <img
+                        src={user.profileImageUrl}
+                        alt={user.userName}
+                        className="share__user__avatar"
+                      />
+                    ) : (
+                      <div className="share__user__avatar share__user__avatar--initials">
+                        {user.userName?.slice(0, 2).toUpperCase() ?? "?"}
+                      </div>
                     )}
-                  </div>
-                </button>
+                    <div className="share__user__info">
+                      <span className="share__user__name">{user.userName}</span>
+                      {user.team && (
+                        <span className="share__user__team">{user.team}</span>
+                      )}
+                    </div>
+                    <div
+                      className={`share__user__check ${isSelected ? "share__user__check--active" : ""}`}
+                    >
+                      {isSelected && (
+                        <svg width="12" height="10" viewBox="0 0 14 11" fill="none">
+                          <path
+                            d="M1 5L5 9L13 1"
+                            stroke="currentColor"
+                            strokeWidth="2.2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </svg>
+                      )}
+                    </div>
+                  </button>
+                );
+              };
+
+              return (
+                <>
+                  {inTeam.length > 0 && (
+                    <>
+                      {showLabels && (
+                        <span className="share__group__label">Your team</span>
+                      )}
+                      {inTeam.map(renderUser)}
+                    </>
+                  )}
+                  {others.length > 0 && (
+                    <>
+                      {showLabels && (
+                        <span className="share__group__label">Everyone else</span>
+                      )}
+                      {others.map(renderUser)}
+                    </>
+                  )}
+                </>
               );
-            })}
+            })()}
           </div>
         )}
 
@@ -1739,6 +1767,7 @@ const TrainingDetail = () => {
         <ShareDialog
           training={training}
           currentUserId={currentUserId}
+          currentUserTeam={userTeam}
           senderName={senderName}
           onClose={() => setShareOpen(false)}
         />
