@@ -7,6 +7,7 @@ import {
   deleteDoc,
   updateDoc,
   setDoc,
+  arrayUnion,
   query,
   where,
 } from "firebase/firestore";
@@ -691,12 +692,15 @@ const ShareDialog = ({
     if (selected.size === 0) return;
     setSharing(true);
 
+    const originalId = (training as any).id ?? "";
+
     try {
       const recipientIds = Array.from(selected);
 
+      // Write a full copy with originalId so future edits can be propagated
       await Promise.all(
         recipientIds.map((recipientId) =>
-          setDoc(doc(collection(db, "users", recipientId, "trainings")), {
+          setDoc(doc(db, "users", recipientId, "trainings", originalId), {
             title: training.title,
             description: training.description,
             duration: training.duration,
@@ -707,17 +711,23 @@ const ShareDialog = ({
             author: training.author,
             date: training.date,
             sharedBy: currentUserId,
+            originalId,
             sharedAt: new Date(),
           }),
         ),
       );
+
+      // Track recipients on the original so saves can propagate
+      await updateDoc(doc(db, "users", currentUserId, "trainings", originalId), {
+        sharedWith: arrayUnion(...recipientIds),
+      });
 
       try {
         await Promise.all(
           recipientIds.map((recipientId) =>
             notifyTrainingShared(
               recipientId,
-              (training as any).id ?? "",
+              originalId,
               training.title,
               senderName,
               currentUserId,
@@ -859,6 +869,7 @@ const TrainingDetail = () => {
   const currentUserId = currentUser?.uid ?? "";
 
   const [training, setTraining] = useState<Training | null>(null);
+  const isSharedWithMe = !!training?.sharedBy;
   const [loading, setLoading] = useState(true);
   const [senderName, setSenderName] = useState<string>("");
   const [userTeam, setUserTeam] = useState<string>("");
@@ -959,15 +970,26 @@ const TrainingDetail = () => {
     if (!trainingId || !training || !currentUserId) return;
     setSaving(true);
     try {
+      const updatedFields = {
+        title: editData.title ?? training.title,
+        description: editData.description ?? training.description,
+        duration: editData.duration ?? training.duration,
+        tags: editData.tags ?? training.tags,
+        players: editData.players ?? training.players ?? null,
+      };
       await updateDoc(
         doc(db, "users", currentUserId, "trainings", trainingId),
-        {
-          title: editData.title ?? training.title,
-          description: editData.description ?? training.description,
-          duration: editData.duration ?? training.duration,
-          tags: editData.tags ?? training.tags,
-          players: editData.players ?? training.players ?? null,
-        },
+        updatedFields,
+      );
+      // Push changes to all users this training was shared with
+      const sharedWith = training.sharedWith ?? [];
+      await Promise.all(
+        sharedWith.map((recipientId) =>
+          updateDoc(
+            doc(db, "users", recipientId, "trainings", trainingId),
+            updatedFields,
+          ).catch(() => {}),
+        ),
       );
       setTraining((prev) => (prev ? { ...prev, ...editData } : prev));
       setEditing(false);
@@ -1018,9 +1040,17 @@ const TrainingDetail = () => {
     try {
       await updateDoc(
         doc(db, "users", currentUserId, "trainings", trainingId),
-        {
-          exercises: editExercises,
-        },
+        { exercises: editExercises },
+      );
+      // Push exercise changes to all users this training was shared with
+      const sharedWith = training.sharedWith ?? [];
+      await Promise.all(
+        sharedWith.map((recipientId) =>
+          updateDoc(
+            doc(db, "users", recipientId, "trainings", trainingId),
+            { exercises: editExercises },
+          ).catch(() => {}),
+        ),
       );
       setTraining((prev) =>
         prev ? { ...prev, exercises: editExercises } : prev,
@@ -1259,32 +1289,34 @@ const TrainingDetail = () => {
                     </>
                   ) : (
                     <>
-                      <button
-                        className="trainingdetail__btn"
-                        onClick={() => setShareOpen(true)}
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
+                      {!isSharedWithMe && (
+                        <button
+                          className="trainingdetail__btn"
+                          onClick={() => setShareOpen(true)}
                         >
-                          <path
-                            d="M4 12V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V12"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                          />
-                          <path
-                            d="M12 2V15M12 2L8 6M12 2L16 6"
-                            stroke="currentColor"
-                            strokeWidth="2"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                          />
-                        </svg>
-                        Share
-                      </button>
+                          <svg
+                            width="16"
+                            height="16"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                          >
+                            <path
+                              d="M4 12V20C4 21.1046 4.89543 22 6 22H18C19.1046 22 20 21.1046 20 20V12"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                            />
+                            <path
+                              d="M12 2V15M12 2L8 6M12 2L16 6"
+                              stroke="currentColor"
+                              strokeWidth="2"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          Share
+                        </button>
+                      )}
                       <button
                         className="trainingdetail__btn"
                         onClick={() =>
@@ -1325,33 +1357,37 @@ const TrainingDetail = () => {
                         </svg>
                         Export
                       </button>
-                      <button
-                        className="trainingdetail__btn"
-                        onClick={handleEditStart}
-                      >
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 18 24"
-                          fill="none"
-                        >
-                          <path
-                            d="M16.8756 21.5929H1.12977C0.831474 21.5929 0.545402 21.7198 0.334478 21.9454C0.123556 22.1711 0.00506036 22.4772 0.00506036 22.7964C0.00506036 23.1156 0.123556 23.4217 0.334478 23.6474C0.545402 23.873 0.831474 23.9999 1.12977 23.9999H16.8756C17.1739 23.9999 17.46 23.873 17.671 23.6474C17.8818 23.4217 18.0004 23.1156 18.0004 22.7964C18.0004 22.4772 17.8818 22.1711 17.671 21.9454C17.46 21.7198 17.1739 21.5929 16.8756 21.5929Z"
-                            fill="currentColor"
-                          />
-                          <path
-                            d="M1.12943 19.1861H1.23066L5.92067 18.7288C6.43444 18.674 6.91495 18.4318 7.28156 18.0428L17.404 7.21152C17.7968 6.76739 18.0091 6.17473 17.9944 5.5634C17.9796 4.95206 17.739 4.37192 17.3251 3.9501L14.2435 0.652573C13.8413 0.248321 13.3142 0.0163667 12.7626 0.000833716C12.211 -0.0146993 11.6733 0.187273 11.2518 0.568331L1.12943 11.3996C0.765888 11.7919 0.53953 12.3061 0.48835 12.8558L0.00472708 17.8744C-0.0104239 18.0505 0.0109516 18.2282 0.0673295 18.3947C0.123707 18.5611 0.2137 18.7122 0.330892 18.8371C0.435984 18.9486 0.56062 19.0369 0.69765 19.0968C0.834682 19.1567 0.981413 19.187 1.12943 19.1861ZM12.6802 2.33744L15.7506 5.62292L13.5012 7.9697L10.487 4.74439L12.6802 2.33744ZM2.67028 13.0604L9.00236 6.33298L12.0391 9.58236L5.74072 16.3218L2.3666 16.6588L2.67028 13.0604Z"
-                            fill="currentColor"
-                          />
-                        </svg>
-                        Edit
-                      </button>
-                      <button
-                        className="trainingdetail__btn trainingdetail__btn--danger"
-                        onClick={() => setDeleteConfirm(true)}
-                      >
-                        Delete
-                      </button>
+                      {!isSharedWithMe && (
+                        <>
+                          <button
+                            className="trainingdetail__btn"
+                            onClick={handleEditStart}
+                          >
+                            <svg
+                              width="16"
+                              height="16"
+                              viewBox="0 0 18 24"
+                              fill="none"
+                            >
+                              <path
+                                d="M16.8756 21.5929H1.12977C0.831474 21.5929 0.545402 21.7198 0.334478 21.9454C0.123556 22.1711 0.00506036 22.4772 0.00506036 22.7964C0.00506036 23.1156 0.123556 23.4217 0.334478 23.6474C0.545402 23.873 0.831474 23.9999 1.12977 23.9999H16.8756C17.1739 23.9999 17.46 23.873 17.671 23.6474C17.8818 23.4217 18.0004 23.1156 18.0004 22.7964C18.0004 22.4772 17.8818 22.1711 17.671 21.9454C17.46 21.7198 17.1739 21.5929 16.8756 21.5929Z"
+                                fill="currentColor"
+                              />
+                              <path
+                                d="M1.12943 19.1861H1.23066L5.92067 18.7288C6.43444 18.674 6.91495 18.4318 7.28156 18.0428L17.404 7.21152C17.7968 6.76739 18.0091 6.17473 17.9944 5.5634C17.9796 4.95206 17.739 4.37192 17.3251 3.9501L14.2435 0.652573C13.8413 0.248321 13.3142 0.0163667 12.7626 0.000833716C12.211 -0.0146993 11.6733 0.187273 11.2518 0.568331L1.12943 11.3996C0.765888 11.7919 0.53953 12.3061 0.48835 12.8558L0.00472708 17.8744C-0.0104239 18.0505 0.0109516 18.2282 0.0673295 18.3947C0.123707 18.5611 0.2137 18.7122 0.330892 18.8371C0.435984 18.9486 0.56062 19.0369 0.69765 19.0968C0.834682 19.1567 0.981413 19.187 1.12943 19.1861ZM12.6802 2.33744L15.7506 5.62292L13.5012 7.9697L10.487 4.74439L12.6802 2.33744ZM2.67028 13.0604L9.00236 6.33298L12.0391 9.58236L5.74072 16.3218L2.3666 16.6588L2.67028 13.0604Z"
+                                fill="currentColor"
+                              />
+                            </svg>
+                            Edit
+                          </button>
+                          <button
+                            className="trainingdetail__btn trainingdetail__btn--danger"
+                            onClick={() => setDeleteConfirm(true)}
+                          >
+                            Delete
+                          </button>
+                        </>
+                      )}
                     </>
                   )}
                 </div>

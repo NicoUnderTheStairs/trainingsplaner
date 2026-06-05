@@ -11,5 +11,9 @@ export interface Training {
   date: string;
   duration: number;
   exercises: SelectedExercise[];
-  players?: Players; // optional — older trainings won't have this
+  players?: Players;
+  sharedBy?: string;
+  originalId?: string;
+  sharedAt?: any;
+  sharedWith?: string[];
 }
