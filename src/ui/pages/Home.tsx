@@ -161,12 +161,14 @@ export default function Home() {
       return;
     }
     const fetch = async () => {
+      const now = new Date();
       try {
         const q = query(
           collection(db, "users", userId, "trainings"),
           where("sharedBy", "==", null),
-          orderBy("createdAt", "desc"),
-          limit(3),
+          where("date", ">=", now),
+          orderBy("date", "asc"),
+          limit(1),
         );
         const snap = await getDocs(q);
         setTrainings(
@@ -174,17 +176,24 @@ export default function Home() {
         );
       } catch {
         const snap = await getDocs(
-          query(collection(db, "users", userId, "trainings"), limit(20)),
+          query(collection(db, "users", userId, "trainings"), limit(50)),
         );
-        setTrainings(
-          snap.docs
-            .map(
-              (d) =>
-                ({ id: d.id, ...d.data() }) as Training & { sharedBy?: string },
-            )
-            .filter((t) => !t.sharedBy)
-            .slice(0, 3),
+        const all = snap.docs.map(
+          (d) => ({ id: d.id, ...d.data() }) as Training & { sharedBy?: string; date?: any },
         );
+        const upcoming = all
+          .filter((t) => {
+            if (t.sharedBy) return false;
+            if (!t.date) return false;
+            const d = typeof t.date.toDate === "function" ? t.date.toDate() : new Date(t.date);
+            return d >= now;
+          })
+          .sort((a, b) => {
+            const da = typeof a.date?.toDate === "function" ? a.date.toDate() : new Date(a.date);
+            const db2 = typeof b.date?.toDate === "function" ? b.date.toDate() : new Date(b.date);
+            return da - db2;
+          });
+        setTrainings(upcoming.slice(0, 1));
       } finally {
         setLoadingTr(false);
       }
@@ -288,7 +297,7 @@ export default function Home() {
           {/* My trainings */}
           <section className="home__widget home__widget--trainings">
             <div className="home__widget__header">
-              <h2 className="home__widget__title">My Trainings</h2>
+              <h2 className="home__widget__title">Upcoming Trainings</h2>
               <button
                 className="home__widget__link"
                 onClick={() => navigate("/training-overview")}
@@ -300,7 +309,7 @@ export default function Home() {
               <Skeleton />
             ) : trainings.length === 0 ? (
               <div className="home__widget__empty">
-                <p>No trainings yet.</p>
+                <p>No upcoming trainings planned</p>
                 <button
                   className="home__widget__cta"
                   onClick={() => navigate("/create-training")}

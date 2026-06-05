@@ -33,11 +33,11 @@ const DefaultInfo: React.FC<Props> = ({
   tags = [],
   onChange,
 }) => {
-  // Push today's date into wizard state on mount (only if not already set)
+  // Push today's date into wizard state on mount only if no date was pre-filled
   useEffect(() => {
-    onChange({
-      date: new Date().toISOString().slice(0, 10),
-    });
+    if (!date) {
+      onChange({ date: new Date().toISOString().slice(0, 10) });
+    }
   }, []);
 
   console.log(author);

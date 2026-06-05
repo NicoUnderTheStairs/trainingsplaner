@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { collection, getDocs } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { getAuth } from "firebase/auth";
@@ -6,6 +6,8 @@ import db from "../../../firebase";
 import type { Training } from "../../../types/Training";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
+
+const WEEKDAYS = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"];
 
 const AVAILABLE_TAGS = [
   "Warmup",
@@ -18,6 +20,39 @@ const AVAILABLE_TAGS = [
 ];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+const toDateKey = (date: any): string => {
+  if (!date) return "";
+  const d = typeof date.toDate === "function" ? date.toDate() : new Date(date);
+  if (isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const getCalendarDays = (monthDate: Date): { date: Date; currentMonth: boolean }[] => {
+  const year = monthDate.getFullYear();
+  const month = monthDate.getMonth();
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+
+  // Convert Sunday-based (0=Sun) to Monday-based (0=Mon)
+  let startDow = firstDay.getDay();
+  startDow = startDow === 0 ? 6 : startDow - 1;
+
+  const days: { date: Date; currentMonth: boolean }[] = [];
+
+  for (let i = startDow - 1; i >= 0; i--)
+    days.push({ date: new Date(year, month, -i), currentMonth: false });
+
+  for (let d = 1; d <= lastDay.getDate(); d++)
+    days.push({ date: new Date(year, month, d), currentMonth: true });
+
+  const remaining = 7 - (days.length % 7);
+  if (remaining < 7)
+    for (let d = 1; d <= remaining; d++)
+      days.push({ date: new Date(year, month + 1, d), currentMonth: false });
+
+  return days;
+};
 
 const formatDate = (date: any): string => {
   if (!date) return "—";
@@ -39,6 +74,14 @@ const TrainingList = () => {
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // ── Calendar ──────────────────────────────────────────────────────────────
+  const [calendarMonth, setCalendarMonth] = useState(() => {
+    const d = new Date();
+    d.setDate(1);
+    return d;
+  });
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   // ── Search & filter ───────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
@@ -105,6 +148,39 @@ const TrainingList = () => {
   const hasActiveFilters =
     activeTags.length > 0 || search.trim() !== "" || minPlayers > 0;
   const activeFilterCount = activeTags.length + (minPlayers > 0 ? 1 : 0);
+
+  // ── Calendar derived data ─────────────────────────────────────────────────
+  const trainingDays = useMemo(() => {
+    const keys = new Set<string>();
+    trainings.forEach((tr) => {
+      const key = toDateKey(tr.date);
+      if (key) keys.add(key);
+    });
+    return keys;
+  }, [trainings]);
+
+  const todayKey = toDateKey(new Date());
+  const calendarDays = getCalendarDays(calendarMonth);
+
+  const handleCalendarDayClick = (dateKey: string) => {
+    if (trainingDays.has(dateKey)) {
+      // Toggle selection and scroll to the card
+      const next = selectedDay === dateKey ? null : dateKey;
+      setSelectedDay(next);
+      if (next) {
+        const match = trainings.find((tr) => toDateKey(tr.date) === next);
+        if (match) {
+          setTimeout(() => {
+            document
+              .getElementById(`training-card-${match.id}`)
+              ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 50);
+        }
+      }
+    } else {
+      navigate("/create-training", { state: { date: dateKey } });
+    }
+  };
 
   // ── Filtered list ─────────────────────────────────────────────────────────
   const filtered = trainings.filter((tr) => {
@@ -293,7 +369,7 @@ const TrainingList = () => {
           </div>
         )}
 
-        {/* States */}
+        {/* Loading / error */}
         {loading && <p className="traininglist__status">Loading...</p>}
         {error && (
           <p className="traininglist__status traininglist__status--error">
@@ -301,9 +377,9 @@ const TrainingList = () => {
           </p>
         )}
 
-        {/* Training cards */}
         {!loading && !error && (
           <>
+            {/* No trainings at all — full-width empty state */}
             {trainings.length === 0 ? (
               <div className="traininglist__empty">
                 <p>No trainings yet.</p>
@@ -314,21 +390,109 @@ const TrainingList = () => {
                   + Create your first training
                 </button>
               </div>
-            ) : filtered.length === 0 ? (
-              <div className="traininglist__empty">
-                <p>No trainings match your filters.</p>
-                <button className="btn__wired" onClick={clearFilters}>
-                  Clear filters
-                </button>
-              </div>
             ) : (
-              <div className="traininglist__cards">
-                {filtered.map((training) => (
-                  <div
-                    key={training.id}
-                    className="traininglist__card"
-                    onClick={() => navigate(`/training-detail/${training.id}`)}
-                  >
+              /* Two-column layout: sticky calendar left, scrollable list right */
+              <div className="traininglist__layout">
+
+                {/* ── Sidebar: calendar ──────────────────────────────────── */}
+                <aside className="traininglist__sidebar">
+                  <section className="traininglist__calendar">
+                    <div className="traininglist__calendar__header">
+                      <button
+                        className="traininglist__calendar__nav"
+                        onClick={() =>
+                          setCalendarMonth(
+                            (m) => new Date(m.getFullYear(), m.getMonth() - 1, 1),
+                          )
+                        }
+                        aria-label="Previous month"
+                      >
+                        <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                          <path d="M8.5 1L1.5 8L8.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                      <span className="traininglist__calendar__title">
+                        {calendarMonth.toLocaleDateString("en-GB", {
+                          month: "long",
+                          year: "numeric",
+                        })}
+                      </span>
+                      <button
+                        className="traininglist__calendar__nav"
+                        onClick={() =>
+                          setCalendarMonth(
+                            (m) => new Date(m.getFullYear(), m.getMonth() + 1, 1),
+                          )
+                        }
+                        aria-label="Next month"
+                      >
+                        <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                          <path d="M1.5 1L8.5 8L1.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </button>
+                    </div>
+
+                    <div className="traininglist__calendar__grid">
+                      {WEEKDAYS.map((d) => (
+                        <div key={d} className="traininglist__calendar__weekday">
+                          {d}
+                        </div>
+                      ))}
+                      {calendarDays.map(({ date, currentMonth }, i) => {
+                        const key = toDateKey(date);
+                        const hasTraining = trainingDays.has(key);
+                        const isToday = key === todayKey;
+                        return (
+                          <button
+                            key={i}
+                            className={[
+                              "traininglist__calendar__day",
+                              currentMonth
+                                ? "traininglist__calendar__day--current"
+                                : "traininglist__calendar__day--other",
+                              isToday ? "traininglist__calendar__day--today" : "",
+                              hasTraining
+                                ? "traininglist__calendar__day--has-training"
+                                : "",
+                              key === selectedDay
+                                ? "traininglist__calendar__day--selected"
+                                : "",
+                            ]
+                              .filter(Boolean)
+                              .join(" ")}
+                            onClick={() => currentMonth && handleCalendarDayClick(key)}
+                            disabled={!currentMonth}
+                            aria-label={`${date.getDate()}${hasTraining ? " – training planned" : ""}`}
+                          >
+                            <span>{date.getDate()}</span>
+                            {hasTraining && (
+                              <i className="traininglist__calendar__day__dot" />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                </aside>
+
+                {/* ── Content: training list ─────────────────────────────── */}
+                <div className="traininglist__content">
+                  {filtered.length === 0 ? (
+                    <div className="traininglist__empty">
+                      <p>No trainings match your filters.</p>
+                      <button className="btn__wired" onClick={clearFilters}>
+                        Clear filters
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="traininglist__cards">
+                      {filtered.map((training) => (
+                        <div
+                          key={training.id}
+                          id={`training-card-${training.id}`}
+                          className={`traininglist__card${toDateKey(training.date) === selectedDay ? " traininglist__card--selected" : ""}`}
+                          onClick={() => navigate(`/training-detail/${training.id}`)}
+                        >
                     <div className="traininglist__card__accent" />
 
                     <div className="traininglist__card__body">
@@ -407,7 +571,10 @@ const TrainingList = () => {
                       </div>
                     </div>
                   </div>
-                ))}
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </>

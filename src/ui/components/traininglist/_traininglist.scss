@@ -66,7 +66,7 @@
 
         &--open {
           background-color: $secondary-2;
-          color: $secondary;
+          color: $black;
           box-shadow: 0.3rem 0.3rem 0 $black;
           transform: translate(-0.1rem, -0.1rem);
         }
@@ -326,6 +326,200 @@
     }
   }
 
+  // ── Two-column layout ────────────────────────────────────────────────────
+
+  &__layout {
+    display: flex;
+    gap: 1.6rem;
+    align-items: flex-start;
+  }
+
+  &__sidebar {
+    width: 50%;
+    flex-shrink: 0;
+    position: sticky;
+    top: calc(8.3rem + 2.4rem); // nav height + breathing room
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+  }
+
+  // ── Calendar ──────────────────────────────────────────────────────────────
+
+  &__calendar {
+    background-color: $white;
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    padding: 2.4rem 2.8rem;
+    margin-bottom: 0;
+
+    &__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2.4rem;
+    }
+
+    &__title {
+      font-size: 2rem;
+      font-weight: 900;
+      font-family: $font-family;
+      text-transform: uppercase;
+      letter-spacing: 0.06rem;
+      color: $black;
+    }
+
+    &__nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.6rem;
+      height: 3.6rem;
+      background: $secondary;
+      border: 0.2rem solid $black;
+      border-radius: 1rem;
+      cursor: pointer;
+      color: $black;
+      transition: all $ease;
+
+      &:hover {
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 $black;
+      }
+
+      &:active {
+        transform: translate(0.1rem, 0.1rem);
+        box-shadow: none;
+      }
+    }
+
+    &__grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.4rem;
+      justify-items: center;
+
+      @media (max-width: #{$screen-sm-min}) {
+        justify-items: unset;
+      }
+    }
+
+    &__weekday {
+      text-align: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      font-family: $font-family;
+      text-transform: uppercase;
+      letter-spacing: 0.1rem;
+      color: rgba($black, 0.4);
+      padding-bottom: 0.8rem;
+      max-width: 9rem;
+    }
+    
+    &__day {
+      max-width: 5.2rem;
+      max-height: 5.2rem;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      aspect-ratio: 1;
+      border: 0.2rem solid transparent;
+      border-radius: 1rem;
+      background: transparent;
+      cursor: default;
+      font-size: 1.4rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      padding: 3rem;
+      transition: all $ease;
+
+      @media (max-width: #{$screen-sm-min}) {
+        padding: 0;
+      }
+
+      &--other {
+        color: rgba($black, 0.2);
+      }
+
+      &--today > span {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.6rem;
+        height: 2.6rem;
+        border-radius: 50%;
+        padding: 1.5rem;
+        border: 0.2rem solid $black;
+      }
+
+      // All current-month days are clickable
+      &--current {
+        cursor: pointer;
+
+        &:hover {
+          border-color: rgba($black, 0.2);
+          background: rgba($black, 0.04);
+        }
+
+        &:active {
+          transform: translate(0.1rem, 0.1rem);
+        }
+
+        // "+" hint on empty days
+        &:not(.traininglist__calendar__day--has-training):hover::after {
+          content: "+";
+          position: absolute;
+          top: 0.1rem;
+          right: 0.3rem;
+          font-size: 1rem;
+          font-weight: 900;
+          font-family: $font-family;
+          color: rgba($black, 0.35);
+          line-height: 1;
+        }
+      }
+
+      &--has-training {
+        border-color: $black;
+        background: $secondary;
+
+        &:hover {
+          transform: translate(-0.2rem, -0.2rem);
+          box-shadow: 0.3rem 0.3rem 0 $black;
+        }
+
+        &:active {
+          transform: translate(0.1rem, 0.1rem);
+          box-shadow: none;
+        }
+      }
+
+      &--selected {
+        background: $primary-1 !important;
+        border-color: $black !important;
+        transform: translate(-0.2rem, -0.2rem) !important;
+        box-shadow: 0.3rem 0.3rem 0 $black !important;
+      }
+
+      &__dot {
+        display: block;
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 50%;
+        background-color: $black;
+        flex-shrink: 0;
+      }
+    }
+
+  }
+
   // ── Status ────────────────────────────────────────────────────────────────
 
   &__status {
@@ -384,6 +578,13 @@
     &:active {
       transform: translate(0.2rem, 0.2rem);
       box-shadow: 0.2rem 0.2rem 0 $black;
+    }
+
+    &--selected {
+      border-color: $primary-1;
+      background-color: rgba(#ffee52, 0.12);
+      transform: translate(-0.4rem, -0.4rem);
+      box-shadow: 0.8rem 0.8rem 0 $primary-1;
     }
 
     &__body {
@@ -533,6 +734,20 @@
         right: auto;
         left: 2.4rem;
       }
+    }
+
+    // Stack layout on tablet / mobile
+    &__layout {
+      flex-direction: column;
+    }
+
+    &__sidebar {
+      width: 100%;
+      position: static;
+    }
+
+    &__calendar {
+      margin-bottom: 3.2rem;
     }
 
     &__card {

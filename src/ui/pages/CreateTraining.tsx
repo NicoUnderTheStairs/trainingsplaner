@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Navigation from "../components/navigation/Navigation";
 import Step1 from "../components/trainingwizard/defaultInfo";
 import Step2 from "../components/trainingwizard/exerciseSelection";
@@ -59,12 +59,15 @@ interface FormData {
 
 export default function CreateTraining() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentUser } = useAuth() || { currentUser: null };
   // @ts-ignore
   const userData = useGetUserData(currentUser?.uid ?? "");
 
+  const prefillDate = (location.state as { date?: string } | null)?.date;
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>({});
+  const [formData, setFormData] = useState<FormData>({ date: prefillDate });
   const [isSaving, setIsSaving] = useState(false);
 
   const handlePrev = () => {
