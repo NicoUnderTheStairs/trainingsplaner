@@ -1,0 +1,167 @@
+@use "../../../styleconfig/settings" as *;
+
+.install-banner {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  gap: 1.4rem;
+
+  background-color: $secondary-2;
+  color: $secondary;
+  border: 0.3rem solid $black;
+  border-radius: 2rem;
+  padding: 1.2rem 1.6rem;
+  box-shadow: 0.4rem 0.4rem 0 $black;
+
+  width: calc(100% - 3.2rem);
+  max-width: 48rem;
+
+  animation: banner-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+  &__icon {
+    flex-shrink: 0;
+    width: 4.4rem;
+    height: 4.4rem;
+    border-radius: 1.2rem;
+    border: 0.2rem solid rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+  }
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__title {
+    font-family: $font-family;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06rem;
+    color: $primary-1;
+    margin: 0 0 0.2rem;
+    line-height: 1.2;
+  }
+
+  &__hint {
+    font-family: $font-family;
+    font-size: 1.3rem;
+    font-weight: 400;
+    color: rgba(255, 250, 240, 0.7);
+    margin: 0;
+    line-height: 1.4;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+
+    &__icon {
+      display: inline-block;
+      font-size: 1.5rem;
+      vertical-align: middle;
+      margin: 0 0.2rem;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  &__btn {
+    font-family: $font-family;
+    font-weight: 700;
+    font-size: 1.4rem;
+    cursor: pointer;
+    border-radius: 1rem;
+    transition: all 0.2s ease;
+    line-height: 1;
+    padding: 0;
+
+    &--install {
+      padding: 0.7rem 1.6rem;
+      background-color: $primary-1;
+      color: $black;
+      border: 0.2rem solid $black;
+      text-transform: uppercase;
+      letter-spacing: 0.04rem;
+
+      &:hover {
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 rgba(0, 0, 0, 0.4);
+      }
+
+      &:active {
+        transform: translate(0.1rem, 0.1rem);
+        box-shadow: none;
+      }
+    }
+
+    &--dismiss {
+      width: 3.2rem;
+      height: 3.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: 0.2rem solid rgba(255, 255, 255, 0.2);
+      color: rgba(255, 250, 240, 0.6);
+      font-size: 1.2rem;
+
+      &:hover {
+        border-color: rgba(255, 255, 255, 0.5);
+        color: $secondary;
+        background-color: rgba(255, 255, 255, 0.08);
+      }
+    }
+  }
+
+  @media (max-width: #{$screen-sm-min}) {
+    bottom: 1.2rem;
+    padding: 1rem 1.2rem;
+    gap: 1rem;
+    border-radius: 1.6rem;
+
+    &__icon {
+      width: 3.8rem;
+      height: 3.8rem;
+    }
+
+    &__title {
+      font-size: 1.3rem;
+    }
+
+    &__hint {
+      font-size: 1.2rem;
+    }
+
+    &__btn--install {
+      font-size: 1.3rem;
+      padding: 0.6rem 1.2rem;
+    }
+  }
+}
+
+@keyframes banner-slide-up {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(2rem);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}

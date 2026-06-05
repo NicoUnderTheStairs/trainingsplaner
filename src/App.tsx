@@ -15,6 +15,7 @@ import Profile from "./ui/components/user/Profile";
 import TrainingExportView from "./ui/components/trainingexport/TrainingExportView";
 import ExerciseShop from "./ui/components/exerciseshop/ExerciseShop";
 import Preference from "./ui/components/user/Preference";
+import InstallBanner from "./ui/components/installbanner/InstallBanner";
 
 const App: React.FC = () => {
   const { userLoggedIn } = useAuth() || {
@@ -25,6 +26,7 @@ const App: React.FC = () => {
 
   return (
     <Router>
+      <InstallBanner />
       <Routes>
         {userLoggedIn ? (
           <>
