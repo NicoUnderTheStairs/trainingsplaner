@@ -16,6 +16,7 @@ export interface UserProfile {
   bio: string | null;
   mobileMode?: "advanced" | "simple";
   planningDirection?: "forward" | "backward";
+  notificationScope?: "all" | "team";
   tourCompleted?: boolean;
 }
 

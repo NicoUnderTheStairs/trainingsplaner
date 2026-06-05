@@ -9,15 +9,18 @@ import db from "../../../firebase";
 
 type MobileMode = "advanced" | "simple";
 type PlanningDirection = "forward" | "backward";
+type NotificationScope = "all" | "team";
 
 interface UserSettings {
   mobileMode: MobileMode;
   planningDirection: PlanningDirection;
+  notificationScope: NotificationScope;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
   mobileMode: "advanced",
   planningDirection: "forward",
+  notificationScope: "all",
 };
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
@@ -116,6 +119,8 @@ const Preference = () => {
             mobileMode: data.mobileMode ?? DEFAULT_SETTINGS.mobileMode,
             planningDirection:
               data.planningDirection ?? DEFAULT_SETTINGS.planningDirection,
+            notificationScope:
+              data.notificationScope ?? DEFAULT_SETTINGS.notificationScope,
           });
         }
       } catch (e) {
@@ -235,6 +240,35 @@ const Preference = () => {
                 />
               </div>
               {saving === "planningDirection" && (
+                <span className="preference__saving">Saving...</span>
+              )}
+            </SettingRow>
+          </SettingsSection>
+
+          {/* ── Notifications ──────────────────────────────────────────── */}
+          <SettingsSection
+            title="Notifications"
+            description="Choose which activity triggers notifications for you."
+          >
+            <SettingRow
+              label="Notify me about"
+              hint="Control whether you receive notifications from everyone or only from members of your own team."
+            >
+              <div className="preference__options">
+                <OptionCard
+                  title="Everyone"
+                  description="Receive notifications from all users in the app."
+                  active={settings.notificationScope === "all"}
+                  onClick={() => updateSetting("notificationScope", "all")}
+                />
+                <OptionCard
+                  title="My team only"
+                  description="Only receive notifications from users in the same team as you."
+                  active={settings.notificationScope === "team"}
+                  onClick={() => updateSetting("notificationScope", "team")}
+                />
+              </div>
+              {saving === "notificationScope" && (
                 <span className="preference__saving">Saving...</span>
               )}
             </SettingRow>

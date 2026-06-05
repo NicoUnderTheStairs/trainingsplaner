@@ -8,6 +8,7 @@ import AvatarEditor from "../avatareditor/AvatarEditor";
 
 type MobileMode = "advanced" | "simple";
 type PlanningDirection = "forward" | "backward";
+type NotificationScope = "all" | "team";
 type Role = "coach" | "player";
 
 interface TourProps {
@@ -86,6 +87,8 @@ const Tour = ({ onComplete }: TourProps) => {
   const [mobileMode, setMobileMode] = useState<MobileMode>("advanced");
   const [planningDirection, setPlanningDirection] =
     useState<PlanningDirection>("forward");
+  const [notificationScope, setNotificationScope] =
+    useState<NotificationScope>("all");
 
   // Fetch user's name for avatar initials placeholder
   const uid = auth.currentUser?.uid;
@@ -111,6 +114,7 @@ const Tour = ({ onComplete }: TourProps) => {
         tourCompleted: true,
         mobileMode,
         planningDirection,
+        notificationScope,
         role,
       };
       if (bio.trim()) updates.bio = bio.trim();
@@ -309,6 +313,27 @@ const Tour = ({ onComplete }: TourProps) => {
                         description="Add the last exercise first"
                         active={planningDirection === "backward"}
                         onClick={() => setPlanningDirection("backward")}
+                      />
+                    </div>
+                  </div>
+                  <div className="tour__field">
+                    <label className="tour__label">Notifications</label>
+                    <span className="tour__field__hint">
+                      Receive notifications from everyone, or only from your
+                      team.
+                    </span>
+                    <div className="preference__options">
+                      <OptionCard
+                        title="Everyone"
+                        description="Get notified about activity from all users"
+                        active={notificationScope === "all"}
+                        onClick={() => setNotificationScope("all")}
+                      />
+                      <OptionCard
+                        title="My team only"
+                        description="Only get notified about your teammates"
+                        active={notificationScope === "team"}
+                        onClick={() => setNotificationScope("team")}
                       />
                     </div>
                   </div>

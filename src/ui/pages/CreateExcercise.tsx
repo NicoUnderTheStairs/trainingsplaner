@@ -127,10 +127,17 @@ export default function CreateExcercise() {
 
       // 3. Notify other users (non-blocking)
       try {
+        const creatorTeam = userData?.team ?? "";
         const usersSnap = await getDocs(collection(db, "users"));
         const recipientIds = usersSnap.docs
-          .map((d) => d.id)
-          .filter((uid) => uid !== currentUser?.uid);
+          .filter((d) => d.id !== currentUser?.uid)
+          .filter((d) => {
+            const scope = (d.data().notificationScope as string | undefined) ?? "all";
+            if (scope === "all") return true;
+            // "team": only notify if recipient is in the same team as the creator
+            return creatorTeam !== "" && d.data().team === creatorTeam;
+          })
+          .map((d) => d.id);
 
         if (recipientIds.length > 0) {
           await notifyExerciseCreated(
