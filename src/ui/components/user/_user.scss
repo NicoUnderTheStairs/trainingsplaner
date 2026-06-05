@@ -997,6 +997,92 @@ $transition-slow: 250ms ease;
   }
 }
 
+// ─── Admin section ────────────────────────────────────────────────────────────
+
+.profile__admin {
+  display: flex;
+  flex-direction: column;
+  gap: $space-md;
+
+  &__header {
+    display: flex;
+    align-items: center;
+    gap: $space-sm;
+    flex-wrap: wrap;
+  }
+
+  &__title {
+    font-size: 20px;
+    font-weight: 700;
+    color: $role-admin-fg;
+    margin: 0;
+  }
+
+  &__subtitle {
+    width: 100%;
+    font-size: 1.4rem;
+    color: $text-muted;
+    margin: 0;
+  }
+
+  &__desc {
+    font-size: 1.4rem;
+    color: $text-muted;
+    margin: 0 0 $space-md;
+    line-height: 1.5;
+  }
+
+  &__phonelist {
+    display: flex;
+    flex-direction: column;
+    gap: $space-xs;
+    margin-bottom: $space-md;
+  }
+
+  &__phonerow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-md;
+    padding: $space-sm 0;
+    border-bottom: 1px solid rgba($border, 0.15);
+
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+
+  &__phone {
+    font-size: 1.6rem;
+    font-weight: 500;
+    color: $text;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &__remove {
+    flex-shrink: 0;
+    padding: 4px $space-sm;
+    font-size: 1.3rem;
+  }
+
+  &__addrow {
+    display: flex;
+    gap: $space-sm;
+    align-items: center;
+    margin-top: $space-sm;
+
+    .profile__edit__input {
+      flex: 1;
+    }
+  }
+
+  &__error {
+    font-size: 1.3rem;
+    color: $role-admin-fg;
+    margin: $space-xs 0 0;
+  }
+}
+
 // ─── Tour ─────────────────────────────────────────────────────────────────────
 
 .tour__overlay {

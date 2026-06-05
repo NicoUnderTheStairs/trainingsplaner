@@ -5,22 +5,30 @@ import {
   sendPasswordResetEmail,
   signOut,
 } from "firebase/auth";
-import { collection, query, where, getDocs } from "firebase/firestore";
+import { collection, query, where, getDocs, getDoc, doc } from "firebase/firestore";
 import { registerUser } from "../services/upload/registerUser";
 
 // ─── Phone allowlist ──────────────────────────────────────────────────────────
-// Add phone numbers in E.164 format (e.g. +41791234567)
-// Only users whose phone number is in this list can register.
-const ALLOWED_PHONE_NUMBERS: string[] = [
+// Fallback list used when the Firestore config doc doesn't exist yet.
+const FALLBACK_PHONE_NUMBERS: string[] = [
   "+41796167045",
   "+41767256001",
   "+41762397502",
   "+41786739011",
 ];
 
-export const isPhoneAllowed = (phone: string): boolean => {
-  const normalized = phone.replace(/\s/g, ""); // strip spaces
-  return ALLOWED_PHONE_NUMBERS.includes(normalized);
+export const isPhoneAllowed = async (phone: string): Promise<boolean> => {
+  const normalized = phone.replace(/\s/g, "");
+  try {
+    const snap = await getDoc(doc(db, "config", "allowedPhones"));
+    if (snap.exists()) {
+      const phones = (snap.data().phones as string[]) ?? [];
+      return phones.includes(normalized);
+    }
+  } catch {
+    // fall through to hardcoded list
+  }
+  return FALLBACK_PHONE_NUMBERS.includes(normalized);
 };
 
 // ─── Phone uniqueness check ─────────────────────────────────────────────────────
@@ -42,7 +50,7 @@ export const doCreateUserWithEmailAndPassword = async (
 ) => {
   const normalized = phone.replace(/\s/g, "");
 
-  if (!isPhoneAllowed(normalized)) {
+  if (!(await isPhoneAllowed(normalized))) {
     throw new Error("PHONE_NOT_ALLOWED");
   }
 

@@ -5,6 +5,7 @@ import {
   getDoc,
   getDocs,
   updateDoc,
+  setDoc,
   collection,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -33,6 +34,121 @@ const AvatarPlaceholder = ({ name }: { name: string }) => {
 const RoleBadge = ({ role }: { role: string }) => (
   <span className={`profile__role profile__role--${role}`}>{role}</span>
 );
+
+// ─── Admin section ────────────────────────────────────────────────────────────
+
+const AdminSection = () => {
+  const [phones, setPhones] = useState<string[]>([]);
+  const [loadingPhones, setLoadingPhones] = useState(true);
+  const [newPhone, setNewPhone] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    getDoc(doc(db, "config", "allowedPhones"))
+      .then((snap) => {
+        if (snap.exists()) setPhones((snap.data().phones as string[]) ?? []);
+      })
+      .finally(() => setLoadingPhones(false));
+  }, []);
+
+  const persistPhones = async (updated: string[]) => {
+    setSaving(true);
+    try {
+      await setDoc(doc(db, "config", "allowedPhones"), { phones: updated });
+      setPhones(updated);
+    } catch (e) {
+      console.error("Error saving phones:", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleAdd = () => {
+    const normalized = newPhone.trim().replace(/\s/g, "");
+    if (!normalized) return;
+    if (!/^\+\d{7,15}$/.test(normalized)) {
+      setError("Use E.164 format, e.g. +41791234567");
+      return;
+    }
+    if (phones.includes(normalized)) {
+      setError("Number already in the list");
+      return;
+    }
+    setError("");
+    setNewPhone("");
+    persistPhones([...phones, normalized]);
+  };
+
+  return (
+    <div className="profile__admin">
+      <div className="profile__admin__header">
+        <span className="profile__role profile__role--admin">Admin</span>
+        <h2 className="profile__admin__title">Admin Panel</h2>
+        <p className="profile__admin__subtitle">
+          Visible only to admins. Changes take effect immediately.
+        </p>
+      </div>
+
+      <div className="profile__card profile__card--wide">
+        <h3 className="profile__card__title">Allowed phone numbers</h3>
+        <p className="profile__admin__desc">
+          Only users whose phone number is in this list can register. Use E.164
+          format (e.g. +41791234567).
+        </p>
+
+        {loadingPhones ? (
+          <p className="profile__card__value">Loading…</p>
+        ) : (
+          <>
+            <div className="profile__admin__phonelist">
+              {phones.length === 0 && (
+                <p className="profile__card__empty profile__card__value">
+                  No numbers added yet.
+                </p>
+              )}
+              {phones.map((phone) => (
+                <div key={phone} className="profile__admin__phonerow">
+                  <span className="profile__admin__phone">{phone}</span>
+                  <button
+                    className="btn__danger profile__admin__remove"
+                    onClick={() =>
+                      persistPhones(phones.filter((p) => p !== phone))
+                    }
+                    disabled={saving}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            <div className="profile__admin__addrow">
+              <input
+                className="profile__edit__input"
+                value={newPhone}
+                onChange={(e) => {
+                  setNewPhone(e.target.value);
+                  setError("");
+                }}
+                placeholder="+41791234567"
+                onKeyDown={(e) => e.key === "Enter" && handleAdd()}
+              />
+              <button
+                className="btn__primary"
+                onClick={handleAdd}
+                disabled={saving || !newPhone.trim()}
+              >
+                {saving ? "Saving…" : "Add"}
+              </button>
+            </div>
+            {error && <p className="profile__admin__error">{error}</p>}
+          </>
+        )}
+      </div>
+    </div>
+  );
+};
 
 // ─── Main component ────────────────────────────────────────────────────────────
 
@@ -307,7 +423,6 @@ const Profile = () => {
                   >
                     <option value="coach">Coach</option>
                     <option value="player">Player</option>
-                    <option value="admin">Admin</option>
                   </select>
                 ) : (
                   <RoleBadge role={profile.role} />
@@ -345,6 +460,8 @@ const Profile = () => {
               </button>
             </div>
           </div>
+
+          {profile.role === "admin" && <AdminSection />}
         </div>
       </div>
 
