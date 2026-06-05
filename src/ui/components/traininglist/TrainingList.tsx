@@ -118,6 +118,7 @@ const TrainingListSkeleton = () => (
 
 const TrainingList = () => {
   const navigate = useNavigate();
+  const currentUserId = getAuth().currentUser?.uid ?? "";
 
   // ── Data ─────────────────────────────────────────────────────────────────
   const [trainings, setTrainings] = useState<Training[]>([]);
@@ -540,7 +541,7 @@ const TrainingList = () => {
                           key={training.id}
                           id={`training-card-${training.id}`}
                           className={`traininglist__card${toDateKey(training.date) === selectedDay ? " traininglist__card--selected" : ""}`}
-                          onClick={() => navigate(`/training-detail/${training.id}`)}
+                          onClick={() => navigate(`/training-detail/${currentUserId}/${training.id}`)}
                         >
                     <div className="traininglist__card__accent" />
 

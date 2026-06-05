@@ -1,23 +1,31 @@
 import db from "../../firebase";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 
+export interface SharedTrainingRef {
+  trainingId: string;
+  ownerId: string;
+  sharedBy: string;
+  sharedAt: any;
+}
+
 export interface UserProfile {
   uid: string;
   userName: string;
   email: string;
   phone: string;
   profileImageUrl: string | null;
-  favoriteExercises: string[]; // array of exercise IDs
-  favoriteTrainings: string[]; // array of training IDs
+  favoriteExercises: string[];
+  favoriteTrainings: string[];
   createdAt: Timestamp;
   lastLoginAt: Timestamp;
   role: "coach" | "player" | "admin";
-  team: string | null; // optional team name
+  team: string | null;
   bio: string | null;
   mobileMode?: "advanced" | "simple";
   planningDirection?: "forward" | "backward";
   notificationScope?: "all" | "team";
   tourCompleted?: boolean;
+  sharedWithMe?: SharedTrainingRef[];
 }
 
 export const registerUser = async (

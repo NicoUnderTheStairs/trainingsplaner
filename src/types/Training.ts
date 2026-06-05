@@ -12,8 +12,5 @@ export interface Training {
   duration: number;
   exercises: SelectedExercise[];
   players?: Players;
-  sharedBy?: string;
-  originalId?: string;
-  sharedAt?: any;
-  sharedWith?: string[];
+  sharedWith?: string[]; // UIDs of users this training was shared with
 }

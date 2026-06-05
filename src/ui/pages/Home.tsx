@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import {
   collection,
   getDocs,
+  getDoc,
+  doc,
   query,
   limit,
   orderBy,
@@ -17,10 +19,12 @@ import { useGetUserData } from "../../hooks/useGetUserData";
 import db from "../../firebase";
 import type { Exercise } from "../../types/Exercise";
 import type { Training } from "../../types/Training";
+import type { SharedTrainingRef } from "../../services/upload/registerUser";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface SharedTraining extends Training {
+  ownerId: string;
   sharedBy: string;
   sharedByName?: string;
   sharedAt?: any;
@@ -237,69 +241,69 @@ export default function Home() {
 
   // ── Fetch trainings shared with the user ───────────────────────────────────
   useEffect(() => {
-    const userId = getAuth().currentUser?.uid;
-    if (!userId) {
+    if (userData === undefined) return; // wait for profile
+    const refs: SharedTrainingRef[] = userData?.sharedWithMe ?? [];
+    if (refs.length === 0) {
+      setSharedTrainings([]);
       setLoadingSh(false);
       return;
     }
     const fetch = async () => {
       try {
-        const q = query(
-          collection(db, "users", userId, "trainings"),
-          where("sharedBy", "!=", null),
-          orderBy("sharedBy"),
-          orderBy("sharedAt", "desc"),
-          limit(4),
-        );
-        const snap = await getDocs(q);
-        const raw = snap.docs.map(
-          (d) => ({ id: d.id, ...d.data() }) as SharedTraining,
-        );
-        const senderIds = [
-          ...new Set(raw.map((t) => t.sharedBy).filter(Boolean)),
-        ];
-        const senderMap: Record<string, string> = {};
+        const sorted = [...refs]
+          .sort((a, b) => {
+            const ta = a.sharedAt?.toDate?.() ?? new Date(a.sharedAt ?? 0);
+            const tb = b.sharedAt?.toDate?.() ?? new Date(b.sharedAt ?? 0);
+            return tb - ta;
+          })
+          .slice(0, 4);
+
+        // Fetch the owner's name for each unique ownerId
+        const ownerIds = [...new Set(sorted.map((r) => r.ownerId))];
+        const ownerNames: Record<string, string> = {};
         await Promise.all(
-          senderIds.map(async (uid) => {
+          ownerIds.map(async (uid) => {
             try {
-              const { getDoc, doc } = await import("firebase/firestore");
-              const senderDoc = await getDoc(doc(db, "users", uid));
-              if (senderDoc.exists())
-                senderMap[uid] = (senderDoc.data() as any).userName ?? uid;
+              const snap = await getDoc(doc(db, "users", uid));
+              ownerNames[uid] = snap.exists()
+                ? ((snap.data() as any).userName ?? uid)
+                : uid;
             } catch {
-              senderMap[uid] = uid;
+              ownerNames[uid] = uid;
             }
           }),
         );
-        setSharedTrainings(
-          raw.map((t) => ({
-            ...t,
-            sharedByName: senderMap[t.sharedBy] ?? t.sharedBy,
-          })),
+
+        // Fetch each training from the owner's collection
+        const results = await Promise.all(
+          sorted.map(async (ref) => {
+            try {
+              const snap = await getDoc(
+                doc(db, "users", ref.ownerId, "trainings", ref.trainingId),
+              );
+              if (!snap.exists()) return null;
+              return {
+                id: snap.id,
+                ...(snap.data() as Omit<Training, "id">),
+                ownerId: ref.ownerId,
+                sharedBy: ref.sharedBy,
+                sharedByName: ownerNames[ref.ownerId] ?? ref.ownerId,
+                sharedAt: ref.sharedAt,
+              } as SharedTraining;
+            } catch {
+              return null;
+            }
+          }),
         );
+        setSharedTrainings(results.filter(Boolean) as SharedTraining[]);
       } catch {
-        try {
-          const snap = await getDocs(
-            query(
-              collection(db, "users", getAuth().currentUser!.uid, "trainings"),
-              limit(30),
-            ),
-          );
-          setSharedTrainings(
-            snap.docs
-              .map((d) => ({ id: d.id, ...d.data() }) as SharedTraining)
-              .filter((t) => !!t.sharedBy)
-              .slice(0, 4),
-          );
-        } catch {
-          setSharedTrainings([]);
-        }
+        setSharedTrainings([]);
       } finally {
         setLoadingSh(false);
       }
     };
     fetch();
-  }, []);
+  }, [userData]);
 
   const firstName = userData?.userName?.split(" ")[0] ?? "Coach";
 
@@ -357,7 +361,7 @@ export default function Home() {
                   <div
                     key={tr.id}
                     className="home__training__row"
-                    onClick={() => navigate(`/training-detail/${tr.id}`)}
+                    onClick={() => navigate(`/training-detail/${currentUser?.uid}/${tr.id}`)}
                   >
                     <div className="home__training__row__accent" />
                     <div className="home__training__row__info">
@@ -490,7 +494,7 @@ export default function Home() {
                   <div
                     key={tr.id}
                     className="home__shared__card"
-                    onClick={() => navigate(`/training-detail/${tr.id}`)}
+                    onClick={() => navigate(`/training-detail/${tr.ownerId}/${tr.id}`)}
                   >
                     <div className="home__shared__card__top">
                       <div className="home__shared__card__author">

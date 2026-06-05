@@ -47,7 +47,7 @@ const App: React.FC = () => {
               element={<ExerciseDetail />}
             />
             <Route
-              path="/training-detail/:trainingId"
+              path="/training-detail/:ownerId/:trainingId"
               element={<TrainingDetail />}
             />
             <Route path="*" element={<Home />} />

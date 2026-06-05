@@ -103,7 +103,7 @@ export default function CreateTraining() {
         selectedExercises: formData.selectedExercises ?? [],
         players: formData.players ?? EMPTY_PLAYERS,
       });
-      navigate(`/training-detail/${id}`);
+      navigate(`/training-detail/${currentUser?.uid}/${id}`);
     } catch (error) {
       console.error("Error creating training:", error);
     } finally {

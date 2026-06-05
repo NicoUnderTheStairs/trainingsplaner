@@ -52,9 +52,9 @@ export const sendNotification = async (
   });
 };
 
-/** Call after writing a shared training copy to the recipient's subcollection */
 export const notifyTrainingShared = async (
   recipientUserId: string,
+  ownerId: string,
   trainingId: string,
   trainingTitle: string,
   senderName: string,
@@ -64,7 +64,7 @@ export const notifyTrainingShared = async (
     type: "training_shared",
     title: "New training shared with you",
     body: `${senderName} shared "${trainingTitle}" with you.`,
-    link: `/training-detail/${trainingId}`,
+    link: `/training-detail/${ownerId}/${trainingId}`,
     fromUserId: senderUserId,
     fromUserName: senderName,
   });
