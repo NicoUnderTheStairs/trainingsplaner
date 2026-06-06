@@ -11,6 +11,9 @@ import ExerciseDetail from "./ui/pages/ExerciseDetail";
 import TrainingDetail from "./ui/pages/TrainingDetail";
 import TrainingOverview from "./ui/pages/TrainingOverview";
 import ExerciseOverview from "./ui/pages/ExerciseOverview";
+import CreateMatch from "./ui/pages/CreateMatch";
+import MatchDetail from "./ui/pages/MatchDetail";
+import MatchOverview from "./ui/pages/MatchOverview";
 import Profile from "./ui/components/user/Profile";
 import TrainingExportView from "./ui/components/trainingexport/TrainingExportView";
 import ExerciseShop from "./ui/components/exerciseshop/ExerciseShop";
@@ -35,6 +38,12 @@ const App: React.FC = () => {
             <Route path="/training-overview" element={<TrainingOverview />} />
             <Route path="/create-exercise" element={<CreateExcercise />} />
             <Route path="/create-training" element={<CreateTraining />} />
+            <Route path="/match-overview" element={<MatchOverview />} />
+            <Route path="/create-match" element={<CreateMatch />} />
+            <Route
+              path="/match-detail/:ownerId/:matchId"
+              element={<MatchDetail />}
+            />
             <Route path="/profile" element={<Profile />} />
             <Route path="/exercise-shop" element={<ExerciseShop />} />
             <Route path="/preferences" element={<Preference />} />

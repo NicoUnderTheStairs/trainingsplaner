@@ -1,0 +1,367 @@
+// ─── Match Detail ─────────────────────────────────────────────────────────────
+
+.matchdetail {
+  max-width: 72rem;
+  margin: 0 auto;
+  padding: 2.4rem 1.6rem 8rem;
+
+  &__header {
+    margin: 2.4rem 0 3.2rem;
+  }
+
+  &__opponent {
+    font-size: 2.8rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 0.8rem;
+  }
+
+  &__header__meta {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+  }
+
+  &__date {
+    font-size: 1.4rem;
+    color: rgba(30, 30, 30, 0.55);
+  }
+
+  &__section {
+    margin-bottom: 3.2rem;
+
+    &__title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(30, 30, 30, 0.45);
+      margin: 0 0 1.2rem;
+    }
+
+    &__text {
+      font-size: 1.5rem;
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+  }
+
+  &__lineup {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+
+    &__row {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      padding: 1rem 1.4rem;
+      border-radius: 1rem;
+      background: rgba(30, 30, 30, 0.04);
+    }
+
+    &__abbr {
+      width: 3.6rem;
+      height: 3.6rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    &__info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    &__name {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    &__position {
+      font-size: 1.2rem;
+      color: rgba(30, 30, 30, 0.5);
+    }
+
+    &__number {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: rgba(30, 30, 30, 0.55);
+    }
+  }
+
+  &__empty {
+    font-size: 1.4rem;
+    color: rgba(30, 30, 30, 0.4);
+  }
+}
+
+// ─── Home / Away badge (shared by MatchList cards + MatchDetail) ─────────────
+
+.matchlist__badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.9rem;
+  border-radius: 9999px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  line-height: 1;
+
+  &--home {
+    background: rgba(77, 184, 122, 0.15);
+    color: #2e8a55;
+  }
+
+  &--away {
+    background: rgba(230, 60, 47, 0.12);
+    color: #c0291c;
+  }
+}
+
+// ─── Match List card overrides ────────────────────────────────────────────────
+
+.matchlist__card {
+  cursor: pointer;
+
+  &__accent {
+    background: #3EC6D4; // teal accent for match cards
+  }
+}
+
+// ─── Match wizard ─────────────────────────────────────────────────────────────
+
+.matchwizard {
+  &__location {
+    display: flex;
+    gap: 0.8rem;
+    margin: 0.4rem 0 2.4rem;
+
+    &__btn {
+      flex: 1;
+      padding: 1rem;
+      border-radius: 0.8rem;
+      border: 2px solid rgba(30, 30, 30, 0.15);
+      background: transparent;
+      font-size: 1.4rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      color: rgba(30, 30, 30, 0.55);
+
+      &--active {
+        border-color: #1e1e1e;
+        background: #1e1e1e;
+        color: #fff;
+      }
+    }
+  }
+
+  &__roster {
+    margin-bottom: 2.4rem;
+
+    &__title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: rgba(30, 30, 30, 0.45);
+      margin: 0 0 1rem;
+    }
+
+    &__row {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      padding: 1rem 1.4rem;
+      border-radius: 1rem;
+      border: 2px solid transparent;
+      background: rgba(30, 30, 30, 0.04);
+      cursor: pointer;
+      width: 100%;
+      text-align: left;
+      transition: border-color 0.15s, background 0.15s;
+      margin-bottom: 0.6rem;
+
+      &--selected {
+        border-color: #1e1e1e;
+        background: rgba(30, 30, 30, 0.06);
+      }
+    }
+
+    &__check {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: #1e1e1e;
+      width: 1.6rem;
+      text-align: center;
+    }
+  }
+
+  &__lineup {
+    &__abbr {
+      width: 3.6rem;
+      height: 3.6rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    &__info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+    }
+
+    &__name {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+
+    &__position {
+      font-size: 1.2rem;
+      color: rgba(30, 30, 30, 0.5);
+    }
+
+    &__number {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: rgba(30, 30, 30, 0.55);
+    }
+
+    &__remove {
+      background: none;
+      border: none;
+      font-size: 2rem;
+      line-height: 1;
+      cursor: pointer;
+      color: rgba(30, 30, 30, 0.4);
+      padding: 0 0.4rem;
+
+      &:hover { color: #e63c2f; }
+    }
+
+    &__count {
+      margin-top: 1.2rem;
+      font-size: 1.3rem;
+      color: rgba(30, 30, 30, 0.5);
+      text-align: center;
+    }
+  }
+
+  &__add {
+    margin-top: 0.8rem;
+    padding: 1.6rem;
+    border-radius: 1.2rem;
+    background: rgba(30, 30, 30, 0.04);
+
+    &__actions {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1.2rem;
+
+      button { flex: 1; }
+    }
+
+    &__trigger {
+      display: block;
+      width: 100%;
+      padding: 1.2rem;
+      margin-top: 0.4rem;
+      border-radius: 0.8rem;
+      border: 2px dashed rgba(30, 30, 30, 0.2);
+      background: none;
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: rgba(30, 30, 30, 0.55);
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+
+      &:hover {
+        border-color: #1e1e1e;
+        color: #1e1e1e;
+      }
+    }
+  }
+
+  &__error {
+    font-size: 1.3rem;
+    color: #e63c2f;
+    margin: 0.4rem 0 0;
+  }
+
+  &__loading {
+    font-size: 1.4rem;
+    color: rgba(30, 30, 30, 0.4);
+    margin: 1.2rem 0;
+  }
+}
+
+// ─── Match list modal ─────────────────────────────────────────────────────────
+
+.matchlist__modal {
+  background: #fff;
+  border-radius: 1.6rem;
+  padding: 2.4rem;
+  width: min(48rem, calc(100vw - 3.2rem));
+  box-shadow: 0 2rem 6rem rgba(0, 0, 0, 0.18);
+  position: relative;
+
+  &__backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 1.6rem;
+  }
+
+  &__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2.4rem;
+
+    h2 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin: 0;
+    }
+  }
+
+  &__close {
+    background: none;
+    border: none;
+    font-size: 2.4rem;
+    line-height: 1;
+    cursor: pointer;
+    color: rgba(30, 30, 30, 0.4);
+    padding: 0 0.4rem;
+    transition: color 0.15s;
+
+    &:hover { color: #1e1e1e; }
+  }
+
+  &__footer {
+    display: flex;
+    gap: 1rem;
+    margin-top: 2rem;
+
+    button { flex: 1; }
+  }
+}
