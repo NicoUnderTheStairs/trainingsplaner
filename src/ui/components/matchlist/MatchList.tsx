@@ -1,5 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { addDoc, collection, deleteDoc, doc, getDocs, updateDoc } from "firebase/firestore";
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  deleteField,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+} from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import db from "../../../firebase";
 import type { Match } from "../../../types/Match";
@@ -17,8 +27,16 @@ const POSITION_COLORS: Record<string, string> = {
   "Outside Hitter": "#3EC6D4",
   "Opposite Hitter": "#F5A623",
   "Middle Blocker": "#4A90D9",
-  "Setter": "#7ED321",
-  "Libero": "#9B59B6",
+  Setter: "#7ED321",
+  Libero: "#9B59B6",
+};
+
+const POSITION_ABBR: Record<string, string> = {
+  "Outside Hitter": "OH",
+  "Opposite Hitter": "OP",
+  "Middle Blocker": "MB",
+  Setter: "S",
+  Libero: "L",
 };
 
 type Player = {
@@ -216,21 +234,117 @@ const MatchList = () => {
   const [playerError, setPlayerError] = useState("");
   const [playerSaving, setPlayerSaving] = useState(false);
 
-  const [uploadingPlayerId, setUploadingPlayerId] = useState<string | null>(null);
+  const [coaches, setCoaches] = useState<{
+    firstCoach: string;
+    secondCoach: string;
+    firstCoachIdUrl?: string;
+    secondCoachIdUrl?: string;
+  }>({ firstCoach: "", secondCoach: "" });
+  const [editingCoach, setEditingCoach] = useState<
+    "firstCoach" | "secondCoach" | null
+  >(null);
+  const [coachDraft, setCoachDraft] = useState("");
+  const [coachSaving, setCoachSaving] = useState(false);
+
+  const [uploadingPlayerId, setUploadingPlayerId] = useState<string | null>(
+    null,
+  );
+  const [uploadingCoachRole, setUploadingCoachRole] = useState<
+    "firstCoach" | "secondCoach" | null
+  >(null);
   const [uploadError, setUploadError] = useState("");
-  const [pendingUploadPlayer, setPendingUploadPlayer] = useState<Player | null>(null);
+  const [pendingUploadPlayer, setPendingUploadPlayer] = useState<Player | null>(
+    null,
+  );
+  const [pendingCoachRole, setPendingCoachRole] = useState<
+    "firstCoach" | "secondCoach" | null
+  >(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const triggerIdUpload = (player: Player) => {
     setPendingUploadPlayer(player);
+    setPendingCoachRole(null);
+    setUploadError("");
+    fileInputRef.current?.click();
+  };
+
+  const triggerCoachIdUpload = (role: "firstCoach" | "secondCoach") => {
+    setPendingCoachRole(role);
+    setPendingUploadPlayer(null);
     setUploadError("");
     fileInputRef.current?.click();
   };
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && pendingUploadPlayer) await uploadIdFile(pendingUploadPlayer, file);
+    if (file) {
+      if (pendingUploadPlayer) await uploadIdFile(pendingUploadPlayer, file);
+      else if (pendingCoachRole) await uploadCoachId(pendingCoachRole, file);
+    }
     e.target.value = "";
+  };
+
+  const uploadCoachId = async (
+    role: "firstCoach" | "secondCoach",
+    file: File,
+  ) => {
+    if (!teamId) return;
+    setUploadingCoachRole(role);
+    setUploadError("");
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      form.append("teamId", teamId);
+      form.append("playerName", role);
+      const res = await fetch(import.meta.env.VITE_UPLOAD_URL as string, {
+        method: "POST",
+        headers: {
+          "X-Upload-Token": import.meta.env.VITE_UPLOAD_TOKEN as string,
+        },
+        body: form,
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setUploadError(json.error ?? "Upload failed.");
+        return;
+      }
+      const urlField =
+        role === "firstCoach" ? "firstCoachIdUrl" : "secondCoachIdUrl";
+      await setDoc(doc(db, "teams", teamId), { [urlField]: json.url }, { merge: true });
+      setCoaches((prev) => ({ ...prev, [urlField]: json.url }));
+    } catch {
+      setUploadError("Upload failed. Check your connection.");
+    } finally {
+      setUploadingCoachRole(null);
+    }
+  };
+
+  const removeCoachId = async (role: "firstCoach" | "secondCoach") => {
+    if (!teamId) return;
+    const urlField =
+      role === "firstCoach" ? "firstCoachIdUrl" : "secondCoachIdUrl";
+    try {
+      await updateDoc(doc(db, "teams", teamId), { [urlField]: deleteField() });
+      setCoaches((prev) => ({ ...prev, [urlField]: undefined }));
+    } catch {
+      setUploadError("Failed to remove ID. Please try again.");
+    }
+  };
+
+  const removeIdFile = async (player: Player) => {
+    if (!teamId) return;
+    try {
+      await updateDoc(doc(db, "teams", teamId, "players", player.id), {
+        idFileUrl: deleteField(),
+      });
+      setPlayers((prev) =>
+        prev.map((p) =>
+          p.id === player.id ? { ...p, idFileUrl: undefined } : p,
+        ),
+      );
+    } catch {
+      setUploadError("Failed to remove ID. Please try again.");
+    }
   };
 
   const uploadIdFile = async (player: Player, file: File) => {
@@ -248,18 +362,25 @@ const MatchList = () => {
 
       const res = await fetch(import.meta.env.VITE_UPLOAD_URL as string, {
         method: "POST",
-        headers: { "X-Upload-Token": import.meta.env.VITE_UPLOAD_TOKEN as string },
+        headers: {
+          "X-Upload-Token": import.meta.env.VITE_UPLOAD_TOKEN as string,
+        },
         body: form,
       });
 
       const json = await res.json();
-      if (!res.ok) { setUploadError(json.error ?? "Upload failed."); return; }
+      if (!res.ok) {
+        setUploadError(json.error ?? "Upload failed.");
+        return;
+      }
 
       await updateDoc(doc(db, "teams", teamId, "players", player.id), {
         idFileUrl: json.url,
       });
       setPlayers((prev) =>
-        prev.map((p) => (p.id === player.id ? { ...p, idFileUrl: json.url } : p)),
+        prev.map((p) =>
+          p.id === player.id ? { ...p, idFileUrl: json.url } : p,
+        ),
       );
     } catch {
       setUploadError("Upload failed. Check your connection.");
@@ -273,7 +394,10 @@ const MatchList = () => {
     setPlayersLoading(true);
     try {
       const snap = await getDocs(collection(db, "teams", teamId, "players"));
-      const data = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<Player, "id">) }));
+      const data = snap.docs.map((d) => ({
+        id: d.id,
+        ...(d.data() as Omit<Player, "id">),
+      }));
       data.sort((a, b) => a.playerNumber - b.playerNumber);
       setPlayers(data);
     } finally {
@@ -281,16 +405,54 @@ const MatchList = () => {
     }
   };
 
+  const loadCoaches = async () => {
+    if (!teamId) return;
+    try {
+      const snap = await getDoc(doc(db, "teams", teamId));
+      if (snap.exists()) {
+        const data = snap.data();
+        setCoaches({
+          firstCoach: data.firstCoach ?? "",
+          secondCoach: data.secondCoach ?? "",
+          firstCoachIdUrl: data.firstCoachIdUrl,
+          secondCoachIdUrl: data.secondCoachIdUrl,
+        });
+      }
+    } catch {
+      // silently ignore — coaches stay as empty strings
+    }
+  };
+
   const openPlayersModal = () => {
     setPlayersOpen(true);
     setPlayerMode("list");
+    setEditingCoach(null);
     loadPlayers();
+    loadCoaches();
+  };
+
+  const saveCoach = async () => {
+    if (!teamId || !editingCoach) return;
+    setCoachSaving(true);
+    try {
+      await setDoc(doc(db, "teams", teamId), { [editingCoach]: coachDraft.trim() }, { merge: true });
+      setCoaches((prev) => ({ ...prev, [editingCoach]: coachDraft.trim() }));
+      setEditingCoach(null);
+    } finally {
+      setCoachSaving(false);
+    }
   };
 
   const savePlayer = async () => {
     if (!teamId) return;
-    if (!playerDraft.playerName.trim()) { setPlayerError("Player name is required."); return; }
-    if (playerDraft.playerNumber <= 0) { setPlayerError("Jersey number must be greater than 0."); return; }
+    if (!playerDraft.playerName.trim()) {
+      setPlayerError("Player name is required.");
+      return;
+    }
+    if (playerDraft.playerNumber <= 0) {
+      setPlayerError("Jersey number must be greater than 0.");
+      return;
+    }
     setPlayerSaving(true);
     try {
       await addDoc(collection(db, "teams", teamId, "players"), {
@@ -298,7 +460,11 @@ const MatchList = () => {
         playerNumber: playerDraft.playerNumber,
         playerPosition: playerDraft.playerPosition,
       });
-      setPlayerDraft({ playerName: "", playerNumber: 0, playerPosition: POSITIONS[0] });
+      setPlayerDraft({
+        playerName: "",
+        playerNumber: 0,
+        playerPosition: POSITIONS[0],
+      });
       setPlayerError("");
       setPlayerMode("list");
       await loadPlayers();
@@ -311,8 +477,14 @@ const MatchList = () => {
 
   const updatePlayer = async () => {
     if (!teamId || !editingPlayer) return;
-    if (!playerDraft.playerName.trim()) { setPlayerError("Player name is required."); return; }
-    if (playerDraft.playerNumber <= 0) { setPlayerError("Jersey number must be greater than 0."); return; }
+    if (!playerDraft.playerName.trim()) {
+      setPlayerError("Player name is required.");
+      return;
+    }
+    if (playerDraft.playerNumber <= 0) {
+      setPlayerError("Jersey number must be greater than 0.");
+      return;
+    }
     setPlayerSaving(true);
     try {
       await updateDoc(doc(db, "teams", teamId, "players", editingPlayer.id), {
@@ -323,13 +495,22 @@ const MatchList = () => {
       setPlayers((prev) =>
         prev.map((p) =>
           p.id === editingPlayer.id
-            ? { ...p, playerName: playerDraft.playerName.trim(), playerNumber: playerDraft.playerNumber, playerPosition: playerDraft.playerPosition }
+            ? {
+                ...p,
+                playerName: playerDraft.playerName.trim(),
+                playerNumber: playerDraft.playerNumber,
+                playerPosition: playerDraft.playerPosition,
+              }
             : p,
         ),
       );
       setPlayerMode("list");
       setEditingPlayer(null);
-      setPlayerDraft({ playerName: "", playerNumber: 0, playerPosition: POSITIONS[0] });
+      setPlayerDraft({
+        playerName: "",
+        playerNumber: 0,
+        playerPosition: POSITIONS[0],
+      });
       setPlayerError("");
     } catch {
       setPlayerError("Failed to update player. Please try again.");
@@ -534,10 +715,7 @@ const MatchList = () => {
               )}
             </div>
 
-            <button
-              className="btn__wired"
-              onClick={openPlayersModal}
-            >
+            <button className="btn__wired" onClick={openPlayersModal}>
               Players
             </button>
             <button
@@ -1050,14 +1228,19 @@ const MatchList = () => {
                   <div>
                     <h2>Players</h2>
                     <p className="matchlist__players__count">
-                      {players.length} player{players.length !== 1 ? "s" : ""} in roster
+                      {players.length} player{players.length !== 1 ? "s" : ""}{" "}
+                      in roster
                     </p>
                   </div>
                   <div className="matchlist__players__header-actions">
                     <button
                       className="btn__primary matchlist__players__add-btn"
                       onClick={() => {
-                        setPlayerDraft({ playerName: "", playerNumber: 0, playerPosition: POSITIONS[0] });
+                        setPlayerDraft({
+                          playerName: "",
+                          playerNumber: 0,
+                          playerPosition: POSITIONS[0],
+                        });
                         setPlayerError("");
                         setPlayerMode("add");
                       }}
@@ -1074,6 +1257,178 @@ const MatchList = () => {
                   </div>
                 </div>
 
+                {/* ── Coaches ── */}
+                <div className="matchlist__players__coaches">
+                  <p className="matchlist__players__coaches__title">
+                    Coaching Staff
+                  </p>
+                  <div className="matchlist__players__coaches__cards">
+                    {(["firstCoach", "secondCoach"] as const).map((role) => {
+                      const label =
+                        role === "firstCoach" ? "First Coach" : "Second Coach";
+                      const isEditing = editingCoach === role;
+                      const idUrl =
+                        role === "firstCoach"
+                          ? coaches.firstCoachIdUrl
+                          : coaches.secondCoachIdUrl;
+                      const isUploading = uploadingCoachRole === role;
+                      return (
+                        <div
+                          key={role}
+                          className={`matchlist__players__coaches__card${isEditing ? " matchlist__players__coaches__card--editing" : ""}`}
+                        >
+                          <div className="matchlist__players__coaches__card__top">
+                            <span className="matchlist__players__coaches__role">
+                              {label}
+                            </span>
+                            <div className="matchlist__players__coaches__card__actions">
+                              {idUrl ? (
+                                <div className="matchlist__players__id-wrap">
+                                  <a
+                                    href={idUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    className="matchlist__players__id-badge matchlist__players__id-badge--uploaded"
+                                    title="View ID"
+                                  >
+                                    <svg
+                                      width="12"
+                                      height="12"
+                                      viewBox="0 0 12 12"
+                                      fill="none"
+                                    >
+                                      <path
+                                        d="M2 1h5.5L10 3.5V11H2V1Z"
+                                        stroke="currentColor"
+                                        strokeWidth="1.3"
+                                        strokeLinejoin="round"
+                                      />
+                                      <path
+                                        d="M7 1v3h3"
+                                        stroke="currentColor"
+                                        strokeWidth="1.3"
+                                        strokeLinejoin="round"
+                                      />
+                                      <path
+                                        d="M4 6.5h4M4 8.5h2.5"
+                                        stroke="currentColor"
+                                        strokeWidth="1.2"
+                                        strokeLinecap="round"
+                                      />
+                                    </svg>
+                                    ID
+                                  </a>
+                                  <button
+                                    className="matchlist__players__id-remove"
+                                    onClick={() => removeCoachId(role)}
+                                    title="Remove ID"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  className={`matchlist__players__id-badge${isUploading ? " matchlist__players__id-badge--uploading" : ""}`}
+                                  onClick={() => triggerCoachIdUpload(role)}
+                                  disabled={isUploading}
+                                  title="Upload ID"
+                                >
+                                  {isUploading ? (
+                                    "…"
+                                  ) : (
+                                    <>
+                                      <svg
+                                        width="11"
+                                        height="11"
+                                        viewBox="0 0 11 11"
+                                        fill="none"
+                                      >
+                                        <path
+                                          d="M5.5 7.5V1M5.5 1L3 3.5M5.5 1L8 3.5"
+                                          stroke="currentColor"
+                                          strokeWidth="1.4"
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                        />
+                                        <path
+                                          d="M1 8.5v1a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-1"
+                                          stroke="currentColor"
+                                          strokeWidth="1.3"
+                                          strokeLinecap="round"
+                                        />
+                                      </svg>
+                                      ID
+                                    </>
+                                  )}
+                                </button>
+                              )}
+                              {!isEditing && (
+                                <button
+                                  className="matchlist__players__action"
+                                  aria-label={`Edit ${label}`}
+                                  onClick={() => {
+                                    setEditingCoach(role);
+                                    setCoachDraft(coaches[role]);
+                                  }}
+                                >
+                                  <svg
+                                    width="14"
+                                    height="14"
+                                    viewBox="0 0 14 14"
+                                    fill="none"
+                                  >
+                                    <path
+                                      d="M9.5 1.5L12.5 4.5L4.5 12.5H1.5V9.5L9.5 1.5Z"
+                                      stroke="currentColor"
+                                      strokeWidth="1.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {isEditing ? (
+                            <div className="matchlist__players__coaches__edit">
+                              <input
+                                className="matchlist__players__coaches__input"
+                                value={coachDraft}
+                                onChange={(e) => setCoachDraft(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") saveCoach();
+                                  if (e.key === "Escape") setEditingCoach(null);
+                                }}
+                                placeholder="Full name…"
+                                autoFocus
+                              />
+                              <div className="matchlist__players__coaches__edit-actions">
+                                <button
+                                  className="matchlist__players__coaches__btn"
+                                  onClick={() => setEditingCoach(null)}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  className="matchlist__players__coaches__btn matchlist__players__coaches__btn--save"
+                                  onClick={saveCoach}
+                                  disabled={coachSaving}
+                                >
+                                  {coachSaving ? "…" : "Save"}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="matchlist__players__coaches__name">
+                              {coaches[role] || <em>Not set</em>}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {playersLoading ? (
                   <div className="matchlist__players__loading">Loading…</div>
                 ) : players.length === 0 ? (
@@ -1082,7 +1437,11 @@ const MatchList = () => {
                     <button
                       className="btn__primary"
                       onClick={() => {
-                        setPlayerDraft({ playerName: "", playerNumber: 0, playerPosition: POSITIONS[0] });
+                        setPlayerDraft({
+                          playerName: "",
+                          playerNumber: 0,
+                          playerPosition: POSITIONS[0],
+                        });
                         setPlayerError("");
                         setPlayerMode("add");
                       }}
@@ -1093,22 +1452,22 @@ const MatchList = () => {
                 ) : (
                   <>
                     {uploadError && (
-                      <p className="matchlist__players__upload-error">{uploadError}</p>
+                      <p className="matchlist__players__upload-error">
+                        {uploadError}
+                      </p>
                     )}
                     <div className="matchlist__players__list">
                       {players.map((player) => {
-                        const initials = player.playerName
-                          .split(" ")
-                          .map((n) => n[0])
-                          .slice(0, 2)
-                          .join("")
-                          .toUpperCase();
-                        const avatarColor = POSITION_COLORS[player.playerPosition] ?? "#888";
+                        const posColor =
+                          POSITION_COLORS[player.playerPosition] ?? "#888";
                         const isUploading = uploadingPlayerId === player.id;
 
                         if (deletingPlayerId === player.id) {
                           return (
-                            <div key={player.id} className="matchlist__players__item matchlist__players__item--confirming">
+                            <div
+                              key={player.id}
+                              className="matchlist__players__item matchlist__players__item--confirming"
+                            >
                               <span className="matchlist__players__confirm-text">
                                 Delete <strong>{player.playerName}</strong>?
                               </span>
@@ -1131,36 +1490,77 @@ const MatchList = () => {
                         }
 
                         return (
-                          <div key={player.id} className="matchlist__players__item">
+                          <div
+                            key={player.id}
+                            className="matchlist__players__item"
+                          >
                             <div
-                              className="matchlist__players__avatar"
-                              style={{ background: avatarColor }}
+                              className="matchlist__players__jersey"
+                              style={{ background: posColor }}
                             >
-                              {initials}
+                              {player.playerNumber}
                             </div>
                             <div className="matchlist__players__info">
-                              <span className="matchlist__players__name">{player.playerName}</span>
+                              <span className="matchlist__players__name">
+                                {player.playerName}
+                              </span>
                               <span className="matchlist__players__meta">
-                                #{player.playerNumber} · {player.playerPosition}
+                                <span
+                                  className="matchlist__players__pos-tag"
+                                  style={{ color: posColor }}
+                                >
+                                  {POSITION_ABBR[player.playerPosition] ??
+                                    player.playerPosition}
+                                </span>
                               </span>
                             </div>
 
                             {/* ID file */}
                             {player.idFileUrl ? (
-                              <a
-                                href={player.idFileUrl}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="matchlist__players__id-badge matchlist__players__id-badge--uploaded"
-                                title="View ID document"
-                              >
-                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
-                                  <path d="M2 1h5.5L10 3.5V11H2V1Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-                                  <path d="M7 1v3h3" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/>
-                                  <path d="M4 6.5h4M4 8.5h2.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
-                                </svg>
-                                ID
-                              </a>
+                              <div className="matchlist__players__id-wrap">
+                                <a
+                                  href={player.idFileUrl}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="matchlist__players__id-badge matchlist__players__id-badge--uploaded"
+                                  title="View ID document"
+                                >
+                                  <svg
+                                    width="12"
+                                    height="12"
+                                    viewBox="0 0 12 12"
+                                    fill="none"
+                                  >
+                                    <path
+                                      d="M2 1h5.5L10 3.5V11H2V1Z"
+                                      stroke="currentColor"
+                                      strokeWidth="1.3"
+                                      strokeLinejoin="round"
+                                    />
+                                    <path
+                                      d="M7 1v3h3"
+                                      stroke="currentColor"
+                                      strokeWidth="1.3"
+                                      strokeLinejoin="round"
+                                    />
+                                    <path
+                                      d="M4 6.5h4M4 8.5h2.5"
+                                      stroke="currentColor"
+                                      strokeWidth="1.2"
+                                      strokeLinecap="round"
+                                    />
+                                  </svg>
+                                  ID
+                                </a>
+                                <button
+                                  className="matchlist__players__id-remove"
+                                  onClick={() => removeIdFile(player)}
+                                  aria-label="Remove ID document"
+                                  title="Remove ID"
+                                >
+                                  ×
+                                </button>
+                              </div>
                             ) : (
                               <button
                                 className={`matchlist__players__id-badge${isUploading ? " matchlist__players__id-badge--uploading" : ""}`}
@@ -1172,9 +1572,25 @@ const MatchList = () => {
                                   "…"
                                 ) : (
                                   <>
-                                    <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
-                                      <path d="M5.5 7.5V1M5.5 1L3 3.5M5.5 1L8 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
-                                      <path d="M1 8.5v1a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-1" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+                                    <svg
+                                      width="11"
+                                      height="11"
+                                      viewBox="0 0 11 11"
+                                      fill="none"
+                                    >
+                                      <path
+                                        d="M5.5 7.5V1M5.5 1L3 3.5M5.5 1L8 3.5"
+                                        stroke="currentColor"
+                                        strokeWidth="1.4"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                      />
+                                      <path
+                                        d="M1 8.5v1a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 .5-.5v-1"
+                                        stroke="currentColor"
+                                        strokeWidth="1.3"
+                                        strokeLinecap="round"
+                                      />
                                     </svg>
                                     ID
                                   </>
@@ -1197,8 +1613,19 @@ const MatchList = () => {
                                   setPlayerMode("edit");
                                 }}
                               >
-                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                  <path d="M9.5 1.5L12.5 4.5L4.5 12.5H1.5V9.5L9.5 1.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 14 14"
+                                  fill="none"
+                                >
+                                  <path
+                                    d="M9.5 1.5L12.5 4.5L4.5 12.5H1.5V9.5L9.5 1.5Z"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
                                 </svg>
                               </button>
                               <button
@@ -1206,8 +1633,19 @@ const MatchList = () => {
                                 aria-label="Delete player"
                                 onClick={() => setDeletingPlayerId(player.id)}
                               >
-                                <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                                  <path d="M1 3.5H13M5.5 3.5V2H8.5V3.5M2.5 3.5L3.5 12H10.5L11.5 3.5H2.5Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                <svg
+                                  width="14"
+                                  height="14"
+                                  viewBox="0 0 14 14"
+                                  fill="none"
+                                >
+                                  <path
+                                    d="M1 3.5H13M5.5 3.5V2H8.5V3.5M2.5 3.5L3.5 12H10.5L11.5 3.5H2.5Z"
+                                    stroke="currentColor"
+                                    strokeWidth="1.5"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
                                 </svg>
                               </button>
                             </div>
@@ -1227,14 +1665,30 @@ const MatchList = () => {
                   <div className="matchlist__players__back-header">
                     <button
                       className="matchlist__players__back"
-                      onClick={() => { setPlayerMode("list"); setPlayerError(""); }}
+                      onClick={() => {
+                        setPlayerMode("list");
+                        setPlayerError("");
+                      }}
                       aria-label="Back to players list"
                     >
-                      <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
-                        <path d="M8.5 1L1.5 8L8.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <svg
+                        width="10"
+                        height="16"
+                        viewBox="0 0 10 16"
+                        fill="none"
+                      >
+                        <path
+                          d="M8.5 1L1.5 8L8.5 15"
+                          stroke="currentColor"
+                          strokeWidth="2.2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
                       </svg>
                     </button>
-                    <h2>{playerMode === "add" ? "Add Player" : "Edit Player"}</h2>
+                    <h2>
+                      {playerMode === "add" ? "Add Player" : "Edit Player"}
+                    </h2>
                   </div>
                   <button
                     className="matchlist__modal__close"
@@ -1253,11 +1707,17 @@ const MatchList = () => {
                     placeholder=" "
                     value={playerDraft.playerName}
                     onChange={(e) => {
-                      setPlayerDraft((p) => ({ ...p, playerName: e.target.value }));
+                      setPlayerDraft((p) => ({
+                        ...p,
+                        playerName: e.target.value,
+                      }));
                       setPlayerError("");
                     }}
                   />
-                  <label className="trainingwizard__label" htmlFor="mpPlayerName">
+                  <label
+                    className="trainingwizard__label"
+                    htmlFor="mpPlayerName"
+                  >
                     Player Name
                   </label>
                 </div>
@@ -1270,39 +1730,64 @@ const MatchList = () => {
                     placeholder=" "
                     min={1}
                     max={99}
-                    value={playerDraft.playerNumber === 0 ? "" : playerDraft.playerNumber}
+                    value={
+                      playerDraft.playerNumber === 0
+                        ? ""
+                        : playerDraft.playerNumber
+                    }
                     onChange={(e) => {
-                      setPlayerDraft((p) => ({ ...p, playerNumber: parseInt(e.target.value) || 0 }));
+                      setPlayerDraft((p) => ({
+                        ...p,
+                        playerNumber: parseInt(e.target.value) || 0,
+                      }));
                       setPlayerError("");
                     }}
                   />
-                  <label className="trainingwizard__label" htmlFor="mpPlayerNumber">
+                  <label
+                    className="trainingwizard__label"
+                    htmlFor="mpPlayerNumber"
+                  >
                     Jersey Number
                   </label>
                 </div>
 
                 <div className="trainingwizard__select__field">
-                  <label className="trainingwizard__select__label" htmlFor="mpPlayerPosition">
+                  <label
+                    className="trainingwizard__select__label"
+                    htmlFor="mpPlayerPosition"
+                  >
                     Position
                   </label>
                   <select
                     id="mpPlayerPosition"
                     className="trainingwizard__select__input"
                     value={playerDraft.playerPosition}
-                    onChange={(e) => setPlayerDraft((p) => ({ ...p, playerPosition: e.target.value }))}
+                    onChange={(e) =>
+                      setPlayerDraft((p) => ({
+                        ...p,
+                        playerPosition: e.target.value,
+                      }))
+                    }
                   >
                     {POSITIONS.map((pos) => (
-                      <option key={pos} value={pos}>{pos}</option>
+                      <option key={pos} value={pos}>
+                        {pos}
+                      </option>
                     ))}
                   </select>
                 </div>
 
-                {playerError && <p className="matchwizard__error">{playerError}</p>}
+                {playerError && (
+                  <p className="matchwizard__error">{playerError}</p>
+                )}
 
                 <div className="matchlist__modal__footer">
                   <button
                     className="btn__wired"
-                    onClick={() => { setPlayerMode("list"); setPlayerError(""); }}
+                    onClick={() => {
+                      setPlayerMode("list");
+                      setPlayerError("");
+                    }}
                   >
                     Cancel
                   </button>
@@ -1311,7 +1796,11 @@ const MatchList = () => {
                     onClick={playerMode === "add" ? savePlayer : updatePlayer}
                     disabled={playerSaving}
                   >
-                    {playerSaving ? "Saving…" : playerMode === "add" ? "Save Player" : "Update Player"}
+                    {playerSaving
+                      ? "Saving…"
+                      : playerMode === "add"
+                        ? "Save Player"
+                        : "Update Player"}
                   </button>
                 </div>
               </>

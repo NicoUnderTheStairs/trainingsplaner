@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
-import { deleteDoc, doc, getDoc, updateDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "../components/navigation/Navigation";
 import type { Match, Player } from "../../types/Match";
 import db from "../../firebase";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type InspectionEntry =
+  | { kind: "player"; name: string; number: number; position: string; idFileUrl?: string }
+  | { kind: "coach"; name: string; role: string; idFileUrl?: string };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -214,6 +220,11 @@ export default function MatchDetail() {
   const [pickingLineup, setPickingLineup] = useState(false);
   const [savingLineup, setSavingLineup] = useState(false);
 
+  const [refInspectionOpen, setRefInspectionOpen] = useState(false);
+  const [inspectionEntries, setInspectionEntries] = useState<InspectionEntry[]>([]);
+  const [inspectionIndex, setInspectionIndex] = useState(0);
+  const [inspectionLoading, setInspectionLoading] = useState(false);
+
   // Local ordering for the sketch (survives without re-picking)
   const [localStarting, setLocalStarting] = useState<Player[]>([]);
 
@@ -293,6 +304,53 @@ export default function MatchDetail() {
     startingDraft.filter((p) => p.playerPosition === "Setter").length === 1 &&
     startingDraft.filter((p) => p.playerPosition === "Opposite Hitter")
       .length === 1;
+
+  const openRefInspection = async () => {
+    if (!teamId) return;
+    setRefInspectionOpen(true);
+    setInspectionIndex(0);
+    setInspectionLoading(true);
+    try {
+      const [rosterSnap, teamSnap] = await Promise.all([
+        getDocs(collection(db, "teams", teamId, "players")),
+        getDoc(doc(db, "teams", teamId)),
+      ]);
+
+      const rosterMap = new Map<string, string | undefined>();
+      rosterSnap.docs.forEach((d) => {
+        const data = d.data();
+        rosterMap.set(`${data.playerName}|${data.playerNumber}`, data.idFileUrl);
+      });
+
+      const playerEntries: InspectionEntry[] = (match?.lineup ?? []).map((p) => ({
+        kind: "player" as const,
+        name: p.playerName,
+        number: p.playerNumber,
+        position: p.playerPosition,
+        idFileUrl: rosterMap.get(`${p.playerName}|${p.playerNumber}`),
+      }));
+
+      const teamData = teamSnap.exists() ? teamSnap.data() : {};
+      const coachEntries: InspectionEntry[] = [];
+      if (teamData.firstCoach) coachEntries.push({ kind: "coach", name: teamData.firstCoach, role: "First Coach", idFileUrl: teamData.firstCoachIdUrl });
+      if (teamData.secondCoach) coachEntries.push({ kind: "coach", name: teamData.secondCoach, role: "Second Coach", idFileUrl: teamData.secondCoachIdUrl });
+
+      setInspectionEntries([...playerEntries, ...coachEntries]);
+    } finally {
+      setInspectionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!refInspectionOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") setInspectionIndex((i) => Math.min(inspectionEntries.length - 1, i + 1));
+      if (e.key === "ArrowLeft")  setInspectionIndex((i) => Math.max(0, i - 1));
+      if (e.key === "Escape")     setRefInspectionOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [refInspectionOpen, inspectionEntries.length]);
 
   const handleSaveLineup = async () => {
     if (!teamId || !matchId || !startingComplete) return;
@@ -376,14 +434,25 @@ export default function MatchDetail() {
             Back
           </button>
 
-          {!deleteConfirm ? (
-            <button
-              className="matchdetail__delete-btn"
-              onClick={() => setDeleteConfirm(true)}
-            >
-              Delete
+          <div className="matchdetail__topbar__right">
+            <button className="btn__wired" onClick={openRefInspection}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <rect x="1" y="2" width="14" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+                <circle cx="5.5" cy="7" r="2" stroke="currentColor" strokeWidth="1.4"/>
+                <path d="M3 12c0-1.4 1.1-2.5 2.5-2.5S8 10.6 8 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                <path d="M10 6h3M10 9h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+              </svg>
+              Ref Inspection
             </button>
-          ) : (
+
+            {!deleteConfirm ? (
+              <button className="matchdetail__delete-btn" onClick={() => setDeleteConfirm(true)}>
+                <svg width="13" height="15" viewBox="0 0 13 15" fill="none">
+                  <path d="M1 3.5H12M4.5 3.5V2H8.5V3.5M2 3.5L3 13H10L11 3.5H2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Delete Match
+              </button>
+            ) : (
             <div className="matchdetail__delete-confirm">
               <span>Delete this match?</span>
               <button
@@ -400,7 +469,8 @@ export default function MatchDetail() {
                 {deleting ? "Deleting…" : "Yes, Delete"}
               </button>
             </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* ── Header ── */}
@@ -705,6 +775,130 @@ export default function MatchDetail() {
           )}
         </section>
       </div>
+
+      {/* ── Ref Inspection lightbox ── */}
+      {refInspectionOpen && (
+        <div
+          className="matchdetail__inspection"
+          onClick={() => setRefInspectionOpen(false)}
+        >
+          <div
+            className="matchdetail__inspection__card"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              className="matchdetail__inspection__close"
+              onClick={() => setRefInspectionOpen(false)}
+              aria-label="Close"
+            >
+              ×
+            </button>
+
+            {inspectionLoading ? (
+              <div className="matchdetail__inspection__loading">Loading…</div>
+            ) : inspectionEntries.length === 0 ? (
+              <div className="matchdetail__inspection__empty">
+                No players or coaches in this match.
+              </div>
+            ) : (() => {
+              const entry = inspectionEntries[inspectionIndex];
+              const isPdf = entry.idFileUrl?.toLowerCase().endsWith(".pdf");
+              const totalPlayers = inspectionEntries.filter((e) => e.kind === "player").length;
+              const isCoach = entry.kind === "coach";
+              return (
+                <>
+                  <div className="matchdetail__inspection__progress">
+                    <span className="matchdetail__inspection__progress__type">
+                      {isCoach ? "Coach" : "Player"}
+                    </span>
+                    <span>{isCoach ? inspectionIndex - totalPlayers + 1 : inspectionIndex + 1}</span>
+                    <span className="matchdetail__inspection__progress__sep">/</span>
+                    <span>{isCoach ? inspectionEntries.length - totalPlayers : totalPlayers}</span>
+                  </div>
+
+                  {entry.idFileUrl ? (
+                    isPdf ? (
+                      <a
+                        href={entry.idFileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="matchdetail__inspection__pdf-link"
+                      >
+                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                          <path d="M6 4h13l7 7v17H6V4Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                          <path d="M19 4v7h7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+                          <path d="M10 17h12M10 21h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                        Open ID Document (PDF)
+                      </a>
+                    ) : (
+                      <img
+                        src={entry.idFileUrl}
+                        className="matchdetail__inspection__photo"
+                        alt="ID document"
+                      />
+                    )
+                  ) : (
+                    <div className="matchdetail__inspection__no-photo">
+                      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+                        <rect x="3" y="8" width="34" height="24" rx="3" stroke="currentColor" strokeWidth="2"/>
+                        <circle cx="14" cy="19" r="5" stroke="currentColor" strokeWidth="2"/>
+                        <path d="M7 32c0-4 3.1-7 7-7s7 3 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        <path d="M26 16h7M26 21h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      </svg>
+                      <span>No ID uploaded</span>
+                    </div>
+                  )}
+
+                  {entry.kind === "player" ? (
+                    <div
+                      className="matchdetail__inspection__jersey"
+                      style={{ background: POSITION_COLOR[entry.position] ?? "#888" }}
+                    >
+                      #{entry.number}
+                    </div>
+                  ) : (
+                    <div className="matchdetail__inspection__coach-badge">
+                      {entry.role}
+                    </div>
+                  )}
+
+                  <div className="matchdetail__inspection__name">{entry.name}</div>
+
+                  {entry.kind === "player" && (
+                    <div className="matchdetail__inspection__position">
+                      {entry.position}
+                    </div>
+                  )}
+
+                  <div className="matchdetail__inspection__nav">
+                    <button
+                      className="btn__wired matchdetail__inspection__nav__btn"
+                      onClick={() => setInspectionIndex((i) => Math.max(0, i - 1))}
+                      disabled={inspectionIndex === 0}
+                    >
+                      <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                        <path d="M8.5 1L1.5 8L8.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                      Prev
+                    </button>
+                    <button
+                      className="btn__wired matchdetail__inspection__nav__btn"
+                      onClick={() => setInspectionIndex((i) => Math.min(inspectionEntries.length - 1, i + 1))}
+                      disabled={inspectionIndex === inspectionEntries.length - 1}
+                    >
+                      Next
+                      <svg width="10" height="16" viewBox="0 0 10 16" fill="none">
+                        <path d="M1.5 1L8.5 8L1.5 15" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+      )}
     </>
   );
 }

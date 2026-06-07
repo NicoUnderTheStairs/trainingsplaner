@@ -18,7 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────────
-define('UPLOAD_SECRET', 'h2vbclimmattal_upload_2024');
+define('UPLOAD_SECRET', 'hwG[v[8QVqmrHC)');
 
 $token = $_SERVER['HTTP_X_UPLOAD_TOKEN'] ?? '';
 if ($token !== UPLOAD_SECRET) {

@@ -14,6 +14,221 @@
     gap: 1.2rem;
     margin-bottom: 4rem;
     flex-wrap: wrap;
+
+    &__right {
+      display: flex;
+      align-items: center;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+    }
+  }
+
+  // ── Ref Inspection lightbox ───────────────────────────────────────────────
+
+  &__inspection {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.4rem;
+
+    &__card {
+      background: $secondary;
+      border: 0.3rem solid $black;
+      border-radius: 2.4rem;
+      box-shadow: 0.8rem 0.8rem 0 $black;
+      padding: 4rem 3.2rem 3.2rem;
+      width: min(46rem, calc(100vw - 4rem));
+      max-height: calc(100vh - 4rem);
+      overflow-y: auto;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2rem;
+    }
+
+    &__close {
+      position: absolute;
+      top: 1.4rem;
+      right: 1.4rem;
+      width: 3.6rem;
+      height: 3.6rem;
+      border: 0.2rem solid $black;
+      border-radius: 50%;
+      background: $secondary;
+      font-size: 2.2rem;
+      line-height: 1;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: $black;
+      transition: all $ease;
+
+      &:hover {
+        background: $secondary-2;
+        color: $secondary;
+      }
+    }
+
+    &__loading,
+    &__empty {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: rgba($black, 0.45);
+      padding: 4rem 0;
+      text-align: center;
+    }
+
+    &__progress {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: rgba($black, 0.4);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+
+      &__type {
+        font-weight: 900;
+        color: $black;
+        letter-spacing: 0.12em;
+      }
+
+      &__sep {
+        opacity: 0.5;
+      }
+    }
+
+    &__photo {
+      width: 100%;
+      max-height: 26rem;
+      object-fit: contain;
+      border: 0.3rem solid $black;
+      border-radius: 1.6rem;
+      box-shadow: 0.4rem 0.4rem 0 $black;
+      background: $white;
+    }
+
+    &__no-photo {
+      width: 100%;
+      height: 18rem;
+      border: 0.3rem dashed rgba($black, 0.2);
+      border-radius: 1.6rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 1.2rem;
+      color: rgba($black, 0.3);
+
+      span {
+        font-size: 1.6rem;
+        font-family: $font-family;
+        font-weight: 700;
+      }
+    }
+
+    &__pdf-link {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1.2rem;
+      width: 100%;
+      height: 14rem;
+      border: 0.3rem solid $black;
+      border-radius: 1.6rem;
+      background: $secondary;
+      color: $black;
+      text-decoration: none;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      justify-content: center;
+      transition: all $ease;
+
+      &:hover {
+        background: $secondary-2;
+        color: $secondary;
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.4rem 0.4rem 0 $black;
+      }
+    }
+
+    &__jersey {
+      width: 8rem;
+      height: 8rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+      font-weight: 900;
+      font-family: $font-family;
+      color: $white;
+      border: 0.3rem solid $black;
+      box-shadow: 0.4rem 0.4rem 0 $black;
+    }
+
+    &__coach-badge {
+      font-size: 1.4rem;
+      font-weight: 900;
+      font-family: $font-family;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: $black;
+      border: 0.2rem solid $black;
+      border-radius: 5rem;
+      padding: 0.5rem 2rem;
+      background: $secondary;
+    }
+
+    &__name {
+      font-size: 3.2rem;
+      font-weight: 900;
+      font-family: $font-family;
+      text-transform: uppercase;
+      color: $black;
+      text-align: center;
+      line-height: 1.1;
+      letter-spacing: 0.04em;
+    }
+
+    &__position {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: rgba($black, 0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    &__nav {
+      display: flex;
+      gap: 1.2rem;
+      width: 100%;
+      margin-top: 0.4rem;
+
+      &__btn {
+        flex: 1;
+        justify-content: center;
+        font-size: 1.6rem !important;
+
+        &:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+          transform: none !important;
+          box-shadow: none !important;
+        }
+      }
+    }
   }
 
   // Same look as btn__wired — no special danger color until confirmed
