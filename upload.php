@@ -1,10 +1,17 @@
 <?php
 /**
  * Upload handler for player ID files.
- * Deploy this file to the web root of https://www.h2.vbclimmattal.com
+ * Deploy this file to the web root of https://www.h2.vbclimmattal.com,
+ * alongside config.php and download.php.
+ *
  * Files are stored at:  teams/{teamId}/{playerName}.{ext}
- * Public URL pattern:   https://www.h2.vbclimmattal.com/teams/{teamId}/{playerName}.{ext}
+ * That directory is blocked from direct browser access (see teams/.htaccess) —
+ * files can only be retrieved through download.php with a valid access token.
+ * This endpoint returns a "key" (the relative path) which the frontend then
+ * exchanges for the actual file via download.php.
  */
+
+require __DIR__ . '/config.php';
 
 // ── CORS ───────────────────────────────────────────────────────────────────────
 header('Access-Control-Allow-Origin: *');
@@ -18,10 +25,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 // ── Auth ───────────────────────────────────────────────────────────────────────
-define('UPLOAD_SECRET', 'hwG[v[8QVqmrHC)');
-
 $token = $_SERVER['HTTP_X_UPLOAD_TOKEN'] ?? '';
-if ($token !== UPLOAD_SECRET) {
+if (!hash_equals(ACCESS_SECRET, $token)) {
     http_response_code(401);
     echo json_encode(['error' => 'Unauthorized']);
     exit;
@@ -118,5 +123,6 @@ if (!move_uploaded_file($_FILES['file']['tmp_name'], $filepath)) {
 }
 
 // ── Respond ────────────────────────────────────────────────────────────────────
-$url = 'https://www.h2.vbclimmattal.com/teams/' . $teamId . '/' . rawurlencode($filename);
-echo json_encode(['url' => $url]);
+// Return a relative key, not a public URL — the file is only reachable via
+// download.php (with a valid X-Download-Token header).
+echo json_encode(['key' => 'teams/' . $teamId . '/' . $filename]);

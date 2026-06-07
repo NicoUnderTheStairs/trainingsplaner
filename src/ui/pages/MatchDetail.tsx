@@ -4,12 +4,62 @@ import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "../components/navigation/Navigation";
 import type { Match, Player } from "../../types/Match";
 import db from "../../firebase";
+import { useSecureFile, isPdfKey } from "../../hooks/useSecureFile";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type InspectionEntry =
-  | { kind: "player"; name: string; number: number; position: string; idFileUrl?: string }
-  | { kind: "coach"; name: string; role: string; idFileUrl?: string };
+  | { kind: "player"; name: string; number: number; position: string; idFileKey?: string }
+  | { kind: "coach"; name: string; role: string; idFileKey?: string };
+
+// Renders the ID photo / PDF link / placeholder for a Ref Inspection entry.
+// Files are fetched securely (token-gated, not public URLs) and exposed as
+// blob: object URLs.
+const InspectionMedia = ({ fileKey }: { fileKey?: string }) => {
+  const { url, loading } = useSecureFile(fileKey);
+
+  if (!fileKey) {
+    return (
+      <div className="matchdetail__inspection__no-photo">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <rect x="3" y="8" width="34" height="24" rx="3" stroke="currentColor" strokeWidth="2"/>
+          <circle cx="14" cy="19" r="5" stroke="currentColor" strokeWidth="2"/>
+          <path d="M7 32c0-4 3.1-7 7-7s7 3 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <path d="M26 16h7M26 21h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+        <span>No ID uploaded</span>
+      </div>
+    );
+  }
+
+  if (loading || !url) {
+    return (
+      <div className="matchdetail__inspection__no-photo">
+        <span>Loading…</span>
+      </div>
+    );
+  }
+
+  if (isPdfKey(fileKey)) {
+    return (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="matchdetail__inspection__pdf-link"
+      >
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+          <path d="M6 4h13l7 7v17H6V4Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+          <path d="M19 4v7h7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
+          <path d="M10 17h12M10 21h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+        Open ID Document (PDF)
+      </a>
+    );
+  }
+
+  return <img src={url} className="matchdetail__inspection__photo" alt="ID document" />;
+};
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -319,7 +369,7 @@ export default function MatchDetail() {
       const rosterMap = new Map<string, string | undefined>();
       rosterSnap.docs.forEach((d) => {
         const data = d.data();
-        rosterMap.set(`${data.playerName}|${data.playerNumber}`, data.idFileUrl);
+        rosterMap.set(`${data.playerName}|${data.playerNumber}`, data.idFileKey);
       });
 
       const playerEntries: InspectionEntry[] = (match?.lineup ?? []).map((p) => ({
@@ -327,13 +377,13 @@ export default function MatchDetail() {
         name: p.playerName,
         number: p.playerNumber,
         position: p.playerPosition,
-        idFileUrl: rosterMap.get(`${p.playerName}|${p.playerNumber}`),
+        idFileKey: rosterMap.get(`${p.playerName}|${p.playerNumber}`),
       }));
 
       const teamData = teamSnap.exists() ? teamSnap.data() : {};
       const coachEntries: InspectionEntry[] = [];
-      if (teamData.firstCoach) coachEntries.push({ kind: "coach", name: teamData.firstCoach, role: "First Coach", idFileUrl: teamData.firstCoachIdUrl });
-      if (teamData.secondCoach) coachEntries.push({ kind: "coach", name: teamData.secondCoach, role: "Second Coach", idFileUrl: teamData.secondCoachIdUrl });
+      if (teamData.firstCoach) coachEntries.push({ kind: "coach", name: teamData.firstCoach, role: "First Coach", idFileKey: teamData.firstCoachIdKey });
+      if (teamData.secondCoach) coachEntries.push({ kind: "coach", name: teamData.secondCoach, role: "Second Coach", idFileKey: teamData.secondCoachIdKey });
 
       setInspectionEntries([...playerEntries, ...coachEntries]);
     } finally {
@@ -802,7 +852,6 @@ export default function MatchDetail() {
               </div>
             ) : (() => {
               const entry = inspectionEntries[inspectionIndex];
-              const isPdf = entry.idFileUrl?.toLowerCase().endsWith(".pdf");
               const totalPlayers = inspectionEntries.filter((e) => e.kind === "player").length;
               const isCoach = entry.kind === "coach";
               return (
@@ -816,39 +865,7 @@ export default function MatchDetail() {
                     <span>{isCoach ? inspectionEntries.length - totalPlayers : totalPlayers}</span>
                   </div>
 
-                  {entry.idFileUrl ? (
-                    isPdf ? (
-                      <a
-                        href={entry.idFileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="matchdetail__inspection__pdf-link"
-                      >
-                        <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
-                          <path d="M6 4h13l7 7v17H6V4Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-                          <path d="M19 4v7h7" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"/>
-                          <path d="M10 17h12M10 21h8" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                        </svg>
-                        Open ID Document (PDF)
-                      </a>
-                    ) : (
-                      <img
-                        src={entry.idFileUrl}
-                        className="matchdetail__inspection__photo"
-                        alt="ID document"
-                      />
-                    )
-                  ) : (
-                    <div className="matchdetail__inspection__no-photo">
-                      <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                        <rect x="3" y="8" width="34" height="24" rx="3" stroke="currentColor" strokeWidth="2"/>
-                        <circle cx="14" cy="19" r="5" stroke="currentColor" strokeWidth="2"/>
-                        <path d="M7 32c0-4 3.1-7 7-7s7 3 7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                        <path d="M26 16h7M26 21h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                      </svg>
-                      <span>No ID uploaded</span>
-                    </div>
-                  )}
+                  <InspectionMedia fileKey={entry.idFileKey} />
 
                   {entry.kind === "player" ? (
                     <div

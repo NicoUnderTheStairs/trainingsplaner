@@ -14,6 +14,7 @@ import { useNavigate } from "react-router-dom";
 import db from "../../../firebase";
 import type { Match } from "../../../types/Match";
 import { useTeamId } from "../../../hooks/useTeamId";
+import { useSecureFile } from "../../../hooks/useSecureFile";
 
 const POSITIONS = [
   "Outside Hitter",
@@ -44,7 +45,66 @@ type Player = {
   playerName: string;
   playerNumber: number;
   playerPosition: string;
-  idFileUrl?: string;
+  idFileKey?: string;
+};
+
+// Renders the "View ID" badge + remove button for an uploaded ID file.
+// The file is fetched securely (token-gated, not a public URL) and exposed
+// as a blob: object URL so the link can open it in a new tab.
+const IdFileLink = ({
+  fileKey,
+  onRemove,
+  title,
+}: {
+  fileKey: string;
+  onRemove: () => void;
+  title: string;
+}) => {
+  const { url, loading } = useSecureFile(fileKey);
+  return (
+    <div className="matchlist__players__id-wrap">
+      <a
+        href={url ?? undefined}
+        target="_blank"
+        rel="noreferrer"
+        className={`matchlist__players__id-badge matchlist__players__id-badge--uploaded${loading ? " matchlist__players__id-badge--uploading" : ""}`}
+        title={title}
+        onClick={(e) => {
+          if (!url) e.preventDefault();
+        }}
+      >
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+          <path
+            d="M2 1h5.5L10 3.5V11H2V1Z"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M7 1v3h3"
+            stroke="currentColor"
+            strokeWidth="1.3"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M4 6.5h4M4 8.5h2.5"
+            stroke="currentColor"
+            strokeWidth="1.2"
+            strokeLinecap="round"
+          />
+        </svg>
+        ID
+      </a>
+      <button
+        className="matchlist__players__id-remove"
+        onClick={onRemove}
+        aria-label="Remove ID document"
+        title="Remove ID"
+      >
+        ×
+      </button>
+    </div>
+  );
 };
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -237,8 +297,8 @@ const MatchList = () => {
   const [coaches, setCoaches] = useState<{
     firstCoach: string;
     secondCoach: string;
-    firstCoachIdUrl?: string;
-    secondCoachIdUrl?: string;
+    firstCoachIdKey?: string;
+    secondCoachIdKey?: string;
   }>({ firstCoach: "", secondCoach: "" });
   const [editingCoach, setEditingCoach] = useState<
     "firstCoach" | "secondCoach" | null
@@ -308,10 +368,10 @@ const MatchList = () => {
         setUploadError(json.error ?? "Upload failed.");
         return;
       }
-      const urlField =
-        role === "firstCoach" ? "firstCoachIdUrl" : "secondCoachIdUrl";
-      await setDoc(doc(db, "teams", teamId), { [urlField]: json.url }, { merge: true });
-      setCoaches((prev) => ({ ...prev, [urlField]: json.url }));
+      const keyField =
+        role === "firstCoach" ? "firstCoachIdKey" : "secondCoachIdKey";
+      await setDoc(doc(db, "teams", teamId), { [keyField]: json.key }, { merge: true });
+      setCoaches((prev) => ({ ...prev, [keyField]: json.key }));
     } catch {
       setUploadError("Upload failed. Check your connection.");
     } finally {
@@ -321,11 +381,11 @@ const MatchList = () => {
 
   const removeCoachId = async (role: "firstCoach" | "secondCoach") => {
     if (!teamId) return;
-    const urlField =
-      role === "firstCoach" ? "firstCoachIdUrl" : "secondCoachIdUrl";
+    const keyField =
+      role === "firstCoach" ? "firstCoachIdKey" : "secondCoachIdKey";
     try {
-      await updateDoc(doc(db, "teams", teamId), { [urlField]: deleteField() });
-      setCoaches((prev) => ({ ...prev, [urlField]: undefined }));
+      await updateDoc(doc(db, "teams", teamId), { [keyField]: deleteField() });
+      setCoaches((prev) => ({ ...prev, [keyField]: undefined }));
     } catch {
       setUploadError("Failed to remove ID. Please try again.");
     }
@@ -335,11 +395,11 @@ const MatchList = () => {
     if (!teamId) return;
     try {
       await updateDoc(doc(db, "teams", teamId, "players", player.id), {
-        idFileUrl: deleteField(),
+        idFileKey: deleteField(),
       });
       setPlayers((prev) =>
         prev.map((p) =>
-          p.id === player.id ? { ...p, idFileUrl: undefined } : p,
+          p.id === player.id ? { ...p, idFileKey: undefined } : p,
         ),
       );
     } catch {
@@ -375,11 +435,11 @@ const MatchList = () => {
       }
 
       await updateDoc(doc(db, "teams", teamId, "players", player.id), {
-        idFileUrl: json.url,
+        idFileKey: json.key,
       });
       setPlayers((prev) =>
         prev.map((p) =>
-          p.id === player.id ? { ...p, idFileUrl: json.url } : p,
+          p.id === player.id ? { ...p, idFileKey: json.key } : p,
         ),
       );
     } catch {
@@ -414,8 +474,8 @@ const MatchList = () => {
         setCoaches({
           firstCoach: data.firstCoach ?? "",
           secondCoach: data.secondCoach ?? "",
-          firstCoachIdUrl: data.firstCoachIdUrl,
-          secondCoachIdUrl: data.secondCoachIdUrl,
+          firstCoachIdKey: data.firstCoachIdKey,
+          secondCoachIdKey: data.secondCoachIdKey,
         });
       }
     } catch {
@@ -1267,10 +1327,10 @@ const MatchList = () => {
                       const label =
                         role === "firstCoach" ? "First Coach" : "Second Coach";
                       const isEditing = editingCoach === role;
-                      const idUrl =
+                      const idKey =
                         role === "firstCoach"
-                          ? coaches.firstCoachIdUrl
-                          : coaches.secondCoachIdUrl;
+                          ? coaches.firstCoachIdKey
+                          : coaches.secondCoachIdKey;
                       const isUploading = uploadingCoachRole === role;
                       return (
                         <div
@@ -1282,50 +1342,12 @@ const MatchList = () => {
                               {label}
                             </span>
                             <div className="matchlist__players__coaches__card__actions">
-                              {idUrl ? (
-                                <div className="matchlist__players__id-wrap">
-                                  <a
-                                    href={idUrl}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    className="matchlist__players__id-badge matchlist__players__id-badge--uploaded"
-                                    title="View ID"
-                                  >
-                                    <svg
-                                      width="12"
-                                      height="12"
-                                      viewBox="0 0 12 12"
-                                      fill="none"
-                                    >
-                                      <path
-                                        d="M2 1h5.5L10 3.5V11H2V1Z"
-                                        stroke="currentColor"
-                                        strokeWidth="1.3"
-                                        strokeLinejoin="round"
-                                      />
-                                      <path
-                                        d="M7 1v3h3"
-                                        stroke="currentColor"
-                                        strokeWidth="1.3"
-                                        strokeLinejoin="round"
-                                      />
-                                      <path
-                                        d="M4 6.5h4M4 8.5h2.5"
-                                        stroke="currentColor"
-                                        strokeWidth="1.2"
-                                        strokeLinecap="round"
-                                      />
-                                    </svg>
-                                    ID
-                                  </a>
-                                  <button
-                                    className="matchlist__players__id-remove"
-                                    onClick={() => removeCoachId(role)}
-                                    title="Remove ID"
-                                  >
-                                    ×
-                                  </button>
-                                </div>
+                              {idKey ? (
+                                <IdFileLink
+                                  fileKey={idKey}
+                                  onRemove={() => removeCoachId(role)}
+                                  title="View ID"
+                                />
                               ) : (
                                 <button
                                   className={`matchlist__players__id-badge${isUploading ? " matchlist__players__id-badge--uploading" : ""}`}
@@ -1516,51 +1538,12 @@ const MatchList = () => {
                             </div>
 
                             {/* ID file */}
-                            {player.idFileUrl ? (
-                              <div className="matchlist__players__id-wrap">
-                                <a
-                                  href={player.idFileUrl}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="matchlist__players__id-badge matchlist__players__id-badge--uploaded"
-                                  title="View ID document"
-                                >
-                                  <svg
-                                    width="12"
-                                    height="12"
-                                    viewBox="0 0 12 12"
-                                    fill="none"
-                                  >
-                                    <path
-                                      d="M2 1h5.5L10 3.5V11H2V1Z"
-                                      stroke="currentColor"
-                                      strokeWidth="1.3"
-                                      strokeLinejoin="round"
-                                    />
-                                    <path
-                                      d="M7 1v3h3"
-                                      stroke="currentColor"
-                                      strokeWidth="1.3"
-                                      strokeLinejoin="round"
-                                    />
-                                    <path
-                                      d="M4 6.5h4M4 8.5h2.5"
-                                      stroke="currentColor"
-                                      strokeWidth="1.2"
-                                      strokeLinecap="round"
-                                    />
-                                  </svg>
-                                  ID
-                                </a>
-                                <button
-                                  className="matchlist__players__id-remove"
-                                  onClick={() => removeIdFile(player)}
-                                  aria-label="Remove ID document"
-                                  title="Remove ID"
-                                >
-                                  ×
-                                </button>
-                              </div>
+                            {player.idFileKey ? (
+                              <IdFileLink
+                                fileKey={player.idFileKey}
+                                onRemove={() => removeIdFile(player)}
+                                title="View ID document"
+                              />
                             ) : (
                               <button
                                 className={`matchlist__players__id-badge${isUploading ? " matchlist__players__id-badge--uploading" : ""}`}
