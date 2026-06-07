@@ -5,15 +5,114 @@
   margin: 0 auto;
   padding: 2.4rem 1.6rem 8rem;
 
+  // ── Top bar ────────────────────────────────────────────────────────────────
+
+  &__topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.2rem;
+    margin-bottom: 4rem;
+    flex-wrap: wrap;
+  }
+
+  // Same look as btn__wired — no special danger color until confirmed
+  &__delete-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.6rem 1.6rem;
+    cursor: pointer;
+    border: 0.2rem solid $black;
+    border-radius: 1rem;
+    background-color: $secondary;
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $black;
+    transition: all $ease;
+    white-space: nowrap;
+    border-color: $error;
+    color: $error;
+
+    &:hover {
+      background-color: $error;
+      color: $white;
+      box-shadow: 0.3rem 0.3rem 0 darken($error, 15%);
+    }
+  }
+
+  &__delete-confirm {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    flex-wrap: wrap;
+
+    span {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+    }
+
+    &__cancel {
+      padding: 0.6rem 1.6rem;
+      cursor: pointer;
+      border: 0.2rem solid $black;
+      border-radius: 1rem;
+      background-color: $secondary;
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      transition: all $ease;
+
+      &:hover {
+        background: $secondary-2;
+        color: $secondary;
+      }
+    }
+
+    &__ok {
+      padding: 0.6rem 1.6rem;
+      cursor: pointer;
+      border: 0.2rem solid $black;
+      border-radius: 1rem;
+      background-color: $primary-3;
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $secondary;
+      transition: all $ease;
+
+      &:hover {
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 $black;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
+    }
+  }
+
+  // ── Header ─────────────────────────────────────────────────────────────────
+
   &__header {
-    margin: 2.4rem 0 3.2rem;
+    margin: 0 0 4rem;
   }
 
   &__opponent {
-    font-size: 2.8rem;
-    font-weight: 700;
-    line-height: 1.2;
-    margin: 0 0 0.8rem;
+    font-size: 4rem;
+    font-weight: 900;
+    font-family: $font-family;
+    text-transform: uppercase;
+    line-height: 1.1;
+    margin: 0 0 1.2rem;
+    color: $black;
   }
 
   &__header__meta {
@@ -24,28 +123,99 @@
   }
 
   &__date {
-    font-size: 1.4rem;
-    color: rgba(30, 30, 30, 0.55);
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $black;
   }
 
+  // Override shared badge size inside matchdetail
+  .matchlist__badge {
+    font-size: 1.6rem;
+    padding: 0.4rem 1.2rem;
+  }
+
+  // ── Sections ───────────────────────────────────────────────────────────────
+
   &__section {
-    margin-bottom: 3.2rem;
+    margin-bottom: 4.8rem;
 
     &__title {
-      font-size: 1.3rem;
-      font-weight: 600;
+      font-size: 1.6rem;
+      font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: rgba(30, 30, 30, 0.45);
-      margin: 0 0 1.2rem;
+      letter-spacing: 0.1em;
+      color: $black;
+      font-family: $font-family;
+      margin: 0 0 1.6rem;
+    }
+
+    &__titlerow {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.6rem;
+
+      .matchdetail__section__title {
+        margin: 0;
+      }
     }
 
     &__text {
-      font-size: 1.5rem;
-      line-height: 1.6;
+      font-size: 1.6rem;
+      line-height: 1.65;
+      font-family: $font-family;
+      color: $black;
       white-space: pre-wrap;
     }
   }
+
+  // ── Squad grouped by position ───────────────────────────────────────────────
+
+  &__groups {
+    display: flex;
+    flex-direction: column;
+    gap: 2.4rem;
+  }
+
+  &__group {
+    &__header {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 0.8rem;
+    }
+
+    &__dot {
+      width: 1.2rem;
+      height: 1.2rem;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    &__label {
+      font-size: 1.6rem;
+      font-weight: 900;
+      font-family: $font-family;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: $black;
+    }
+
+    &__count {
+      margin-left: auto;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      background: $secondary;
+      border: 0.2rem solid $black;
+      border-radius: 5rem;
+      padding: 0.1rem 1rem;
+    }
+  }
+
+  // ── Lineup rows ─────────────────────────────────────────────────────────────
 
   &__lineup {
     display: flex;
@@ -55,52 +225,334 @@
     &__row {
       display: flex;
       align-items: center;
-      gap: 1.2rem;
-      padding: 1rem 1.4rem;
-      border-radius: 1rem;
-      background: rgba(30, 30, 30, 0.04);
+      gap: 1.4rem;
+      padding: 1.2rem 1.6rem;
+      border: 0.2rem solid $black;
+      border-radius: 1.4rem;
+      background: $secondary;
     }
 
     &__abbr {
-      width: 3.6rem;
-      height: 3.6rem;
+      width: 4.4rem;
+      height: 4.4rem;
       border-radius: 50%;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 1.1rem;
-      font-weight: 700;
+      font-size: 1.6rem;
+      font-weight: 900;
       color: #fff;
       flex-shrink: 0;
+      font-family: $font-family;
+      letter-spacing: 0.02em;
     }
 
     &__info {
       flex: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 0.2rem;
+      min-width: 0;
     }
 
     &__name {
-      font-size: 1.5rem;
-      font-weight: 600;
-    }
-
-    &__position {
-      font-size: 1.2rem;
-      color: rgba(30, 30, 30, 0.5);
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
     }
 
     &__number {
-      font-size: 1.4rem;
-      font-weight: 600;
-      color: rgba(30, 30, 30, 0.55);
+      font-size: 1.6rem;
+      font-weight: 900;
+      font-family: $font-family;
+      color: $black;
+      white-space: nowrap;
     }
   }
 
+  // ── Starting Lineup – edit button ───────────────────────────────────────────
+
+  &__edit-lineup-btn {
+    padding: 0.4rem 1.4rem;
+    cursor: pointer;
+    border: 0.2rem solid $black;
+    border-radius: 1rem;
+    background-color: $secondary;
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $black;
+    transition: all $ease;
+    white-space: nowrap;
+
+    &:hover {
+      background: $secondary-2;
+      color: $secondary;
+    }
+  }
+
+  // ── Field sketch header buttons ────────────────────────────────────────────
+
+  &__field__header-btns {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  &__field__save-btn {
+    font-size: 1.6rem !important;
+    padding: 0.4rem 1.4rem !important;
+  }
+
+  // ── Swap buttons ────────────────────────────────────────────────────────────
+
+  &__field__swaps {
+    display: flex;
+    gap: 1.2rem;
+    margin: 1.2rem 0;
+
+    .btn__wired {
+      flex: 1;
+      justify-content: center;
+      font-size: 1.6rem;
+      padding: 0.6rem 1.2rem;
+
+      svg path {
+        stroke: currentColor;
+        transition: stroke $ease;
+      }
+
+      &:hover svg path {
+        stroke: $secondary;
+      }
+    }
+  }
+
+  // ── Field sketch (SVG) ──────────────────────────────────────────────────────
+
+  &__field {
+    display: block;
+    width: 100%;
+    max-width: 52rem;
+    margin: 0 auto 2rem;
+    border-radius: 1.6rem;
+    border: 0.3rem solid $black;
+    box-shadow: 0.6rem 0.6rem 0 $black;
+  }
+
+  &__field__legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    gap: 0.8rem 1.6rem;
+    padding: 1.6rem 2rem;
+    border: 0.3rem solid $black;
+    border-radius: 1.6rem;
+    background: $secondary;
+    box-shadow: 0.4rem 0.4rem 0 $black;
+
+    &__item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-family: $font-family;
+    }
+
+    &__dot {
+      width: 1.2rem;
+      height: 1.2rem;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    &__num {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: $black;
+      min-width: 3.4rem;
+    }
+
+    &__name {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: $black;
+      flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &__pos {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: $black;
+      background: $secondary;
+      border: 0.2rem solid $black;
+      border-radius: 5rem;
+      padding: 0.1rem 0.9rem;
+    }
+  }
+
+  // ── No-lineup empty state ───────────────────────────────────────────────────
+
+  &__no-lineup {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1.6rem;
+    padding: 2.4rem;
+    border: 0.3rem solid $black;
+    border-radius: 1.6rem;
+    background: $secondary;
+    box-shadow: 0.4rem 0.4rem 0 $black;
+
+    p {
+      margin: 0;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+    }
+  }
+
+  // ── Starting Lineup Picker ──────────────────────────────────────────────────
+
+  &__picker {
+    border: 0.3rem solid $black;
+    border-radius: 2rem;
+    padding: 2.4rem;
+    box-shadow: 0.6rem 0.6rem 0 $black;
+    background: $secondary;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+
+    &__hint {
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: $black;
+      font-family: $font-family;
+      line-height: 1.5;
+      margin: 0;
+    }
+
+    &__group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+
+      &__header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 0.4rem;
+      }
+
+      &__label {
+        font-size: 1.6rem;
+        font-weight: 900;
+        font-family: $font-family;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: $black;
+      }
+    }
+
+    &__slots {
+      margin-left: auto;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      background: $secondary;
+      border: 0.2rem solid $black;
+      border-radius: 5rem;
+      padding: 0.1rem 1rem;
+      transition: all $ease;
+
+      &--full {
+        background: $primary-4;
+        color: $secondary;
+        border-color: $primary-4;
+      }
+    }
+
+    &__row {
+      display: flex;
+      align-items: center;
+      gap: 1.4rem;
+      padding: 1.2rem 1.6rem;
+      border: 0.2rem solid $black;
+      border-radius: 1.4rem;
+      background: #fff;
+      width: 100%;
+      text-align: left;
+      cursor: pointer;
+      transition:
+        transform $ease,
+        box-shadow $ease,
+        background $ease,
+        color $ease;
+
+      &:hover:not(:disabled) {
+        transform: translate(-0.2rem, -0.2rem);
+        box-shadow: 0.3rem 0.3rem 0 $black;
+      }
+
+      &--selected {
+        background: $secondary-2;
+        border-color: $black;
+
+        .matchdetail__lineup__name {
+          color: $secondary;
+        }
+
+        .matchdetail__lineup__number {
+          color: $primary-1;
+        }
+      }
+
+      &--blocked {
+        opacity: 0.3;
+        cursor: not-allowed;
+        transform: none !important;
+        box-shadow: none !important;
+      }
+    }
+
+    &__check {
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: $primary-1;
+      width: 2rem;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    &__footer {
+      display: flex;
+      gap: 1.2rem;
+      padding-top: 1.2rem;
+      border-top: 0.2rem solid $black;
+
+      button {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+  }
+
+  // ── Empty state ─────────────────────────────────────────────────────────────
+
   &__empty {
-    font-size: 1.4rem;
-    color: rgba(30, 30, 30, 0.4);
+    font-size: 1.6rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $black;
   }
 }
 
@@ -132,7 +584,7 @@
   cursor: pointer;
 
   &__accent {
-    background: #3EC6D4; // teal accent for match cards
+    background: #3ec6d4; // teal accent for match cards
   }
 }
 
@@ -153,7 +605,10 @@
       font-size: 1.4rem;
       font-weight: 600;
       cursor: pointer;
-      transition: border-color 0.15s, background 0.15s, color 0.15s;
+      transition:
+        border-color 0.15s,
+        background 0.15s,
+        color 0.15s;
       color: rgba(30, 30, 30, 0.55);
 
       &--active {
@@ -187,7 +642,9 @@
       cursor: pointer;
       width: 100%;
       text-align: left;
-      transition: border-color 0.15s, background 0.15s;
+      transition:
+        border-color 0.15s,
+        background 0.15s;
       margin-bottom: 0.6rem;
 
       &--selected {
@@ -251,7 +708,9 @@
       color: rgba(30, 30, 30, 0.4);
       padding: 0 0.4rem;
 
-      &:hover { color: #e63c2f; }
+      &:hover {
+        color: #e63c2f;
+      }
     }
 
     &__count {
@@ -273,7 +732,9 @@
       gap: 1rem;
       margin-top: 1.2rem;
 
-      button { flex: 1; }
+      button {
+        flex: 1;
+      }
     }
 
     &__trigger {
@@ -288,7 +749,9 @@
       font-weight: 600;
       color: rgba(30, 30, 30, 0.55);
       cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
+      transition:
+        border-color 0.15s,
+        color 0.15s;
 
       &:hover {
         border-color: #1e1e1e;
@@ -354,7 +817,9 @@
     padding: 0 0.4rem;
     transition: color 0.15s;
 
-    &:hover { color: #1e1e1e; }
+    &:hover {
+      color: #1e1e1e;
+    }
   }
 
   &__footer {
@@ -362,6 +827,8 @@
     gap: 1rem;
     margin-top: 2rem;
 
-    button { flex: 1; }
+    button {
+      flex: 1;
+    }
   }
 }

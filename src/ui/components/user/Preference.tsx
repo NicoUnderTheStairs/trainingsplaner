@@ -101,15 +101,27 @@ const PreferenceSkeleton = () => (
     <div className="preference section">
       <div className="preference__inner">
         <div className="preference__header">
-          <span className="sk sk--rect" style={{ width: "8rem", height: "3.4rem" }} />
-          <span className="sk sk--line-xl sk--w40" style={{ marginTop: "1.6rem" }} />
-          <span className="sk sk--line sk--w65" style={{ marginTop: "0.8rem" }} />
+          <span
+            className="sk sk--rect"
+            style={{ width: "8rem", height: "3.4rem" }}
+          />
+          <span
+            className="sk sk--line-xl sk--w40"
+            style={{ marginTop: "1.6rem" }}
+          />
+          <span
+            className="sk sk--line sk--w65"
+            style={{ marginTop: "0.8rem" }}
+          />
         </div>
         {[0, 1, 2].map((i) => (
           <div key={i} className="preference__section">
             <div className="preference__section__header">
               <span className="sk sk--line-lg sk--w30" />
-              <span className="sk sk--line sk--w55" style={{ marginTop: "0.4rem" }} />
+              <span
+                className="sk sk--line sk--w55"
+                style={{ marginTop: "0.4rem" }}
+              />
             </div>
             <div className="preference__section__body">
               <div style={{ display: "flex", gap: "1.2rem" }}>

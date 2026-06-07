@@ -14,5 +14,6 @@ export interface Match {
   strategy: string;
   isHomeGame: boolean;
   lineup: Player[];
+  starting?: Player[];
   createdAt: Timestamp;
 }

@@ -417,7 +417,10 @@ const Navigation = () => {
               Exercises
             </a>
             <a href="/training-overview" className="navigation__menu__item">
-              My Trainings
+              Trainings
+            </a>
+            <a href="/match-overview" className="navigation__menu__item">
+              Matches
             </a>
           </div>
 
@@ -608,7 +611,14 @@ const Navigation = () => {
             className="navigation__menu__item"
             onClick={closeMenu}
           >
-            My Trainings
+            Trainings
+          </a>
+          <a
+            href="/match-overview"
+            className="navigation__menu__item"
+            onClick={closeMenu}
+          >
+            Matches
           </a>
         </div>
       </div>
