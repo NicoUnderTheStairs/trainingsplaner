@@ -6,6 +6,7 @@ import {
   getDocs,
   updateDoc,
   setDoc,
+  deleteDoc,
   collection,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
@@ -14,6 +15,7 @@ import Navigation from "../navigation/Navigation";
 import AvatarEditor from "../avatareditor/AvatarEditor";
 import type { UserProfile } from "../../../services/upload/registerUser";
 import db from "../../../firebase";
+import { sendNotification } from "../../../services/notifications/notifications";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -44,27 +46,20 @@ const AdminSection = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Broadcast notification state
+  const [notifTitle, setNotifTitle] = useState("");
+  const [notifBody, setNotifBody] = useState("");
+  const [notifLink, setNotifLink] = useState("");
+  const [sending, setSending] = useState(false);
+  const [sendStatus, setSendStatus] = useState<"idle" | "success" | "error">("idle");
+
   useEffect(() => {
-    getDoc(doc(db, "config", "allowedPhones"))
-      .then((snap) => {
-        if (snap.exists()) setPhones((snap.data().phones as string[]) ?? []);
-      })
+    getDocs(collection(db, "config", "allowedPhones", "entries"))
+      .then((snap) => setPhones(snap.docs.map((d) => d.id)))
       .finally(() => setLoadingPhones(false));
   }, []);
 
-  const persistPhones = async (updated: string[]) => {
-    setSaving(true);
-    try {
-      await setDoc(doc(db, "config", "allowedPhones"), { phones: updated });
-      setPhones(updated);
-    } catch (e) {
-      console.error("Error saving phones:", e);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleAdd = () => {
+  const handleAdd = async () => {
     const normalized = newPhone.trim().replace(/\s/g, "");
     if (!normalized) return;
     if (!/^\+\d{7,15}$/.test(normalized)) {
@@ -77,7 +72,61 @@ const AdminSection = () => {
     }
     setError("");
     setNewPhone("");
-    persistPhones([...phones, normalized]);
+    setSaving(true);
+    try {
+      await setDoc(doc(db, "config", "allowedPhones", "entries", normalized), { addedAt: new Date() });
+      setPhones((prev) => [...prev, normalized]);
+    } catch (e) {
+      console.error("Error adding phone:", e);
+      setError("Failed to save. Check your connection.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemove = async (phone: string) => {
+    setSaving(true);
+    try {
+      await deleteDoc(doc(db, "config", "allowedPhones", "entries", phone));
+      setPhones((prev) => prev.filter((p) => p !== phone));
+    } catch (e) {
+      console.error("Error removing phone:", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleBroadcast = async () => {
+    if (!notifTitle.trim() || !notifBody.trim()) return;
+    setSending(true);
+    setSendStatus("idle");
+    try {
+      const currentUid = getAuth().currentUser?.uid ?? "";
+      const snap = await getDocs(collection(db, "users"));
+      const recipientIds = snap.docs
+        .map((d) => d.id)
+        .filter((id) => id !== currentUid);
+      await Promise.all(
+        recipientIds.map((uid) =>
+          sendNotification(uid, {
+            type: "announcement" as any,
+            title: notifTitle.trim(),
+            body: notifBody.trim(),
+            link: notifLink.trim() || undefined,
+          }),
+        ),
+      );
+      setNotifTitle("");
+      setNotifBody("");
+      setNotifLink("");
+      setSendStatus("success");
+      setTimeout(() => setSendStatus("idle"), 3000);
+    } catch (e) {
+      console.error("Broadcast error:", e);
+      setSendStatus("error");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -112,9 +161,7 @@ const AdminSection = () => {
                   <span className="profile__admin__phone">{phone}</span>
                   <button
                     className="btn__danger profile__admin__remove"
-                    onClick={() =>
-                      persistPhones(phones.filter((p) => p !== phone))
-                    }
+                    onClick={() => handleRemove(phone)}
                     disabled={saving}
                   >
                     Remove
@@ -145,6 +192,52 @@ const AdminSection = () => {
             {error && <p className="profile__admin__error">{error}</p>}
           </>
         )}
+      </div>
+
+      <div className="profile__card profile__card--wide">
+        <h3 className="profile__card__title">Broadcast notification</h3>
+        <p className="profile__admin__desc">
+          Send a notification to all registered users immediately.
+        </p>
+        <div className="profile__admin__broadcast">
+          <input
+            className="profile__edit__input"
+            value={notifTitle}
+            onChange={(e) => setNotifTitle(e.target.value)}
+            placeholder="Title"
+            maxLength={80}
+          />
+          <textarea
+            className="profile__edit__input profile__edit__input--textarea"
+            value={notifBody}
+            onChange={(e) => setNotifBody(e.target.value)}
+            placeholder="Message body"
+            rows={3}
+            maxLength={300}
+          />
+          <input
+            className="profile__edit__input"
+            value={notifLink}
+            onChange={(e) => setNotifLink(e.target.value)}
+            placeholder="Link (optional, e.g. /training-detail/…)"
+          />
+          <div className="profile__admin__broadcast__footer">
+            <button
+              className={`btn__primary${sendStatus === "success" ? " btn__primary--success" : ""}`}
+              onClick={handleBroadcast}
+              disabled={sending || !notifTitle.trim() || !notifBody.trim()}
+            >
+              {sending
+                ? "Sending…"
+                : sendStatus === "success"
+                  ? "Sent!"
+                  : "Send to all users"}
+            </button>
+            {sendStatus === "error" && (
+              <p className="profile__admin__error">Failed to send. Try again.</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

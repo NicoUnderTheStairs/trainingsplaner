@@ -9,8 +9,11 @@ import { collection, query, where, getDocs, getDoc, doc } from "firebase/firesto
 import { registerUser } from "../services/upload/registerUser";
 
 // ─── Phone allowlist ──────────────────────────────────────────────────────────
-// Fallback list used when the Firestore config doc doesn't exist yet.
-const FALLBACK_PHONE_NUMBERS: string[] = [
+// Each allowed phone is stored as its own document:
+//   config/allowedPhones/entries/{+41796167040}
+// Firestore rule: allow get: if true  (existence check only, no list)
+// Fallback to hardcoded list when Firestore is unreachable.
+const FALLBACK_PHONES: string[] = [
   "+41796167045",
   "+41767256001",
   "+41762397502",
@@ -20,15 +23,14 @@ const FALLBACK_PHONE_NUMBERS: string[] = [
 export const isPhoneAllowed = async (phone: string): Promise<boolean> => {
   const normalized = phone.replace(/\s/g, "");
   try {
-    const snap = await getDoc(doc(db, "config", "allowedPhones"));
-    if (snap.exists()) {
-      const phones = (snap.data().phones as string[]) ?? [];
-      return phones.includes(normalized);
-    }
+    const snap = await getDoc(doc(db, "config", "allowedPhones", "entries", normalized));
+    if (snap.exists()) return true;
+    // Document missing means not on the list (don't fall through to hardcoded).
+    // Only fall through on a permissions/network error.
+    return false;
   } catch {
-    // fall through to hardcoded list
+    return FALLBACK_PHONES.includes(normalized);
   }
-  return FALLBACK_PHONE_NUMBERS.includes(normalized);
 };
 
 // ─── Phone uniqueness check ─────────────────────────────────────────────────────
@@ -50,22 +52,28 @@ export const doCreateUserWithEmailAndPassword = async (
 ) => {
   const normalized = phone.replace(/\s/g, "");
 
+  // Step 1: allowlist check — unauthenticated, uses allow get: if true rule
   if (!(await isPhoneAllowed(normalized))) {
     throw new Error("PHONE_NOT_ALLOWED");
   }
 
-  // Reject if a user already registered with this phone number
-  if (await isPhoneInUse(normalized)) {
-    throw new Error("PHONE_ALREADY_IN_USE");
+  // Step 2: create the Firebase Auth user — now the session is authenticated
+  const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+  // Step 3: phone uniqueness check — runs authenticated, so Firestore rules pass
+  try {
+    if (await isPhoneInUse(normalized)) {
+      await userCredential.user.delete();
+      throw new Error("PHONE_ALREADY_IN_USE");
+    }
+    await registerUser(userCredential.user.uid, userName, email, normalized);
+  } catch (err) {
+    // If anything after auth creation fails, roll back the auth user
+    if (!(err instanceof Error && err.message === "PHONE_ALREADY_IN_USE")) {
+      await userCredential.user.delete().catch(() => {});
+    }
+    throw err;
   }
-
-  const userCredential = await createUserWithEmailAndPassword(
-    auth,
-    email,
-    password,
-  );
-
-  await registerUser(userCredential.user.uid, userName, email, normalized);
 
   return userCredential;
 };

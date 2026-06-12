@@ -449,12 +449,14 @@
       display: flex;
       align-items: center;
       justify-content: flex-end;
+      gap: 0.6rem;
       padding-right: 2rem;
-      font-size: 1.3rem;
+      font-size: 1.2rem;
       font-weight: 900;
       text-transform: uppercase;
-      letter-spacing: 0.08rem;
+      letter-spacing: 0.1rem;
       pointer-events: none;
+      transition: opacity 0.12s ease;
     }
 
     &__item {
@@ -463,13 +465,19 @@
       touch-action: pan-y;
       user-select: none;
       transition:
-        transform 0.18s ease,
+        transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1),
         background-color $ease,
         padding-left $ease;
 
       &--dragging {
         transition: none;
         cursor: grabbing;
+      }
+
+      &--fly-off {
+        animation: notif-fly-off 0.3s cubic-bezier(0.4, 0, 1, 1) forwards;
+        transition: none;
+        pointer-events: none;
       }
     }
 
@@ -519,7 +527,7 @@
       width: 100%;
       border: none;
       border-bottom: 0.1rem solid $gray-200;
-      background: $white !important;
+      background-color: $white;
       cursor: pointer;
       text-align: left;
       font-family: $font-family;
@@ -537,10 +545,31 @@
       }
 
       &--unread {
-        background-color: $primary-1;
+        background-color: rgba($primary-1, 0.45);
+        border-left: 0.35rem solid darken($primary-1, 12%);
+
+        .navigation__notif__item__title {
+          font-weight: 900;
+        }
 
         &:hover {
-          background-color: $white;
+          background-color: rgba($primary-1, 0.65);
+          padding-left: 2rem;
+        }
+      }
+
+      &--read {
+        .navigation__notif__item__title {
+          color: $gray-600;
+          font-weight: 500;
+        }
+
+        .navigation__notif__item__text {
+          color: $gray-400;
+        }
+
+        .navigation__notif__item__icon {
+          opacity: 0.5;
         }
       }
 
@@ -651,5 +680,19 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes notif-fly-off {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(-110%);
+    opacity: 0;
   }
 }

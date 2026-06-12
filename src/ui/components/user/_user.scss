@@ -452,6 +452,12 @@ $transition-slow: 250ms ease;
     color: $text-light;
   }
 
+  &--textarea {
+    resize: vertical;
+    min-height: 8rem;
+    line-height: 1.5;
+  }
+
   &--name {
     font-size: 24px;
     font-weight: 700;
@@ -1087,6 +1093,20 @@ $transition-slow: 250ms ease;
     font-size: 1.3rem;
     color: $role-admin-fg;
     margin: $space-xs 0 0;
+  }
+
+  &__broadcast {
+    display: flex;
+    flex-direction: column;
+    gap: $space-sm;
+    margin-top: $space-xs;
+
+    &__footer {
+      display: flex;
+      align-items: center;
+      gap: $space-md;
+      flex-wrap: wrap;
+    }
   }
 }
 

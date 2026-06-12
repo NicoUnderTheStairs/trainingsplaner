@@ -28,6 +28,7 @@ const timeAgo = (timestamp: any): string => {
 const ICON_MAP: Record<string, string> = {
   training_shared: "↗",
   exercise_created: "✦",
+  announcement: "📣",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -91,10 +92,11 @@ const Navigation = () => {
 
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragX, setDragX] = useState(0);
+  const [flyOffIds, setFlyOffIds] = useState<Set<string>>(new Set());
 
   const startX = useRef(0);
 
-  const SWIPE_THRESHOLD = 120;
+  const SWIPE_THRESHOLD = 110;
 
   const handleSwipeStart = (clientX: number, notifId: string) => {
     startX.current = clientX;
@@ -103,13 +105,8 @@ const Navigation = () => {
 
   const handleSwipeMove = (clientX: number) => {
     if (!draggedId) return;
-
     const delta = clientX - startX.current;
-
-    // only allow left swipe
-    if (delta < 0) {
-      setDragX(delta);
-    }
+    if (delta < 0) setDragX(delta);
   };
 
   const handleSwipeEnd = async (notif: AppNotification) => {
@@ -120,11 +117,23 @@ const Navigation = () => {
     }
 
     if (Math.abs(dragX) > SWIPE_THRESHOLD) {
-      try {
-        await deleteNotification(currentUser.uid, notif.id);
-      } catch (err) {
-        console.error(err);
-      }
+      const uid = currentUser.uid;
+      setFlyOffIds((prev) => new Set(prev).add(notif.id));
+      setDraggedId(null);
+      setDragX(0);
+      setTimeout(async () => {
+        try {
+          await deleteNotification(uid, notif.id);
+        } catch (err) {
+          console.error(err);
+          setFlyOffIds((prev) => {
+            const s = new Set(prev);
+            s.delete(notif.id);
+            return s;
+          });
+        }
+      }, 310);
+      return;
     }
 
     setDraggedId(null);
@@ -490,20 +499,28 @@ const Navigation = () => {
                           key={notif.id}
                           className="navigation__notif__swipe"
                         >
-                          <div className="navigation__notif__delete">
+                          <div
+                            className="navigation__notif__delete"
+                            style={{
+                              opacity:
+                                draggedId === notif.id
+                                  ? Math.min(Math.abs(dragX) / SWIPE_THRESHOLD, 1)
+                                  : flyOffIds.has(notif.id)
+                                  ? 1
+                                  : 0,
+                            }}
+                          >
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3,6 5,6 21,6" />
+                              <path d="M19 6l-1 14H6L5 6" />
+                              <path d="M10 11v6M14 11v6" />
+                              <path d="M9 6V4h6v2" />
+                            </svg>
                             Delete
                           </div>
 
                           <button
-                            className={`navigation__notif__item ${notif.read} ${
-                              !notif.read
-                                ? "navigation__notif__item--unread"
-                                : ""
-                            } ${
-                              draggedId === notif.id
-                                ? "navigation__notif__item--dragging"
-                                : ""
-                            }`}
+                            className={`navigation__notif__item${notif.read ? " navigation__notif__item--read" : " navigation__notif__item--unread"}${draggedId === notif.id ? " navigation__notif__item--dragging" : ""}${flyOffIds.has(notif.id) ? " navigation__notif__item--fly-off" : ""}`}
                             style={{
                               transform:
                                 draggedId === notif.id
@@ -537,7 +554,7 @@ const Navigation = () => {
                               }
                             }}
                           >
-                            <div className="navigation__notif__item__icon navigation__notif__item__icon--${notif.type}">
+                            <div className={`navigation__notif__item__icon navigation__notif__item__icon--${notif.type}`}>
                               {ICON_MAP[notif.type] ?? "●"}
                             </div>
                             <div className="navigation__notif__item__body">
