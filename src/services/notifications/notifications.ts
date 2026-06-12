@@ -2,6 +2,7 @@ import {
   collection,
   addDoc,
   doc,
+  getDoc,
   updateDoc,
   query,
   orderBy,
@@ -12,6 +13,36 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import db from "../../firebase";
+
+// ─── Push relay ───────────────────────────────────────────────────────────────
+
+const PUSH_RELAY_URL = import.meta.env.VITE_PUSH_RELAY_URL as string | undefined;
+const PUSH_SECRET    = import.meta.env.VITE_PUSH_SECRET    as string | undefined;
+
+const sendPushToUser = async (
+  recipientUserId: string,
+  title: string,
+  body: string,
+  link?: string,
+): Promise<void> => {
+  if (!PUSH_RELAY_URL || !PUSH_SECRET) return;
+  try {
+    const userSnap = await getDoc(doc(db, "users", recipientUserId));
+    const token = userSnap.data()?.fcmToken as string | undefined;
+    if (!token) return;
+
+    await fetch(PUSH_RELAY_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Push-Secret": PUSH_SECRET,
+      },
+      body: JSON.stringify({ token, title, body, link: link ?? "/" }),
+    });
+  } catch {
+    // Push is best-effort — never break the in-app notification flow
+  }
+};
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,6 +81,8 @@ export const sendNotification = async (
     read: false,
     createdAt: Timestamp.now(),
   });
+  // Fire-and-forget push — does nothing if relay URL not configured
+  sendPushToUser(recipientUserId, payload.title, payload.body, payload.link);
 };
 
 export const notifyTrainingShared = async (

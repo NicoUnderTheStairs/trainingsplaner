@@ -2,6 +2,7 @@
 import { initializeApp } from "firebase/app";
 import { getFirestore } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { getMessaging, isSupported } from "firebase/messaging";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -22,4 +23,8 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 export const auth = getAuth(app);
 export const firebaseApp = app;
+
+// FCM is not supported in all environments (e.g. Firefox private mode, Safari < 16.4)
+export const messagingPromise = isSupported().then((ok) => (ok ? getMessaging(app) : null));
+
 export default db;

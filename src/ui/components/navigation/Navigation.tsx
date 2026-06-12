@@ -9,6 +9,10 @@ import {
   markAllNotificationsRead,
   type AppNotification,
 } from "../../../services/notifications/notifications";
+import {
+  registerPushToken,
+  onForegroundMessage,
+} from "../../../services/notifications/pushPermission";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -60,6 +64,33 @@ const Navigation = () => {
     const unsub = subscribeToNotifications(uid, setNotifications);
     return () => unsub();
   }, [currentUser?.uid]);
+
+  // ── Register push token once per login session ────────────────────────────
+  useEffect(() => {
+    const uid = currentUser?.uid;
+    if (!uid || Notification.permission === "denied") return;
+    registerPushToken(uid).catch(console.error);
+  }, [currentUser?.uid]);
+
+  // ── Handle foreground FCM messages (tab is open) ──────────────────────────
+  useEffect(() => {
+    let unsub: (() => void) | undefined;
+    onForegroundMessage((title, body, link) => {
+      setNotifications((prev) => [
+        {
+          id: `fg-${Date.now()}`,
+          type: "announcement" as any,
+          title,
+          body,
+          link,
+          read: false,
+          createdAt: null,
+        },
+        ...prev,
+      ]);
+    }).then((fn) => { unsub = fn; });
+    return () => unsub?.();
+  }, []);
 
   // ── Close notification panel on outside click ─────────────────────────────
   useEffect(() => {
