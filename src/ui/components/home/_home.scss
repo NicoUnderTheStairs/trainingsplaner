@@ -115,6 +115,67 @@
     border-radius: 2rem;
     padding: 2.4rem;
 
+    // Exercises and shared span full width
+    &--exercises,
+    &--shared {
+      grid-column: 1 / -1;
+    }
+
+    &--trainings {
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 0.4rem;
+        background: $primary-5;
+        border-radius: 2rem 2rem 0 0;
+      }
+    }
+
+    &--exercises {
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 0.4rem;
+        background: $primary-1;
+        border-radius: 2rem 2rem 0 0;
+      }
+    }
+
+    // Matches widget — red top accent
+    &--matches {
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 0.4rem;
+        background: $primary-3;
+        border-radius: 2rem 2rem 0 0;
+      }
+
+      > * {
+        &:first-child {
+          margin-top: 0.8rem;
+        }
+      }
+    }
+
     // Shared spans full width
     &--shared {
       grid-column: 1 / -1;
@@ -361,7 +422,7 @@
       width: 0.4rem;
       height: 3.6rem;
       border-radius: 0.4rem;
-      background: $black;
+      background: $primary-5;
       flex-shrink: 0;
     }
 
@@ -408,6 +469,106 @@
         transform: translateX(0.4rem);
         color: $black;
       }
+    }
+  }
+
+  // ── Match list rows ────────────────────────────────────────────────────────
+
+  &__matches__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  &__match__row {
+    display: flex;
+    align-items: center;
+    gap: 1.6rem;
+    padding: 1.2rem 1rem;
+    border-radius: 1rem;
+    cursor: pointer;
+    border: 0.2rem solid transparent;
+    transition: all $ease;
+
+    &:hover {
+      background-color: $secondary;
+      border-color: $black;
+    }
+
+    &__accent {
+      width: 0.4rem;
+      height: 3.6rem;
+      border-radius: 0.4rem;
+      background: $primary-3;
+      flex-shrink: 0;
+    }
+
+    &__info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    &__title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    &__meta {
+      font-size: 1.4rem;
+      color: $gray-600;
+      font-family: $font-family;
+    }
+
+    &__badge {
+      font-size: 1.2rem;
+      font-weight: 700;
+      font-family: $font-family;
+      text-transform: uppercase;
+      letter-spacing: 0.06rem;
+      padding: 0.3rem 1rem;
+      border-radius: 10rem;
+      flex-shrink: 0;
+
+      &--home {
+        background-color: rgba($primary-4, 0.15);
+        border: 0.15rem solid $primary-4;
+        color: darken($primary-4, 15%);
+      }
+
+      &--away {
+        background-color: rgba($primary-3, 0.12);
+        border: 0.15rem solid $primary-3;
+        color: darken($primary-3, 10%);
+      }
+    }
+  }
+
+  &__matches__new {
+    margin-top: 1.2rem;
+    background: transparent;
+    border: 0.2rem dashed $black;
+    border-radius: 1rem;
+    padding: 1rem;
+    width: 100%;
+    font-size: 1.8rem;
+    font-weight: 700;
+    font-family: $font-family;
+    color: $black;
+    cursor: pointer;
+    text-align: center;
+    transition: all $ease;
+
+    &:hover {
+      border-color: $black;
+      background-color: $secondary;
     }
   }
 
@@ -599,7 +760,6 @@
       grid-template-columns: 1fr;
     }
 
-    &__widget--exercises,
     &__widget--shared {
       grid-column: 1;
     }

@@ -19,7 +19,9 @@ import { useGetUserData } from "../../hooks/useGetUserData";
 import db from "../../firebase";
 import type { Exercise } from "../../types/Exercise";
 import type { Training } from "../../types/Training";
+import type { Match } from "../../types/Match";
 import type { SharedTrainingRef } from "../../services/upload/registerUser";
+import { useTeamId } from "../../hooks/useTeamId";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,6 +93,21 @@ const SharedWidgetSkeleton = () => (
   </div>
 );
 
+const MatchWidgetSkeleton = () => (
+  <div className="sk-stack" style={{ gap: "1rem" }}>
+    {[0, 1].map((i) => (
+      <div key={i} className="sk-row" style={{ padding: "1.4rem 1.6rem", border: "0.2rem solid rgba(30,30,30,0.1)", borderRadius: "1.2rem" }}>
+        <span className="sk sk--rect" style={{ width: "0.5rem", height: "4.4rem", flexShrink: 0 }} />
+        <div className="sk-stack" style={{ flex: 1, gap: "0.5rem" }}>
+          <span className="sk sk--line sk--w65" />
+          <span className="sk sk--line sk--w40" />
+        </div>
+        <span className="sk sk--rect" style={{ width: "5rem", height: "2rem", flexShrink: 0 }} />
+      </div>
+    ))}
+  </div>
+);
+
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Home() {
@@ -98,16 +115,19 @@ export default function Home() {
   const { currentUser } = useAuth() || { currentUser: null };
   // @ts-ignore
   const userData = useGetUserData(currentUser?.uid ?? "");
+  const teamId = useTeamId();
 
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [trainings, setTrainings] = useState<Training[]>([]);
   const [sharedTrainings, setSharedTrainings] = useState<SharedTraining[]>([]);
+  const [matches, setMatches] = useState<Match[]>([]);
   const [variantCounts, setVariantCounts] = useState<Record<string, number>>(
     {},
   );
   const [loadingEx, setLoadingEx] = useState(true);
   const [loadingTr, setLoadingTr] = useState(true);
   const [loadingSh, setLoadingSh] = useState(true);
+  const [loadingMatches, setLoadingMatches] = useState(true);
   const [showTour, setShowTour] = useState(false);
 
   useEffect(() => {
@@ -128,12 +148,12 @@ export default function Home() {
               collection(db, "Excercises"),
               where("team", "array-contains", userTeam),
               orderBy("createdAt", "desc"),
-              limit(2),
+              limit(4),
             )
           : query(
               collection(db, "Excercises"),
               orderBy("createdAt", "desc"),
-              limit(2),
+              limit(4),
             );
         const snap = await getDocs(q);
         const data = snap.docs.map(
@@ -177,7 +197,7 @@ export default function Home() {
           ? query(
               collection(db, "Excercises"),
               where("team", "array-contains", userTeam),
-              limit(2),
+              limit(4),
             )
           : query(collection(db, "Excercises"), limit(2));
         const snap = await getDocs(q);
@@ -200,6 +220,7 @@ export default function Home() {
     }
     const fetch = async () => {
       const now = new Date();
+      now.setHours(0, 0, 0, 0);
       try {
         const q = query(
           collection(db, "users", userId, "trainings"),
@@ -305,9 +326,46 @@ export default function Home() {
     fetch();
   }, [userData]);
 
+  // ── Fetch upcoming matches ─────────────────────────────────────────────────
+  useEffect(() => {
+    if (teamId === undefined) return; // still loading
+    if (teamId === null) {
+      setLoadingMatches(false);
+      return;
+    }
+    const fetch = async () => {
+      try {
+        const snap = await getDocs(collection(db, "teams", teamId, "matches"));
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const upcoming = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }) as Match)
+          .filter((m) => {
+            const d = typeof (m.date as any)?.toDate === "function"
+              ? (m.date as any).toDate()
+              : new Date(m.date as any);
+            return d >= today;
+          })
+          .sort((a, b) => {
+            const da = typeof (a.date as any)?.toDate === "function" ? (a.date as any).toDate() : new Date(a.date as any);
+            const db2 = typeof (b.date as any)?.toDate === "function" ? (b.date as any).toDate() : new Date(b.date as any);
+            return da.getTime() - db2.getTime();
+          })
+          .slice(0, 3);
+        setMatches(upcoming);
+      } catch {
+        setMatches([]);
+      } finally {
+        setLoadingMatches(false);
+      }
+    };
+    fetch();
+  }, [teamId]);
+
   const firstName = userData?.userName?.split(" ")[0] ?? "Coach";
 
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
   const combinedUpcoming = useMemo(() => {
     const toDate = (d: any): Date =>
       typeof d?.toDate === "function" ? d.toDate() : new Date(d ?? 0);
@@ -352,7 +410,7 @@ export default function Home() {
 
         {/* Grid */}
         <div className="home__grid">
-          {/* My trainings */}
+          {/* Upcoming trainings */}
           <section className="home__widget home__widget--trainings">
             <div className="home__widget__header">
               <h2 className="home__widget__title">Upcoming Trainings</h2>
@@ -412,6 +470,61 @@ export default function Home() {
                   onClick={() => navigate("/create-training")}
                 >
                   + New training
+                </button>
+              </div>
+            )}
+          </section>
+
+          {/* Upcoming matches */}
+          <section className="home__widget home__widget--matches">
+            <div className="home__widget__header">
+              <h2 className="home__widget__title">Upcoming Matches</h2>
+              <button
+                className="home__widget__link"
+                onClick={() => navigate("/match-overview")}
+              >
+                View all →
+              </button>
+            </div>
+            {loadingMatches ? (
+              <MatchWidgetSkeleton />
+            ) : matches.length === 0 ? (
+              <div className="home__widget__empty">
+                <p>No upcoming matches scheduled</p>
+                <button
+                  className="home__widget__cta"
+                  onClick={() => navigate("/create-match")}
+                >
+                  + Schedule a match
+                </button>
+              </div>
+            ) : (
+              <div className="home__matches__list">
+                {matches.map((match) => (
+                  <div
+                    key={match.id}
+                    className="home__match__row"
+                    onClick={() => navigate(`/match-detail/${teamId}/${match.id}`)}
+                  >
+                    <div className="home__match__row__accent" />
+                    <div className="home__match__row__info">
+                      <span className="home__match__row__title">
+                        vs. {match.opponent}
+                      </span>
+                      <span className="home__match__row__meta">
+                        {formatDate(match.date)} · {match.isHomeGame ? "Home" : "Away"}
+                      </span>
+                    </div>
+                    <span className={`home__match__row__badge home__match__row__badge--${match.isHomeGame ? "home" : "away"}`}>
+                      {match.isHomeGame ? "Home" : "Away"}
+                    </span>
+                  </div>
+                ))}
+                <button
+                  className="home__matches__new"
+                  onClick={() => navigate("/create-match")}
+                >
+                  + New match
                 </button>
               </div>
             )}

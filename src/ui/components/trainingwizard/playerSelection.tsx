@@ -8,6 +8,7 @@ export interface Players {
   middleBlocker: number; // Middle Blocker
   setter: number; // Setter
   libero: number; // Libero
+  coach: number; // Coach
 }
 
 export const EMPTY_PLAYERS: Players = {
@@ -16,6 +17,7 @@ export const EMPTY_PLAYERS: Players = {
   middleBlocker: 0,
   setter: 0,
   libero: 0,
+  coach: 0,
 };
 
 interface Props {
@@ -60,6 +62,12 @@ const POSITIONS: {
     label: "Libero",
     abbr: "L",
     color: "#624DB8",
+  },
+  {
+    key: "coach",
+    label: "Coach",
+    abbr: "C",
+    color: "#FFEE52",
   },
 ];
 

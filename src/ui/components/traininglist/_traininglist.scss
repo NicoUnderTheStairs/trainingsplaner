@@ -908,4 +908,147 @@
     color: rgba($black, 0.5);
     margin: 0 0.2rem;
   }
+
+  // ── Multi-select ──────────────────────────────────────────────────────────
+
+  &__card {
+    &--selectable {
+      cursor: default;
+      user-select: none;
+
+      &:hover {
+        transform: none;
+        box-shadow: none;
+      }
+    }
+
+    &--multi-selected {
+      border-color: $primary-4 !important;
+      box-shadow: 0.4rem 0.4rem 0 $primary-4 !important;
+      transform: translate(-0.2rem, -0.2rem) !important;
+      background-color: rgba($primary-4, 0.08) !important;
+    }
+
+    &__checkbox {
+      position: absolute;
+      top: 1.2rem;
+      right: 1.2rem;
+      width: 2.4rem;
+      height: 2.4rem;
+      border-radius: 50%;
+      border: 0.2rem solid rgba($black, 0.3);
+      background: $white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 4;
+      flex-shrink: 0;
+      transition: all $ease;
+
+      &--checked {
+        background: $primary-4;
+        border-color: $primary-4;
+      }
+    }
+  }
+
+  // Card needs relative positioning for checkbox overlay
+  &__card {
+    position: relative;
+  }
+
+  // ── Select toolbar ────────────────────────────────────────────────────────
+
+  &__select-toolbar {
+    position: fixed;
+    bottom: 2.4rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: $secondary-2;
+    border: 0.3rem solid $black;
+    border-radius: 1.6rem;
+    padding: 1rem 1.6rem;
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    z-index: 200;
+    box-shadow: 0.4rem 0.4rem 0 $black;
+    white-space: nowrap;
+    animation: toolbar-slide-up 0.2s ease;
+
+    @keyframes toolbar-slide-up {
+      from { transform: translateX(-50%) translateY(1rem); opacity: 0; }
+      to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+    }
+
+    &__count {
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $white;
+      min-width: 7rem;
+    }
+
+    &__actions {
+      display: flex;
+      gap: 0.8rem;
+    }
+
+    &__btn {
+      padding: 0.6rem 1.4rem;
+      border: 0.2rem solid $white;
+      border-radius: 1rem;
+      background: transparent;
+      color: $white;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      cursor: pointer;
+      transition: all $ease;
+
+      &:hover:not(:disabled) {
+        background: rgba($white, 0.15);
+        transform: translate(-0.1rem, -0.1rem);
+        box-shadow: 0.2rem 0.2rem 0 rgba($white, 0.4);
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+
+      &--delete {
+        border-color: $primary-3;
+        color: $primary-3;
+
+        &:hover:not(:disabled) {
+          background: rgba($primary-3, 0.15);
+          box-shadow: 0.2rem 0.2rem 0 rgba($primary-3, 0.4);
+        }
+      }
+    }
+
+    &__cancel {
+      width: 3.2rem;
+      height: 3.2rem;
+      border-radius: 50%;
+      border: 0.2rem solid rgba($white, 0.4);
+      background: transparent;
+      color: $white;
+      font-size: 1.6rem;
+      font-weight: 700;
+      font-family: $font-family;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all $ease;
+      flex-shrink: 0;
+
+      &:hover {
+        background: rgba($white, 0.15);
+        border-color: $white;
+      }
+    }
+  }
 }

@@ -1,10 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { collection, getDocs, getDoc, doc } from "firebase/firestore";
+import { collection, getDocs, getDoc, doc, deleteDoc, addDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { getAuth } from "firebase/auth";
 import db from "../../../firebase";
 import type { Training } from "../../../types/Training";
 import type { SharedTrainingRef } from "../../../services/upload/registerUser";
+import { useAuth } from "../../../auth/authContext";
+import { useGetUserData } from "../../../hooks/useGetUserData";
+import ShareDialog from "../shareDialog/ShareDialog";
 
 interface ListTraining extends Training {
   ownerId?: string;
@@ -131,6 +134,9 @@ const TrainingListSkeleton = () => (
 const TrainingList = () => {
   const navigate = useNavigate();
   const currentUserId = getAuth().currentUser?.uid ?? "";
+  const { currentUser } = useAuth() || { currentUser: null };
+  // @ts-ignore
+  const userData = useGetUserData(currentUser?.uid ?? "");
 
   // ── Data ─────────────────────────────────────────────────────────────────
   const [trainings, setTrainings] = useState<ListTraining[]>([]);
@@ -161,6 +167,16 @@ const TrainingList = () => {
   const [activeTags, setActiveTags] = useState<string[]>([]);
   const [minPlayers, setMinPlayers] = useState<number>(0); // 0 = any
   const filterRef = useRef<HTMLDivElement>(null);
+
+  // ── Select mode ───────────────────────────────────────────────────────────
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isActioning, setIsActioning] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [shareDialogOpen, setShareDialogOpen] = useState(false);
+  const [shareDialogTrainings, setShareDialogTrainings] = useState<ListTraining[]>([]);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const justEnteredSelectMode = useRef(false);
 
   // ── Fetch ─────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -244,6 +260,88 @@ const TrainingList = () => {
     setActiveTags([]);
     setSearch("");
     setMinPlayers(0);
+  };
+
+  // ── Select mode handlers ───────────────────────────────────────────────────
+  const exitSelectMode = () => {
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handlePointerDown = (id: string) => (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType !== "touch") return;
+    longPressTimer.current = setTimeout(() => {
+      justEnteredSelectMode.current = true;
+      setIsSelectMode(true);
+      setSelectedIds(new Set([id]));
+    }, 500);
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setDeleteConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    const userId = getAuth().currentUser?.uid;
+    if (!userId) return;
+    setIsActioning(true);
+    try {
+      const ownIds = [...selectedIds].filter((id) => !trainings.find((t) => t.id === id)?.ownerId);
+      await Promise.all(ownIds.map((id) => deleteDoc(doc(db, "users", userId, "trainings", id))));
+      setTrainings((prev) => prev.filter((t) => !new Set(ownIds).has(t.id!)));
+      setDeleteConfirmOpen(false);
+      exitSelectMode();
+    } finally {
+      setIsActioning(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (selectedIds.size === 0) return;
+    const userId = getAuth().currentUser?.uid;
+    if (!userId) return;
+    setIsActioning(true);
+    try {
+      const toDup = trainings.filter((t) => selectedIds.has(t.id!) && !t.ownerId);
+      const added = await Promise.all(
+        toDup.map(async (t) => {
+          const { id, ownerId, ...data } = t;
+          const ref = await addDoc(collection(db, "users", userId, "trainings"), {
+            ...data,
+            title: `Copy of ${data.title ?? "Untitled"}`,
+          });
+          return { ...data, id: ref.id } as ListTraining;
+        }),
+      );
+      setTrainings((prev) => [...added, ...prev]);
+      exitSelectMode();
+    } finally {
+      setIsActioning(false);
+    }
+  };
+
+  const handleShare = () => {
+    const toShare = trainings.filter((t) => selectedIds.has(t.id!) && !t.ownerId);
+    if (toShare.length === 0) return;
+    setShareDialogTrainings(toShare);
+    setShareDialogOpen(true);
   };
 
   const hasActiveFilters =
@@ -752,9 +850,37 @@ const TrainingList = () => {
                         <div
                           key={training.id}
                           id={`training-card-${training.id}`}
-                          className={`traininglist__card${toDateKey(training.date) === selectedDay ? " traininglist__card--selected" : ""}`}
-                          onClick={() => navigate(`/training-detail/${training.ownerId ?? currentUserId}/${training.id}`)}
+                          className={[
+                            "traininglist__card",
+                            toDateKey(training.date) === selectedDay ? "traininglist__card--selected" : "",
+                            isSelectMode && selectedIds.has(training.id!) ? "traininglist__card--multi-selected" : "",
+                            isSelectMode ? "traininglist__card--selectable" : "",
+                          ].filter(Boolean).join(" ")}
+                          onPointerDown={handlePointerDown(training.id!)}
+                          onPointerUp={handlePointerUp}
+                          onPointerLeave={handlePointerUp}
+                          onPointerCancel={handlePointerUp}
+                          onClick={() => {
+                            if (justEnteredSelectMode.current) {
+                              justEnteredSelectMode.current = false;
+                              return;
+                            }
+                            if (isSelectMode) {
+                              toggleSelect(training.id!);
+                            } else {
+                              navigate(`/training-detail/${training.ownerId ?? currentUserId}/${training.id}`);
+                            }
+                          }}
                         >
+                    {isSelectMode && (
+                      <div className={`traininglist__card__checkbox${selectedIds.has(training.id!) ? " traininglist__card__checkbox--checked" : ""}`}>
+                        {selectedIds.has(training.id!) && (
+                          <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                            <path d="M1 4.5L4.5 8L11 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                    )}
                     <div className="traininglist__card__accent" />
 
                     <div className="traininglist__card__body">
@@ -845,6 +971,88 @@ const TrainingList = () => {
           </>
         )}
       </div>
+
+      {/* ── Select mode toolbar ─────────────────────────────────────────── */}
+      {isSelectMode && (
+        <div className="traininglist__select-toolbar">
+          <span className="traininglist__select-toolbar__count">
+            {selectedIds.size} selected
+          </span>
+          <div className="traininglist__select-toolbar__actions">
+            <button
+              className="traininglist__select-toolbar__btn"
+              onClick={handleDuplicate}
+              disabled={selectedIds.size === 0 || isActioning}
+            >
+              Duplicate
+            </button>
+            <button
+              className="traininglist__select-toolbar__btn"
+              onClick={handleShare}
+              disabled={selectedIds.size === 0 || isActioning}
+            >
+              Share
+            </button>
+            <button
+              className="traininglist__select-toolbar__btn traininglist__select-toolbar__btn--delete"
+              onClick={handleDelete}
+              disabled={selectedIds.size === 0 || isActioning}
+            >
+              Delete
+            </button>
+          </div>
+          <button className="traininglist__select-toolbar__cancel" onClick={exitSelectMode}>
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ── Share dialog ─────────────────────────────────────────────────── */}
+      {shareDialogOpen && shareDialogTrainings.length > 0 && (
+        <ShareDialog
+          trainings={shareDialogTrainings}
+          currentUserId={currentUserId}
+          currentUserTeam={(userData as any)?.team ?? ""}
+          senderName={(userData as any)?.userName ?? ""}
+          onClose={() => {
+            setShareDialogOpen(false);
+            exitSelectMode();
+          }}
+        />
+      )}
+
+      {/* ── Delete confirmation dialog ───────────────────────────────────── */}
+      {deleteConfirmOpen && (
+        <div
+          className="dialog__overlay"
+          onClick={() => !isActioning && setDeleteConfirmOpen(false)}
+        >
+          <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <h3 className="dialog__title">
+              Delete {selectedIds.size} training{selectedIds.size !== 1 ? "s" : ""}?
+            </h3>
+            <p className="dialog__body">
+              This will permanently delete the selected training{selectedIds.size !== 1 ? "s" : ""}. This cannot be undone.
+            </p>
+            <div className="dialog__actions">
+              <button
+                className="btn__wired"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={isActioning}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn__danger"
+                onClick={executeDelete}
+                disabled={isActioning}
+              >
+                {isActioning ? "Deleting..." : "Yes, delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

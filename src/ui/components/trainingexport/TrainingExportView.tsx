@@ -9,16 +9,26 @@ import type { SketchData } from "../../../types/Sketch";
 // ─── Sketch (self-contained) ───────────────────────────────────────────────────
 
 const PLAYER_COLORS: Record<string, string> = {
+  outside: "#E63C2F",
+  opposite: "#F5A623",
+  middleBlocker: "#4DB87A",
+  setter: "#3EC6D4",
+  libero: "#624DB8",
+  coach: "#FFEE52",
+  // Legacy backward-compat
   attacker: "#E63C2F",
   defender: "#3EC6D4",
-  setter: "#F5A623",
-  libero: "#4DB87A",
 };
 const PLAYER_LABELS: Record<string, string> = {
-  attacker: "A",
-  defender: "D",
+  outside: "OH",
+  opposite: "OP",
+  middleBlocker: "MB",
   setter: "S",
   libero: "L",
+  coach: "C",
+  // Legacy backward-compat
+  attacker: "OH",
+  defender: "S",
 };
 
 const ExportSketch = ({ sketch }: { sketch?: SketchData }) => {
@@ -128,6 +138,21 @@ const ExportSketch = ({ sketch }: { sketch?: SketchData }) => {
               />
             </>
           )}
+          {obj.type === "matt" && (
+            <rect
+              x={-22}
+              y={-10}
+              width={44}
+              height={20}
+              fill="#4A90D9"
+              stroke="#1E1E1E"
+              strokeWidth={1.5}
+              rx={3}
+            />
+          )}
+          {obj.type === "ball" && (
+            <circle r={8} fill="#FFEE52" stroke="#1E1E1E" strokeWidth={1.5} />
+          )}
         </g>
       ))}
       {arrows.map(([id, a]: [string, any]) => (
@@ -149,7 +174,7 @@ const ExportSketch = ({ sketch }: { sketch?: SketchData }) => {
           <text
             textAnchor="middle"
             dominantBaseline="central"
-            fill="white"
+            fill={p.type === "coach" ? "#1E1E1E" : "white"}
             fontSize={11}
             fontWeight="bold"
             fontFamily="Roboto Condensed, sans-serif"
@@ -161,6 +186,22 @@ const ExportSketch = ({ sketch }: { sketch?: SketchData }) => {
     </svg>
   );
 };
+
+// ─── Player position meta (for the players section) ───────────────────────────
+
+const EXPORT_POSITIONS: {
+  key: string;
+  label: string;
+  abbr: string;
+  color: string;
+}[] = [
+  { key: "outside", label: "Outside Hitter", abbr: "OH", color: "#E63C2F" },
+  { key: "opposite", label: "Opposite Hitter", abbr: "OP", color: "#F5A623" },
+  { key: "middleBlocker", label: "Middle Blocker", abbr: "MB", color: "#4DB87A" },
+  { key: "setter", label: "Setter", abbr: "S", color: "#3EC6D4" },
+  { key: "libero", label: "Libero", abbr: "L", color: "#624DB8" },
+  { key: "coach", label: "Coach", abbr: "C", color: "#FFEE52" },
+];
 
 // ─── Tag chip ──────────────────────────────────────────────────────────────────
 
@@ -647,6 +688,105 @@ export default function TrainingExportView() {
             </div>
           </div>
         </div>
+
+        {/* Players section */}
+        {training.players && Object.values(training.players).some((v) => v > 0) && (
+          <div
+            style={{
+              border: "0.3rem solid #1e1e1e",
+              borderRadius: "2rem",
+              background: "white",
+              padding: "20px 28px",
+              marginBottom: 32,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 10,
+                marginBottom: 16,
+              }}
+            >
+              <h2
+                style={{
+                  fontSize: 22,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  margin: 0,
+                }}
+              >
+                Players
+              </h2>
+              <span style={{ fontSize: 14, color: "#999", fontWeight: 700 }}>
+                {Object.values(training.players).reduce((s, v) => s + v, 0)} total
+              </span>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {EXPORT_POSITIONS.filter(
+                (pos) =>
+                  ((training.players as unknown as Record<string, number>)[pos.key] ?? 0) > 0,
+              ).map((pos) => (
+                <div
+                  key={pos.key}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    background: "#f8f4ee",
+                    border: "0.2rem solid #1e1e1e",
+                    borderRadius: "1rem",
+                    padding: "6px 14px 6px 6px",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: 32,
+                      height: 32,
+                      borderRadius: "50%",
+                      background: pos.color,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 11,
+                      fontWeight: 800,
+                      color: pos.key === "coach" ? "#1e1e1e" : "white",
+                      fontFamily: "Roboto Condensed, sans-serif",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {pos.abbr}
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column" }}>
+                    <span
+                      style={{
+                        fontSize: 18,
+                        fontWeight: 800,
+                        lineHeight: 1,
+                        fontFamily: "Roboto Condensed, sans-serif",
+                      }}
+                    >
+                      {(training.players as unknown as Record<string, number>)[pos.key]}
+                    </span>
+                    <span
+                      style={{
+                        fontSize: 11,
+                        color: "#888",
+                        fontWeight: 600,
+                        textTransform: "uppercase",
+                        letterSpacing: "0.04em",
+                        fontFamily: "Roboto Condensed, sans-serif",
+                      }}
+                    >
+                      {pos.label}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Section header */}
         <div

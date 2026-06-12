@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
+import { collection, getDocs, query, where, deleteDoc, addDoc, doc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../auth/authContext";
@@ -233,6 +233,14 @@ const ExcerciseList = () => {
   const [showFavourites, setShowFavourites] = useState(false);
   const filterRef = useRef<HTMLDivElement>(null);
 
+  // Select mode state
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isActioning, setIsActioning] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const justEnteredSelectMode = useRef(false);
+
   // ── Fetch exercises + variant counts ───────────────────────────────────────
   useEffect(() => {
     if (userData === undefined) return; // wait for profile to resolve before querying
@@ -340,6 +348,87 @@ const ExcerciseList = () => {
     setActiveDifficulties([]);
     setSearch("");
     setShowFavourites(false);
+  };
+
+  // ── Select mode handlers ───────────────────────────────────────────────────
+  const exitSelectMode = () => {
+    setIsSelectMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handlePointerDown = (id: string) => (e: React.PointerEvent) => {
+    if (e.button !== 0 && e.pointerType !== "touch") return;
+    longPressTimer.current = setTimeout(() => {
+      justEnteredSelectMode.current = true;
+      setIsSelectMode(true);
+      setSelectedIds(new Set([id]));
+    }, 500);
+  };
+
+  const handlePointerUp = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedIds.size === 0) return;
+    setDeleteConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    setIsActioning(true);
+    try {
+      await Promise.all([...selectedIds].map((id) => deleteDoc(doc(db, "Excercises", id))));
+      setExercises((prev) => prev.filter((ex) => !selectedIds.has(ex.id!)));
+      setDeleteConfirmOpen(false);
+      exitSelectMode();
+    } finally {
+      setIsActioning(false);
+    }
+  };
+
+  const handleDuplicate = async () => {
+    if (selectedIds.size === 0) return;
+    setIsActioning(true);
+    try {
+      const toDup = exercises.filter((ex) => selectedIds.has(ex.id!));
+      const added = await Promise.all(
+        toDup.map(async (ex) => {
+          const { id, ...data } = ex;
+          const ref = await addDoc(collection(db, "Excercises"), {
+            ...data,
+            title: `Copy of ${data.title ?? "Untitled"}`,
+          });
+          return { ...data, id: ref.id } as Exercise;
+        }),
+      );
+      setExercises((prev) => [...added, ...prev]);
+      exitSelectMode();
+    } finally {
+      setIsActioning(false);
+    }
+  };
+
+  const handleShare = async () => {
+    const toShare = exercises.filter((ex) => selectedIds.has(ex.id!));
+    const text = toShare.map((ex) => ex.title ?? "Untitled").join("\n");
+    if (navigator.share) {
+      try { await navigator.share({ title: "Exercises", text }); } catch { /* cancelled */ }
+    } else {
+      await navigator.clipboard.writeText(text);
+    }
+    exitSelectMode();
   };
 
   const hasActiveFilters =
@@ -571,9 +660,38 @@ const ExcerciseList = () => {
                 return (
                   <div
                     key={exercise.id}
-                    className="excerciselist__exercise"
-                    onClick={() => navigate(`/exercise-detail/${exercise.id}`)}
+                    className={[
+                      "excerciselist__exercise",
+                      isSelectMode && selectedIds.has(exercise.id!) ? "excerciselist__exercise--multi-selected" : "",
+                      isSelectMode ? "excerciselist__exercise--selectable" : "",
+                    ].filter(Boolean).join(" ")}
+                    onPointerDown={handlePointerDown(exercise.id!)}
+                    onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
+                    onPointerCancel={handlePointerUp}
+                    onClick={() => {
+                      if (justEnteredSelectMode.current) {
+                        justEnteredSelectMode.current = false;
+                        return;
+                      }
+                      if (isSelectMode) {
+                        toggleSelect(exercise.id!);
+                      } else {
+                        navigate(`/exercise-detail/${exercise.id}`);
+                      }
+                    }}
                   >
+                    {/* Select mode checkbox */}
+                    {isSelectMode && (
+                      <div className={`excerciselist__exercise__checkbox${selectedIds.has(exercise.id!) ? " excerciselist__exercise__checkbox--checked" : ""}`}>
+                        {selectedIds.has(exercise.id!) && (
+                          <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                            <path d="M1 4.5L4.5 8L11 1" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        )}
+                      </div>
+                    )}
+
                     {/* Variant badge */}
                     {variantCount > 0 && (
                       <div
@@ -745,6 +863,74 @@ const ExcerciseList = () => {
           </div>
         </div>
       </div>
+
+      {/* ── Select mode toolbar ──────────────────────────────────────────── */}
+      {isSelectMode && (
+        <div className="excerciselist__select-toolbar">
+          <span className="excerciselist__select-toolbar__count">
+            {selectedIds.size} selected
+          </span>
+          <div className="excerciselist__select-toolbar__actions">
+            <button
+              className="excerciselist__select-toolbar__btn"
+              onClick={handleDuplicate}
+              disabled={selectedIds.size === 0 || isActioning}
+            >
+              Duplicate
+            </button>
+            <button
+              className="excerciselist__select-toolbar__btn"
+              onClick={handleShare}
+              disabled={selectedIds.size === 0 || isActioning}
+            >
+              Share
+            </button>
+            <button
+              className="excerciselist__select-toolbar__btn excerciselist__select-toolbar__btn--delete"
+              onClick={handleDelete}
+              disabled={selectedIds.size === 0 || isActioning}
+            >
+              Delete
+            </button>
+          </div>
+          <button className="excerciselist__select-toolbar__cancel" onClick={exitSelectMode}>
+            ✕
+          </button>
+        </div>
+      )}
+
+      {/* ── Delete confirmation dialog ───────────────────────────────────── */}
+      {deleteConfirmOpen && (
+        <div
+          className="dialog__overlay"
+          onClick={() => !isActioning && setDeleteConfirmOpen(false)}
+        >
+          <div className="dialog" onClick={(e) => e.stopPropagation()}>
+            <h3 className="dialog__title">
+              Delete {selectedIds.size} exercise{selectedIds.size !== 1 ? "s" : ""}?
+            </h3>
+            <p className="dialog__body">
+              This will permanently delete the selected exercise{selectedIds.size !== 1 ? "s" : ""}. This cannot be undone.
+            </p>
+            <div className="dialog__actions">
+              <button
+                className="btn__wired"
+                onClick={() => setDeleteConfirmOpen(false)}
+                disabled={isActioning}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn__danger"
+                onClick={executeDelete}
+                disabled={isActioning}
+              >
+                {isActioning ? "Deleting..." : "Yes, delete"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
