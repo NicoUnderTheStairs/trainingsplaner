@@ -236,11 +236,14 @@
   cursor: pointer;
   padding: 0.4rem 1.4rem;
   border-radius: 5.2rem;
-  font-size: 1.6rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
 
   &--warmup {
     background-color: rgba($primary-1, 0.2);
     border: 0.1rem solid $primary-1;
+    color: darken($primary-1, 35%);
     
     &--active {
       border: 0.1rem solid $primary-1 !important;
@@ -251,6 +254,7 @@
   &--defense {
     background-color: rgba($primary-2, 0.2);
     border: 0.1rem solid $primary-2;
+    color: $primary-2;
     
     &--active {
       background-color: rgba($primary-2, 1) !important;
@@ -261,6 +265,7 @@
   &--attack {
     background-color: rgba($primary-3, 0.2);
     border: 0.1rem solid $primary-3;
+    color: $primary-3;
     
     &--active {
       background-color: rgba($primary-3, 1) !important;
@@ -271,6 +276,7 @@
   &--block {
     background-color: rgba($primary-4, 0.2);
     border: 0.1rem solid $primary-4;
+    color: $primary-4;
     
     &--active {
       background-color: rgba($primary-4, 1) !important;
@@ -281,6 +287,7 @@
   &--reception {
     background-color: rgba($primary-5, 0.2);
     border: 0.1rem solid $primary-5;
+    color: $primary-5;
     
     &--active {
       background-color: rgba($primary-5, 1) !important;
@@ -291,6 +298,7 @@
   &--service {
     background-color: rgba($primary-6, 0.2);
     border: 0.1rem solid $primary-6;
+    color: $primary-6;
     
     &--active {
       background-color: rgba($primary-6, 1) !important;
@@ -301,6 +309,7 @@
   &--setting {
     background-color: rgba($primary-7, 0.2);
     border: 0.1rem solid $primary-7;
+    color: $primary-7;
 
     &--active {
       background-color: rgba($primary-7, 1) !important;
