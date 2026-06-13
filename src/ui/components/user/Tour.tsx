@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import db from "../../../firebase";
+import { updateUserCache } from "../../../hooks/useGetUserData";
 import AvatarEditor from "../avatareditor/AvatarEditor";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -106,25 +107,27 @@ const Tour = ({ onComplete }: TourProps) => {
   const prev = () => setStepIndex((i) => Math.max(i - 1, 0));
 
   const handleFinish = async () => {
-    const userId = auth.currentUser?.uid;
-    if (!userId) return;
     setSaving(true);
     try {
-      const updates: Record<string, unknown> = {
-        tourCompleted: true,
-        mobileMode,
-        planningDirection,
-        notificationScope,
-        role,
-      };
-      if (bio.trim()) updates.bio = bio.trim();
-      if (team) updates.team = team;
-      await updateDoc(doc(db, "users", userId), updates);
-      onComplete();
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        const updates: Record<string, unknown> = {
+          tourCompleted: true,
+          mobileMode,
+          planningDirection,
+          notificationScope,
+          role,
+        };
+        if (bio.trim()) updates.bio = bio.trim();
+        if (team) updates.team = team;
+        await setDoc(doc(db, "users", userId), updates, { merge: true });
+        updateUserCache(userId, { tourCompleted: true });
+      }
     } catch (e) {
       console.error("Tour save failed:", e);
     } finally {
       setSaving(false);
+      onComplete();
     }
   };
 

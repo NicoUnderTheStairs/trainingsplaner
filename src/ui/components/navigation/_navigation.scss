@@ -37,12 +37,12 @@
       display: block;
       margin-left: -3.2rem;
 
+      @media (max-width: #{$screen-sm-min}) {
+        margin-left: 0 !important;
+      }
+
       &__text {
         pointer-events: none;
-
-        @media (max-width: #{505px}) {
-          transform: translate(32px, 5px) scale(0.86);
-        }
       }
     }
   }
@@ -314,12 +314,12 @@
     }
   }
 
-  // Phones
+  // Phones — replace hamburger+drawer with bottom nav
   @media (max-width: #{$screen-sm-min}) {
-    height: 7rem;
+    height: 6rem;
 
     &__inner {
-      padding: 0 1.6rem 0 0;
+      padding: 0 1.2rem 0 0;
     }
 
     &__logo {
@@ -331,13 +331,189 @@
 
       &__notifications,
       &__profile {
-        width: 3.6rem;
-        height: 3.6rem;
+        width: 3.4rem;
+        height: 3.4rem;
       }
     }
 
+    // Hide hamburger and drawer entirely on phones
+    &__hamburger {
+      display: none !important;
+    }
+
     &__drawer {
-      padding: 1.6rem;
+      display: none !important;
+    }
+
+    // Push profile and notifications to the right — profile is in bottom nav
+    &__actions &__actions__profile {
+      display: none;
+    }
+  }
+
+  // ── Bottom navigation (phones only) ───────────────────────────────────────
+
+  &__bottom {
+    display: none;
+
+    @media (max-width: #{$screen-sm-min}) {
+      display: flex;
+      align-items: stretch;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 6.4rem;
+      background-color: $secondary;
+      border-top: 0.3rem solid $black;
+      z-index: 200;
+      padding-bottom: env(safe-area-inset-bottom, 0); // iPhone home bar
+    }
+
+    &__item {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
+      text-decoration: none;
+      color: $black;
+      font-family: $font-family;
+      font-size: 1.1rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05rem;
+      transition:
+        opacity 0.15s ease,
+        color 0.15s ease;
+      -webkit-tap-highlight-color: transparent;
+
+      svg {
+        flex-shrink: 0;
+      }
+
+      &--active {
+        opacity: 1;
+        color: $primary-3;
+
+        & svg path {
+          fill: $primary-3;
+        }
+      }
+
+      &__avatar {
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 0.2rem solid $black;
+        display: block;
+      }
+
+      &__initials {
+        width: 2.4rem;
+        height: 2.4rem;
+        border-radius: 50%;
+        background-color: $secondary-2;
+        color: $primary-1;
+        font-size: 1rem;
+        font-weight: 900;
+        font-family: $font-family;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 0.2rem solid $black;
+      }
+    }
+
+    // ── Plus FAB (center) ──────────────────────────────────────────────────
+
+    &__fab-wrap {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      margin-top: -0.6rem; // pull up so it overlaps the bar
+    }
+
+    &__fab {
+      width: 6.2rem;
+      height: 6.2rem;
+      border-radius: 50%;
+      background-color: $primary-3;
+      border: 0.3rem solid $black;
+      box-shadow: 0.3rem 0.3rem 0 $black;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      margin-bottom: 1.4rem; // lift above the bar
+      transition:
+        transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow 0.2s ease;
+      -webkit-tap-highlight-color: transparent;
+      color: $white;
+      flex-shrink: 0;
+
+      svg {
+        transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+
+      &--open svg {
+        transform: rotate(45deg);
+      }
+
+      &:active {
+        transform: translate(0.2rem, 0.2rem);
+        box-shadow: 0.1rem 0.1rem 0 $black;
+      }
+    }
+
+    &__fab-menu {
+      position: absolute;
+      bottom: calc(100% + 0.4rem);
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+      align-items: stretch;
+      width: 19rem;
+      z-index: 300;
+      animation: bottom-fab-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+
+      &__item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.1rem 1.6rem;
+        background-color: $secondary;
+        border: 0.25rem solid $black;
+        border-radius: 1.2rem;
+        box-shadow: 0.3rem 0.3rem 0 $black;
+        font-family: $font-family;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: $black;
+        cursor: pointer;
+        text-align: left;
+        transition:
+          transform 0.15s ease,
+          box-shadow 0.15s ease;
+        -webkit-tap-highlight-color: transparent;
+
+        svg {
+          flex-shrink: 0;
+          opacity: 0.75;
+        }
+
+        &:active {
+          transform: translate(0.2rem, 0.2rem);
+          box-shadow: 0.1rem 0.1rem 0 $black;
+        }
+      }
     }
   }
 
@@ -680,6 +856,24 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+// Body padding so page content isn't hidden behind the fixed bottom nav
+@media (max-width: #{$screen-sm-min}) {
+  body {
+    padding-bottom: calc(6.4rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+@keyframes bottom-fab-in {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(1rem) scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
   }
 }
 

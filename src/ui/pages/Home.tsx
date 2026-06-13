@@ -130,15 +130,25 @@ export default function Home() {
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [showTour, setShowTour] = useState(false);
 
+  const tourKey = currentUser?.uid ? `tourDone_${currentUser.uid}` : null;
+
   useEffect(() => {
-    if (userData && !userData.tourCompleted) {
-      setShowTour(true);
+    if (!userData?.userName) return; // wait for full document, not just fcmToken
+    if (tourKey && localStorage.getItem(tourKey)) {
+      setShowTour(false);
+      return;
     }
-  }, [userData]);
+    setShowTour(!userData.tourCompleted);
+  }, [userData, tourKey]);
+
+  const handleTourComplete = () => {
+    if (tourKey) localStorage.setItem(tourKey, "1");
+    setShowTour(false);
+  };
 
   // ── Fetch recent exercises + their variant counts ──────────────────────────
   useEffect(() => {
-    if (userData === undefined) return; // wait for profile to load
+    if (userData === null) return; // wait for profile to load
 
     const fetch = async () => {
       try {
@@ -262,7 +272,7 @@ export default function Home() {
 
   // ── Fetch trainings shared with the user ───────────────────────────────────
   useEffect(() => {
-    if (userData === undefined) return; // wait for profile
+    if (userData === null) return; // wait for profile
     const refs: SharedTrainingRef[] = userData?.sharedWithMe ?? [];
     if (refs.length === 0) {
       setSharedTrainings([]);
@@ -671,7 +681,7 @@ export default function Home() {
         </div>
       </div>
 
-      {showTour && <Tour onComplete={() => setShowTour(false)} />}
+      {showTour && <Tour onComplete={handleTourComplete} />}
     </>
   );
 }

@@ -31,7 +31,7 @@ const VariantSelection: React.FC<Props> = ({
 
   // Fetch only exercises from the same team, excluding the one just created
   useEffect(() => {
-    if (userData === undefined) return; // wait for profile to load
+    if (userData === null) return; // wait for profile to load
 
     const fetch = async () => {
       const userTeam = userData?.team ?? "";

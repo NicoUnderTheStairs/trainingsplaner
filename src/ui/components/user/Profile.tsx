@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   doc,
-  getDoc,
+  onSnapshot,
   getDocs,
-  updateDoc,
   setDoc,
   deleteDoc,
   collection,
@@ -19,8 +18,8 @@ import { sendNotification } from "../../../services/notifications/notifications"
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-const AvatarPlaceholder = ({ name }: { name: string }) => {
-  const initials = name
+const AvatarPlaceholder = ({ name }: { name?: string }) => {
+  const initials = (name ?? "?")
     .split(" ")
     .map((n) => n[0])
     .join("")
@@ -51,7 +50,9 @@ const AdminSection = () => {
   const [notifBody, setNotifBody] = useState("");
   const [notifLink, setNotifLink] = useState("");
   const [sending, setSending] = useState(false);
-  const [sendStatus, setSendStatus] = useState<"idle" | "success" | "error">("idle");
+  const [sendStatus, setSendStatus] = useState<"idle" | "success" | "error">(
+    "idle",
+  );
 
   useEffect(() => {
     getDocs(collection(db, "config", "allowedPhones", "entries"))
@@ -74,7 +75,9 @@ const AdminSection = () => {
     setNewPhone("");
     setSaving(true);
     try {
-      await setDoc(doc(db, "config", "allowedPhones", "entries", normalized), { addedAt: new Date() });
+      await setDoc(doc(db, "config", "allowedPhones", "entries", normalized), {
+        addedAt: new Date(),
+      });
       setPhones((prev) => [...prev, normalized]);
     } catch (e) {
       console.error("Error adding phone:", e);
@@ -234,7 +237,9 @@ const AdminSection = () => {
                   : "Send to all users"}
             </button>
             {sendStatus === "error" && (
-              <p className="profile__admin__error">Failed to send. Try again.</p>
+              <p className="profile__admin__error">
+                Failed to send. Try again.
+              </p>
             )}
           </div>
         </div>
@@ -319,24 +324,39 @@ const Profile = () => {
   const [favouriteExerciseCount, setFavouriteExerciseCount] = useState(0);
 
   // ── Fetch ────────────────────────────────────────────────────────────────
+  const editingRef = useRef(editing);
+  editingRef.current = editing;
+
   useEffect(() => {
-    const fetchProfile = async () => {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        navigate("/");
-        return;
-      }
-      const snap = await getDoc(doc(db, "users", userId));
-      if (snap.exists()) setProfile(snap.data() as UserProfile);
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      navigate("/");
+      return;
+    }
 
-      const [favExSnap] = await Promise.all([
-        getDocs(collection(db, "users", userId, "favouriteExercises")),
-      ]);
-      setFavouriteExerciseCount(favExSnap.size);
+    const unsub = onSnapshot(
+      doc(db, "users", userId),
+      (snap) => {
+        if (!editingRef.current) {
+          if (snap.exists()) {
+            setProfile(snap.data() as UserProfile);
+          } else {
+            setProfile({ uid: userId, email: auth.currentUser?.email ?? "" } as UserProfile);
+          }
+        }
+        setLoading(false);
+      },
+      (err) => {
+        console.error("Failed to load profile:", err);
+        setLoading(false);
+      },
+    );
 
-      setLoading(false);
-    };
-    fetchProfile();
+    getDocs(collection(db, "users", userId, "favouriteExercises"))
+      .then((snap) => setFavouriteExerciseCount(snap.size))
+      .catch(() => {});
+
+    return () => unsub();
   }, []);
 
   // ── Edit ─────────────────────────────────────────────────────────────────
@@ -362,12 +382,14 @@ const Profile = () => {
     setSaving(true);
     try {
       const updates = {
-        userName: editData.userName ?? profile.userName,
-        bio: editData.bio ?? profile.bio,
-        team: editData.team ?? profile.team,
-        role: editData.role ?? profile.role,
+        uid: userId,
+        email: auth.currentUser?.email ?? profile.email ?? "",
+        userName: editData.userName ?? profile.userName ?? "",
+        bio: editData.bio ?? profile.bio ?? null,
+        team: editData.team ?? profile.team ?? null,
+        role: editData.role ?? profile.role ?? "player",
       };
-      await updateDoc(doc(db, "users", userId), updates);
+      await setDoc(doc(db, "users", userId), updates, { merge: true });
       setProfile((prev) => (prev ? { ...prev, ...updates } : prev));
       setEditing(false);
       setEditData({});
@@ -393,6 +415,7 @@ const Profile = () => {
   if (loading) return <ProfileSkeleton />;
   if (!profile) return <p>Profile not found.</p>;
 
+
   const joinDate = (profile.createdAt as any)?.toDate?.()
     ? (profile.createdAt as any)
         .toDate()
@@ -404,6 +427,7 @@ const Profile = () => {
       <Navigation />
       <div className="profile">
         <div className="profile__inner">
+
           {/* ── Hero ── */}
           <div className="profile__hero">
             <div className="profile__avatar__wrapper">

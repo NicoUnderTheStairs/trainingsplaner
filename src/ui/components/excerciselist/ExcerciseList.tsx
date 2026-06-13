@@ -243,7 +243,7 @@ const ExcerciseList = () => {
 
   // ── Fetch exercises + variant counts ───────────────────────────────────────
   useEffect(() => {
-    if (userData === undefined) return; // wait for profile to resolve before querying
+    if (userData === null) return; // wait for profile to resolve before querying
 
     const fetchExercises = async () => {
       try {

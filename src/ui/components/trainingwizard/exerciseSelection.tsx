@@ -118,7 +118,7 @@ const ExerciseSelection: React.FC<Props> = ({
 
   // ── Fetch exercises ──────────────────────────────────────────────────────
   useEffect(() => {
-    if (userData === undefined) return;
+    if (userData === null) return;
 
     const fetch = async () => {
       try {

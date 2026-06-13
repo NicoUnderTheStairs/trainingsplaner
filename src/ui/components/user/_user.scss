@@ -76,6 +76,16 @@ $transition-slow: 250ms ease;
   }
 }
 
+.profile__incomplete-banner {
+  background: $primary-1;
+  border: 0.2rem solid $black;
+  border-radius: 1rem;
+  padding: 1.2rem 1.6rem;
+  margin-bottom: 2rem;
+  font-size: 1.4rem;
+  font-weight: 500;
+}
+
 // ─── Hero section ─────────────────────────────────────────────────────────────
 
 .profile__hero {
