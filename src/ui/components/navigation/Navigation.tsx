@@ -53,10 +53,12 @@ const Navigation = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [plusOpen, setPlusOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
 
   const notifRef = useRef<HTMLDivElement>(null);
   const plusRef = useRef<HTMLDivElement>(null);
+  const desktopPlusRef = useRef<HTMLDivElement>(null);
   const closeMenu = () => setMenuOpen(false);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
@@ -98,15 +100,23 @@ const Navigation = () => {
     return () => unsub?.();
   }, []);
 
-  // ── Close notification panel on outside click ─────────────────────────────
+  // ── Shrink nav on scroll ──────────────────────────────────────────────────
+  useEffect(() => {
+    const handler = () => setScrolled(window.scrollY > 72);
+    window.addEventListener("scroll", handler, { passive: true });
+    return () => window.removeEventListener("scroll", handler);
+  }, []);
+
+  // ── Close panels on outside click ─────────────────────────────────────────
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (notifRef.current && !notifRef.current.contains(e.target as Node)) {
         setNotifOpen(false);
       }
-      if (plusRef.current && !plusRef.current.contains(e.target as Node)) {
-        setPlusOpen(false);
-      }
+      const insidePlus =
+        (plusRef.current?.contains(e.target as Node)) ||
+        (desktopPlusRef.current?.contains(e.target as Node));
+      if (!insidePlus) setPlusOpen(false);
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -182,8 +192,8 @@ const Navigation = () => {
 
   return (
     <>
-      <div className="navigation">
-        <div className="navigation__inner section">
+      <div className={`navigation${scrolled ? " navigation--scrolled" : ""}`}>
+        <div className="navigation__inner">
           {/* ── Logo ── */}
           <div className="navigation__logo">
             <a href="/" onClick={closeMenu}>
@@ -462,19 +472,78 @@ const Navigation = () => {
 
           {/* ── Desktop menu ── */}
           <div className="navigation__menu">
-            <a href="/exercise-overview" className="navigation__menu__item">
-              Exercises
+            <a
+              href="/exercise-overview"
+              className={`navigation__menu__item${location.pathname.startsWith("/exercise") ? " navigation__menu__item--active" : ""}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+              </svg>
+              <span>Exercises</span>
             </a>
-            <a href="/training-overview" className="navigation__menu__item">
-              Trainings
+            <a
+              href="/training-overview"
+              className={`navigation__menu__item${location.pathname.startsWith("/training") ? " navigation__menu__item--active" : ""}`}
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="3" y="4" width="18" height="16" rx="2" />
+                <path d="M8 2v4M16 2v4M3 10h18" />
+              </svg>
+              <span>Training</span>
             </a>
-            <a href="/match-overview" className="navigation__menu__item">
-              Matches
+            <a
+              href="/match-overview"
+              className={`navigation__menu__item${location.pathname.startsWith("/match") ? " navigation__menu__item--active" : ""}`}
+            >
+              <svg width="24" height="18" viewBox="0 0 27 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M4.87695 9.78613L7.72363 0.214844H10.4092L6.37012 11.8379H4.69434L4.87695 9.78613ZM2.69629 0.214844L5.59668 9.8291L5.73633 11.8379H4.06055L0 0.214844H2.69629Z" fill="currentColor"/>
+                <path d="M18.5303 8.69043C18.5303 8.43262 18.4658 8.19987 18.3369 7.99219C18.208 7.77734 17.9609 7.58398 17.5957 7.41211C17.2376 7.24023 16.7077 7.08268 16.0059 6.93945C15.39 6.80339 14.8242 6.64225 14.3086 6.45605C13.8001 6.2627 13.3633 6.02995 12.998 5.75781C12.6328 5.48568 12.3499 5.16341 12.1494 4.79102C11.9489 4.41862 11.8486 3.98893 11.8486 3.50195C11.8486 3.0293 11.9525 2.58171 12.1602 2.15918C12.3678 1.73665 12.665 1.36426 13.0518 1.04199C13.4385 0.719727 13.9076 0.465495 14.459 0.279297C15.0176 0.093099 15.6406 0 16.3281 0C17.3021 0 18.1364 0.164714 18.8311 0.494141C19.5329 0.816406 20.07 1.25684 20.4424 1.81543C20.8148 2.36686 21.001 2.98991 21.001 3.68457H18.4121C18.4121 3.37663 18.3333 3.09017 18.1758 2.8252C18.0254 2.55306 17.7962 2.33464 17.4883 2.16992C17.1803 1.99805 16.7936 1.91211 16.3281 1.91211C15.8841 1.91211 15.5153 1.98372 15.2217 2.12695C14.9352 2.26302 14.7204 2.44206 14.5771 2.66406C14.4411 2.88607 14.373 3.12956 14.373 3.39453C14.373 3.58789 14.4089 3.76335 14.4805 3.9209C14.5592 4.07129 14.6882 4.21094 14.8672 4.33984C15.0462 4.46159 15.2897 4.57617 15.5977 4.68359C15.9128 4.79102 16.3066 4.89486 16.7793 4.99512C17.6673 5.18132 18.43 5.42122 19.0674 5.71484C19.7119 6.0013 20.2061 6.3737 20.5498 6.83203C20.8936 7.2832 21.0654 7.85612 21.0654 8.55078C21.0654 9.06641 20.9544 9.53906 20.7324 9.96875C20.5176 10.3913 20.2025 10.7601 19.7871 11.0752C19.3717 11.3831 18.874 11.623 18.2939 11.7949C17.721 11.9668 17.0765 12.0527 16.3604 12.0527C15.3076 12.0527 14.416 11.8665 13.6855 11.4941C12.9551 11.1146 12.4001 10.6312 12.0205 10.0439C11.6481 9.44954 11.4619 8.83366 11.4619 8.19629H13.9648C13.9935 8.67611 14.126 9.05924 14.3623 9.3457C14.6058 9.625 14.9066 9.8291 15.2646 9.95801C15.6299 10.0798 16.0059 10.1406 16.3926 10.1406C16.8581 10.1406 17.2484 10.0798 17.5635 9.95801C17.8786 9.8291 18.1185 9.65723 18.2832 9.44238C18.4479 9.22038 18.5303 8.96973 18.5303 8.69043Z" fill="currentColor"/>
+                <path d="M23.4395 10.5488C23.4395 10.1478 23.5755 9.8112 23.8477 9.53906C24.1198 9.25977 24.4886 9.12012 24.9541 9.12012C25.4268 9.12012 25.7956 9.25977 26.0605 9.53906C26.3327 9.8112 26.4688 10.1478 26.4688 10.5488C26.4688 10.9499 26.3327 11.2865 26.0605 11.5586C25.7956 11.8307 25.4268 11.9668 24.9541 11.9668C24.4886 11.9668 24.1198 11.8307 23.8477 11.5586C23.5755 11.2865 23.4395 10.9499 23.4395 10.5488Z" fill="currentColor"/>
+              </svg>
+              <span>Matches</span>
             </a>
           </div>
 
           {/* ── Actions ── */}
           <div className="navigation__actions">
+            {/* Desktop plus */}
+            <div className="navigation__actions__plus" ref={desktopPlusRef}>
+              <button
+                className={`navigation__actions__plus__btn${plusOpen ? " navigation__actions__plus__btn--open" : ""}`}
+                onClick={() => setPlusOpen((p) => !p)}
+                aria-label="Create new"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.8" strokeLinecap="round">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+              </button>
+              {plusOpen && (
+                <div className="navigation__actions__plus__menu">
+                  <button className="navigation__bottom__fab-menu__item" onClick={() => { setPlusOpen(false); navigate("/create-exercise"); }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                      <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z" />
+                    </svg>
+                    New Exercise
+                  </button>
+                  <button className="navigation__bottom__fab-menu__item" onClick={() => { setPlusOpen(false); navigate("/create-training"); }}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="4" width="18" height="16" rx="2" />
+                      <path d="M8 2v4M16 2v4M3 10h18" />
+                    </svg>
+                    New Training
+                  </button>
+                  <button className="navigation__bottom__fab-menu__item" onClick={() => { setPlusOpen(false); navigate("/create-match"); }}>
+                    <svg width="20" height="14" viewBox="0 0 27 13" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4.87695 9.78613L7.72363 0.214844H10.4092L6.37012 11.8379H4.69434L4.87695 9.78613ZM2.69629 0.214844L5.59668 9.8291L5.73633 11.8379H4.06055L0 0.214844H2.69629Z" fill="black"/>
+                      <path d="M18.5303 8.69043C18.5303 8.43262 18.4658 8.19987 18.3369 7.99219C18.208 7.77734 17.9609 7.58398 17.5957 7.41211C17.2376 7.24023 16.7077 7.08268 16.0059 6.93945C15.39 6.80339 14.8242 6.64225 14.3086 6.45605C13.8001 6.2627 13.3633 6.02995 12.998 5.75781C12.6328 5.48568 12.3499 5.16341 12.1494 4.79102C11.9489 4.41862 11.8486 3.98893 11.8486 3.50195C11.8486 3.0293 11.9525 2.58171 12.1602 2.15918C12.3678 1.73665 12.665 1.36426 13.0518 1.04199C13.4385 0.719727 13.9076 0.465495 14.459 0.279297C15.0176 0.093099 15.6406 0 16.3281 0C17.3021 0 18.1364 0.164714 18.8311 0.494141C19.5329 0.816406 20.07 1.25684 20.4424 1.81543C20.8148 2.36686 21.001 2.98991 21.001 3.68457H18.4121C18.4121 3.37663 18.3333 3.09017 18.1758 2.8252C18.0254 2.55306 17.7962 2.33464 17.4883 2.16992C17.1803 1.99805 16.7936 1.91211 16.3281 1.91211C15.8841 1.91211 15.5153 1.98372 15.2217 2.12695C14.9352 2.26302 14.7204 2.44206 14.5771 2.66406C14.4411 2.88607 14.373 3.12956 14.373 3.39453C14.373 3.58789 14.4089 3.76335 14.4805 3.9209C14.5592 4.07129 14.6882 4.21094 14.8672 4.33984C15.0462 4.46159 15.2897 4.57617 15.5977 4.68359C15.9128 4.79102 16.3066 4.89486 16.7793 4.99512C17.6673 5.18132 18.43 5.42122 19.0674 5.71484C19.7119 6.0013 20.2061 6.3737 20.5498 6.83203C20.8936 7.2832 21.0654 7.85612 21.0654 8.55078C21.0654 9.06641 20.9544 9.53906 20.7324 9.96875C20.5176 10.3913 20.2025 10.7601 19.7871 11.0752C19.3717 11.3831 18.874 11.623 18.2939 11.7949C17.721 11.9668 17.0765 12.0527 16.3604 12.0527C15.3076 12.0527 14.416 11.8665 13.6855 11.4941C12.9551 11.1146 12.4001 10.6312 12.0205 10.0439C11.6481 9.44954 11.4619 8.83366 11.4619 8.19629H13.9648C13.9935 8.67611 14.126 9.05924 14.3623 9.3457C14.6058 9.625 14.9066 9.8291 15.2646 9.95801C15.6299 10.0798 16.0059 10.1406 16.3926 10.1406C16.8581 10.1406 17.2484 10.0798 17.5635 9.95801C17.8786 9.8291 18.1185 9.65723 18.2832 9.44238C18.4479 9.22038 18.5303 8.96973 18.5303 8.69043Z" fill="black"/>
+                      <path d="M23.4395 10.5488C23.4395 10.1478 23.5755 9.8112 23.8477 9.53906C24.1198 9.25977 24.4886 9.12012 24.9541 9.12012C25.4268 9.12012 25.7956 9.25977 26.0605 9.53906C26.3327 9.8112 26.4688 10.1478 26.4688 10.5488C26.4688 10.9499 26.3327 11.2865 26.0605 11.5586C25.7956 11.8307 25.4268 11.9668 24.9541 11.9668C24.4886 11.9668 24.1198 11.8307 23.8477 11.5586C23.5755 11.2865 23.4395 10.9499 23.4395 10.5488Z" fill="black"/>
+                    </svg>
+                    New Match
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Notification bell */}
             <div className="navigation__notif" ref={notifRef}>
               <button
