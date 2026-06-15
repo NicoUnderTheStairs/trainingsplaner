@@ -362,12 +362,15 @@
       position: fixed;
       bottom: 0;
       left: 0;
+      max-width: 85%;
+      margin: 0 auto 9px auto;
       right: 0;
+      border-radius: 2rem;
       height: 6.4rem;
-      background-color: $secondary;
-      border-top: 0.3rem solid $black;
+      background-color: #fffaf0;
+      border: 0.3rem solid #1e1e1e;
       z-index: 200;
-      padding-bottom: env(safe-area-inset-bottom, 0); // iPhone home bar
+      padding-bottom: env(safe-area-inset-bottom, 0);
     }
 
     &__item {
@@ -403,11 +406,10 @@
       }
 
       &__avatar {
-        width: 2.4rem;
+        width: 3.4rem;
         height: 2.4rem;
         border-radius: 50%;
         object-fit: cover;
-        border: 0.2rem solid $black;
         display: block;
       }
 
