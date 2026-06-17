@@ -1118,6 +1118,92 @@ $transition-slow: 250ms ease;
       flex-wrap: wrap;
     }
   }
+
+  &__logheader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $space-sm;
+    margin-bottom: $space-xs;
+  }
+
+  &__loglist {
+    display: flex;
+    flex-direction: column;
+    gap: $space-sm;
+  }
+
+  &__logentry {
+    background: rgba($role-admin-bg, 0.6);
+    border: 0.15rem solid rgba($role-admin-fg, 0.2);
+    border-radius: $radius-md;
+    padding: $space-sm $space-md;
+
+    &__meta {
+      display: flex;
+      gap: $space-sm;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-bottom: 0.4rem;
+    }
+
+    &__time {
+      font-size: 1.2rem;
+      color: $text-muted;
+      font-variant-numeric: tabular-nums;
+    }
+
+    &__url {
+      font-size: 1.2rem;
+      color: $role-coach-fg;
+      font-family: monospace;
+      background: rgba($role-coach-bg, 0.6);
+      padding: 0.1rem 0.4rem;
+      border-radius: 0.4rem;
+    }
+
+    &__uid {
+      font-size: 1.2rem;
+      color: $text-muted;
+      font-family: monospace;
+    }
+
+    &__message {
+      font-size: 1.4rem;
+      font-weight: 600;
+      color: $role-admin-fg;
+      margin: 0 0 0.4rem;
+      word-break: break-word;
+    }
+
+    &__details {
+      margin-top: 0.6rem;
+
+      summary {
+        font-size: 1.2rem;
+        color: $text-muted;
+        cursor: pointer;
+        user-select: none;
+
+        &:hover {
+          color: $black;
+        }
+      }
+
+      pre {
+        margin: 0.6rem 0 0;
+        font-size: 1.1rem;
+        color: $role-admin-fg;
+        white-space: pre-wrap;
+        word-break: break-all;
+        overflow: auto;
+        max-height: 14rem;
+        background: rgba($black, 0.04);
+        padding: $space-sm;
+        border-radius: $radius-sm;
+      }
+    }
+  }
 }
 
 // ─── Tour ─────────────────────────────────────────────────────────────────────

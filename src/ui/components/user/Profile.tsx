@@ -15,6 +15,11 @@ import AvatarEditor from "../avatareditor/AvatarEditor";
 import type { UserProfile } from "../../../services/upload/registerUser";
 import db from "../../../firebase";
 import { sendNotification } from "../../../services/notifications/notifications";
+import {
+  fetchErrorLog,
+  clearErrorLog,
+  type ErrorLogEntry,
+} from "../../../services/errorlog/errorLog";
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
@@ -244,6 +249,97 @@ const AdminSection = () => {
           </div>
         </div>
       </div>
+
+      <ErrorLogSection />
+    </div>
+  );
+};
+
+// ─── Error log section (admin only) ──────────────────────────────────────────
+
+const ErrorLogSection = () => {
+  const [logs, setLogs] = useState<ErrorLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [clearing, setClearing] = useState(false);
+
+  useEffect(() => {
+    fetchErrorLog()
+      .then(setLogs)
+      .finally(() => setLoading(false));
+  }, []);
+
+  const handleClearAll = async () => {
+    setClearing(true);
+    try {
+      await clearErrorLog(logs);
+      setLogs([]);
+    } finally {
+      setClearing(false);
+    }
+  };
+
+  return (
+    <div className="profile__card profile__card--wide">
+      <div className="profile__admin__logheader">
+        <h3 className="profile__card__title">Error log</h3>
+        {logs.length > 0 && (
+          <button
+            className="btn__danger profile__admin__remove"
+            onClick={handleClearAll}
+            disabled={clearing}
+          >
+            {clearing ? "Clearing…" : "Clear all"}
+          </button>
+        )}
+      </div>
+      <p className="profile__admin__desc">
+        Critical runtime errors logged automatically from the app.
+      </p>
+
+      {loading ? (
+        <p className="profile__card__value">Loading…</p>
+      ) : logs.length === 0 ? (
+        <p className="profile__card__empty profile__card__value">
+          No errors logged.
+        </p>
+      ) : (
+        <div className="profile__admin__loglist">
+          {logs.map((log) => (
+            <div key={log.id} className="profile__admin__logentry">
+              <div className="profile__admin__logentry__meta">
+                <span className="profile__admin__logentry__time">
+                  {log.timestamp
+                    ? log.timestamp.toLocaleString("de-CH")
+                    : "—"}
+                </span>
+                {log.url && (
+                  <span className="profile__admin__logentry__url">
+                    {(() => {
+                      try {
+                        return new URL(log.url).pathname;
+                      } catch {
+                        return log.url;
+                      }
+                    })()}
+                  </span>
+                )}
+                {log.uid && (
+                  <span className="profile__admin__logentry__uid">
+                    uid:{log.uid.slice(0, 8)}…
+                  </span>
+                )}
+              </div>
+              <p className="profile__admin__logentry__message">{log.message}</p>
+              {log.stack && (
+                <details className="profile__admin__logentry__details">
+                  <summary>Stack trace</summary>
+                  <pre>{log.stack}</pre>
+                </details>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
