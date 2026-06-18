@@ -13,4 +13,5 @@ export interface Training {
   exercises: SelectedExercise[];
   players?: Players;
   sharedWith?: string[]; // UIDs of users this training was shared with
+  rating?: number; // 1–5 post-training star rating by the owner
 }

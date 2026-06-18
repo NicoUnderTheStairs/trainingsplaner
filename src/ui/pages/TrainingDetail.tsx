@@ -780,6 +780,9 @@ const TrainingDetail = () => {
   // Share
   const [shareOpen, setShareOpen] = useState(false);
 
+  // Rating
+  const [savingRating, setSavingRating] = useState(false);
+
   // Drag & drop refs
   const dragIndex = useRef<number | null>(null);
   const dragOverIndex = useRef<number | null>(null);
@@ -1011,6 +1014,20 @@ const TrainingDetail = () => {
     }
   };
 
+  // ── Rating ────────────────────────────────────────────────────────────────
+  const handleRating = async (stars: number) => {
+    if (!trainingId || !ownerId || savingRating) return;
+    setSavingRating(true);
+    try {
+      await updateDoc(doc(db, "users", ownerId, "trainings", trainingId), { rating: stars });
+      setTraining((prev) => prev ? { ...prev, rating: stars } : prev);
+    } catch (e) {
+      console.error("Error saving rating:", e);
+    } finally {
+      setSavingRating(false);
+    }
+  };
+
   if (loading) return <TrainingDetailSkeleton />;
   if (!training)
     return (
@@ -1021,6 +1038,16 @@ const TrainingDetail = () => {
     );
 
   const exercises = training.exercises ?? [];
+
+  const isPast = (() => {
+    if (!training.date) return false;
+    const d = typeof (training.date as any).toDate === "function"
+      ? (training.date as any).toDate()
+      : new Date(training.date as any);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return d < today;
+  })();
   const totalPlanned = exercises.reduce((sum, e) => sum + (e.duration ?? 0), 0);
   const editPlanned = editExercises.reduce(
     (sum, e) => sum + (e.duration ?? 0),
@@ -1299,6 +1326,28 @@ const TrainingDetail = () => {
               </div>
             </div>
           </div>
+
+          {/* Rating section — visible after training date has passed */}
+          {isPast && !isSharedWithMe && (
+            <div className="trainingdetail__rating">
+              <span className="trainingdetail__rating__label">
+                {training.rating ? "Your rating" : "Rate this training"}
+              </span>
+              <div className="trainingdetail__rating__stars">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    className={`trainingdetail__rating__star${(training.rating ?? 0) >= star ? " trainingdetail__rating__star--filled" : ""}`}
+                    onClick={() => handleRating(star)}
+                    disabled={savingRating}
+                    aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                  >
+                    ★
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Players section */}
           {(editing || training.players) && (

@@ -1,97 +1,98 @@
 import { useState } from "react";
-import { Navigate } from "react-router-dom";
-import {
-  sendResetPasswordEmail,
-} from "../../../../auth/auth";
-import { useAuth } from "../../../../auth/authContext/index";
+import { Link } from "react-router-dom";
+import { sendResetPasswordEmail } from "../../../../auth/auth";
 
 const ResetPassword = () => {
-  const { userLoggedIn } = useAuth() || {
-    currentUser: null,
-    userLoggedIn: false,
-    loading: false,
-  };
-
   const [email, setEmail] = useState("");
-  const [isReseting, setisReseting] = useState(false);
+  const [status, setStatus] = useState<"idle" | "loading" | "sent" | "error">("idle");
   const [errorMessage, setErrorMessage] = useState("");
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setisReseting(true);
-    setErrorMessage(""); // Clear previous error messages
-
+    setStatus("loading");
+    setErrorMessage("");
     try {
       await sendResetPasswordEmail(email);
-      window.location.href = "/?reset=true";
+      setStatus("sent");
     } catch (error) {
+      setStatus("error");
       if (error instanceof Error) {
-        setErrorMessage(error.message);
+        const msg = error.message;
+        if (msg.includes("auth/user-not-found") || msg.includes("auth/invalid-email")) {
+          setErrorMessage("No account found for this email address.");
+        } else if (msg.includes("auth/too-many-requests")) {
+          setErrorMessage("Too many attempts. Please wait a moment and try again.");
+        } else {
+          setErrorMessage("Something went wrong. Please try again.");
+        }
       } else {
-        setErrorMessage("An unexpected error occurred. Please try again.");
+        setErrorMessage("Something went wrong. Please try again.");
       }
-    } finally {
-      setisReseting(false);
     }
   };
 
   return (
-    <div>
-      {errorMessage && (
-        <div className="section">
-          <a className="itemlist__link--error" href="/">
-            {errorMessage === "Firebase: Error (auth/invalid-credential)."
-              ? "Your e-mail or password is incorrect. Please try again."
-              : errorMessage}
-          </a>
+    <main className="login section">
+      <div>
+        <div className="login__title">
+          <h3>Reset password</h3>
         </div>
-      )}
 
-      {userLoggedIn && <Navigate to={"/"} replace={true} />}
-
-      <main className="login section">
-        <div>
-          <div>
-            <div className="login__title">
-              <h3>Reset Password</h3>
-              <h4>Papiersammlung 2025</h4>
-            </div>
+        {status === "sent" ? (
+          <div className="login__reset-success">
+            <p>
+              A password reset link has been sent to <strong>{email}</strong>.
+              Check your inbox and follow the link to set a new password.
+            </p>
+            <Link to="/login" className="login__btn" style={{ display: "block", textAlign: "center", marginTop: "1.6rem" }}>
+              Back to login
+            </Link>
           </div>
-          <form onSubmit={onSubmit}>
-            <div className="login__input__wrapper">
-              <div className="login__input__field">
-                <input
-                  id="email"
-                  type="email"
-                  className="login__input"
-                  autoComplete="email"
-                  required
-                  value={email}
-                  placeholder=" "
-                  onChange={(e) => setEmail(e.target.value)}
-                />
-                <label
-                  className="login__label text-select-none"
-                  htmlFor="email"
-                >
-                  Your E-Mail
-                </label>
-              </div>
-            </div>
+        ) : (
+          <>
+            <p className="login__reset-hint">
+              Enter your email address and we'll send you a link to reset your password.
+            </p>
 
-            <button
-              className={
-                isReseting ? "login__btn login__btn--disabled" : "login__btn"
-              }
-              type="submit"
-              disabled={isReseting}
-            >
-              {isReseting ? "Reseting password..." : "Reset password"}
-            </button>
-          </form>
-        </div>
-      </main>
-    </div>
+            {status === "error" && errorMessage && (
+              <div className="login__error">{errorMessage}</div>
+            )}
+
+            <form onSubmit={onSubmit}>
+              <div className="login__input__wrapper">
+                <div className="login__input__field">
+                  <input
+                    id="email"
+                    type="email"
+                    className="login__input"
+                    autoComplete="email"
+                    required
+                    value={email}
+                    placeholder=" "
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                  <label className="login__label text-select-none" htmlFor="email">
+                    Your email address
+                  </label>
+                </div>
+              </div>
+
+              <button
+                className="login__btn"
+                type="submit"
+                disabled={status === "loading"}
+              >
+                {status === "loading" ? "Sending…" : "Send reset link"}
+              </button>
+            </form>
+
+            <div className="login__reset-back">
+              <Link to="/login">Back to login</Link>
+            </div>
+          </>
+        )}
+      </div>
+    </main>
   );
 };
 

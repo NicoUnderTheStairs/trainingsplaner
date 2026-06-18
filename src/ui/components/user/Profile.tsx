@@ -9,7 +9,7 @@ import {
   collection,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { doSignOut } from "../../../auth/auth";
+import { doSignOut, sendResetPasswordEmail } from "../../../auth/auth";
 import Navigation from "../navigation/Navigation";
 import AvatarEditor from "../avatareditor/AvatarEditor";
 import type { UserProfile } from "../../../services/upload/registerUser";
@@ -508,6 +508,23 @@ const Profile = () => {
     navigate("/");
   };
 
+  // ── Reset password ────────────────────────────────────────────────────────
+  const [resetStatus, setResetStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+
+  const handleResetPassword = async () => {
+    const email = auth.currentUser?.email;
+    if (!email) return;
+    setResetStatus("sending");
+    try {
+      await sendResetPasswordEmail(email);
+      setResetStatus("sent");
+      setTimeout(() => setResetStatus("idle"), 5000);
+    } catch {
+      setResetStatus("error");
+      setTimeout(() => setResetStatus("idle"), 4000);
+    }
+  };
+
   if (loading) return <ProfileSkeleton />;
   if (!profile) return <p>Profile not found.</p>;
 
@@ -598,6 +615,13 @@ const Profile = () => {
                 <>
                   <button className="btn__wired" onClick={handleEditStart}>
                     Edit profile
+                  </button>
+                  <button
+                    className="btn__wired"
+                    onClick={handleResetPassword}
+                    disabled={resetStatus === "sending"}
+                  >
+                    {resetStatus === "sending" ? "Sending…" : resetStatus === "sent" ? "Email sent ✓" : resetStatus === "error" ? "Failed — retry" : "Reset password"}
                   </button>
                   <button className="btn__danger" onClick={handleSignOut}>
                     Sign out
