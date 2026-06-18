@@ -9,6 +9,7 @@ export const registerPushToken = async (uid: string): Promise<"granted" | "denie
   const messaging = await messagingPromise;
   if (!messaging) return "unsupported";
 
+  if (typeof Notification === "undefined") return "unsupported";
   const permission = await Notification.requestPermission();
   if (permission !== "granted") return "denied";
 

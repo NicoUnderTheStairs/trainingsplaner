@@ -74,7 +74,7 @@ const Navigation = () => {
   // ── Register push token once per login session ────────────────────────────
   useEffect(() => {
     const uid = currentUser?.uid;
-    if (!uid || Notification.permission === "denied") return;
+    if (!uid || typeof Notification === "undefined" || Notification.permission === "denied") return;
     registerPushToken(uid).catch(console.error);
   }, [currentUser?.uid]);
 
