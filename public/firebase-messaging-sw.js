@@ -3,7 +3,7 @@ importScripts("https://www.gstatic.com/firebasejs/10.14.0/firebase-messaging-com
 
 firebase.initializeApp({
   apiKey: "AIzaSyCP2bu3DuGXEuzeQVn3Y_09Mp0Qd2TpbU8",
-  authDomain: "trainingsplaner-796d3.firebaseapp.co",
+  authDomain: "trainingsplaner-796d3.firebaseapp.com",
   projectId: "trainingsplaner-796d3",
   storageBucket: "trainingsplaner-796d3.firebasestorage.app",
   messagingSenderId: "946824686799",
