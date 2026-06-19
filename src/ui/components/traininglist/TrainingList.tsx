@@ -903,6 +903,14 @@ const TrainingList = () => {
                         {training.ownerId && (
                           <span className="traininglist__card__shared-badge">Shared</span>
                         )}
+                        {!!training.rating && (
+                          <span className="traininglist__card__rating-badge">
+                            {training.rating}
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                              <path d="M12 .587l3.668 7.431 8.332 1.21-6.001 5.847 1.417 8.279L12 19.771l-7.416 3.583 1.417-8.279-6.001-5.847 8.332-1.21z" />
+                            </svg>
+                          </span>
+                        )}
                       </h3>
 
                       {training.description && (

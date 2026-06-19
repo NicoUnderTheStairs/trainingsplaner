@@ -477,6 +477,14 @@
       border: 0.3rem solid #1e1e1e;
       z-index: 200;
       padding-bottom: env(safe-area-inset-bottom, 0);
+      // Forces Safari to composite this on its own GPU layer instead of
+      // recomputing its fixed position mid-scroll, which otherwise makes
+      // it visually lag and "float" up the page during the scroll gesture.
+      transform: translateZ(0);
+      -webkit-transform: translateZ(0);
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+      will-change: transform;
     }
 
     &__item {

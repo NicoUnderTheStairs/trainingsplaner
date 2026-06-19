@@ -14,4 +14,5 @@ export interface Training {
   players?: Players;
   sharedWith?: string[]; // UIDs of users this training was shared with
   rating?: number; // 1–5 post-training star rating by the owner
+  ratingReminderSent?: boolean; // set by the server-side rating-reminder cron job
 }

@@ -782,6 +782,7 @@ const TrainingDetail = () => {
 
   // Rating
   const [savingRating, setSavingRating] = useState(false);
+  const [hoverRating, setHoverRating] = useState(0);
 
   // Drag & drop refs
   const dragIndex = useRef<number | null>(null);
@@ -1073,6 +1074,39 @@ const TrainingDetail = () => {
             </button>
           </div>
 
+          {/* Rating section — visible after training date has passed */}
+          {isPast && !isSharedWithMe && (
+            <div className="trainingdetail__rating">
+              <span className="trainingdetail__rating__label">
+                {training.rating ? "Your rating" : "Rate this training"}
+              </span>
+              <div
+                className="trainingdetail__rating__stars"
+                onMouseLeave={() => setHoverRating(0)}
+              >
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    className={`trainingdetail__rating__star${(hoverRating || training.rating || 0) >= star ? " trainingdetail__rating__star--filled" : ""}`}
+                    onClick={() => handleRating(star)}
+                    onMouseEnter={() => setHoverRating(star)}
+                    disabled={savingRating}
+                    aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
+                  >
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 .587l3.668 7.431 8.332 1.21-6.001 5.847 1.417 8.279L12 19.771l-7.416 3.583 1.417-8.279-6.001-5.847 8.332-1.21z" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+              {!!training.rating && (
+                <span className="trainingdetail__rating__value">
+                  {training.rating}/5
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Header card */}
           <div className="trainingdetail__header">
             <div className="trainingdetail__header__accent" />
@@ -1327,27 +1361,6 @@ const TrainingDetail = () => {
             </div>
           </div>
 
-          {/* Rating section — visible after training date has passed */}
-          {isPast && !isSharedWithMe && (
-            <div className="trainingdetail__rating">
-              <span className="trainingdetail__rating__label">
-                {training.rating ? "Your rating" : "Rate this training"}
-              </span>
-              <div className="trainingdetail__rating__stars">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    className={`trainingdetail__rating__star${(training.rating ?? 0) >= star ? " trainingdetail__rating__star--filled" : ""}`}
-                    onClick={() => handleRating(star)}
-                    disabled={savingRating}
-                    aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
-                  >
-                    ★
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
 
           {/* Players section */}
           {(editing || training.players) && (

@@ -33,6 +33,7 @@ const ICON_MAP: Record<string, string> = {
   training_shared: "↗",
   exercise_created: "✦",
   announcement: "📣",
+  rate_training: "★",
 };
 
 // ─── Component ────────────────────────────────────────────────────────────────

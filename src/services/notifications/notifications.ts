@@ -48,7 +48,8 @@ const sendPushToUser = async (
 
 export type NotificationType =
   | "training_shared"
-  | "exercise_created";
+  | "exercise_created"
+  | "rate_training";
 
 export interface AppNotification {
   id: string;

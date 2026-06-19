@@ -740,7 +740,7 @@
       margin: 0;
       line-height: 1.1;
       display: flex;
-      align-items: baseline;
+      align-items: center;
       gap: 1rem;
       flex-wrap: wrap;
     }
@@ -756,6 +756,25 @@
       border-radius: 10rem;
       padding: 0.1rem 0.8rem;
       white-space: nowrap;
+    }
+
+    &__rating-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 1.3rem;
+      font-weight: 700;
+      font-family: $font-family;
+      color: $black;
+      background-color: $primary-1;
+      border: 0.2rem solid $black;
+      border-radius: 10rem;
+      padding: 0.1rem 0.8rem 0.1rem 0.9rem;
+      white-space: nowrap;
+
+      svg {
+        flex-shrink: 0;
+      }
     }
 
     &__desc {
