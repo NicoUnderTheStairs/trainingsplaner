@@ -12,6 +12,7 @@ import {
 import { getAuth } from "firebase/auth";
 import Navigation from "../components/navigation/Navigation";
 import SketchThumbnail from "../components/sketch/Sketchthumbnail";
+import KraftDetail from "./KraftDetail";
 import type { Exercise } from "../../types/Exercise";
 import type { SketchData } from "../../types/Sketch";
 import db from "../../firebase";
@@ -25,7 +26,7 @@ import { useGetUserData } from "../../hooks/useGetUserData";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const AVAILABLE_TAGS = [
+export const AVAILABLE_TAGS = [
   "Warmup",
   "Defense",
   "Attack",
@@ -345,7 +346,7 @@ const BallPalette = ({ active }: { active: boolean }) => (
 
 // ─── Sketch editor ────────────────────────────────────────────────────────────
 
-const SketchEditor = ({
+export const SketchEditor = ({
   sketch,
   onChange,
 }: {
@@ -1323,6 +1324,10 @@ const ExerciseDetail = () => {
         <p style={{ padding: "4rem 11.2rem" }}>Exercise not found.</p>
       </>
     );
+
+  if (exercise.title?.trim().toLowerCase() === "kraft") {
+    return <KraftDetail exercise={exercise} />;
+  }
 
   const hasVariants = variants.length > 0;
 

@@ -1,0 +1,314 @@
+.kraftdetail {
+  margin: 4.4rem 0;
+  padding-bottom: 8rem;
+
+  &__inner {
+    padding: 0 11.2rem;
+  }
+
+  &__back {
+    margin-bottom: 2.4rem;
+  }
+
+  // ── Overview ───────────────────────────────────────────────────────────────
+
+  &__layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 3.2rem;
+    align-items: start;
+  }
+
+  &__info {
+    display: flex;
+    flex-direction: column;
+    gap: 1.6rem;
+  }
+
+  &__title {
+    font-size: 3.6rem;
+    font-weight: 900;
+    text-transform: uppercase;
+    color: $black;
+    margin: 0;
+  }
+
+  &__tags {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+
+    &__item {
+      position: relative;
+      padding: 1.2rem 1.6rem 1.2rem 3.2rem;
+      background: $secondary;
+      border: 0.2rem solid $black;
+      border-radius: 1rem;
+      font-size: 1.6rem;
+      font-weight: 600;
+      color: $black;
+
+      &::before {
+        content: "";
+        position: absolute;
+        left: 1.4rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 0.7rem;
+        height: 0.7rem;
+        border-radius: 50%;
+        background: $primary-3;
+      }
+    }
+  }
+
+  &__empty {
+    font-size: 1.5rem;
+    color: $gray-600;
+  }
+
+  &__start {
+    align-self: flex-start;
+    margin-top: 0.8rem;
+  }
+
+  &__sketch {
+    border: 0.3rem solid $black;
+    border-radius: 1.4rem;
+    overflow: hidden;
+    aspect-ratio: 560 / 440;
+    background: $white;
+
+    &--empty {
+      background: $secondary;
+    }
+  }
+
+  &__sketch__panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+  }
+
+  // Neutralize the unrelated top-level .exercisedetail margin/padding that
+  // comes along for the ride when borrowing its nested .sketch__* styles.
+  &__sketch__edit-scope {
+    margin: 0;
+    padding-bottom: 0;
+  }
+
+  &__sketch__edit__actions {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: flex-end;
+  }
+
+  // Level/difficulty isn't relevant for Kraft — hide both the read-only
+  // badge and the edit-mode picker without touching the shared component.
+  &__info > .difficulty {
+    display: none;
+  }
+
+  // ── Edit mode ──────────────────────────────────────────────────────────────
+
+  &__actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__edit__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+
+    &__label {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: $gray-600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+  }
+
+  &__edit__difficulty {
+    display: none;
+  }
+
+  &__edit__actions {
+    display: flex;
+    gap: 1.2rem;
+    justify-content: flex-end;
+    margin-top: 0.8rem;
+  }
+
+  .exercisedetail__edit__input {
+    width: 100%;
+    border: 0.2rem solid $black;
+    border-radius: 1rem;
+    padding: 1rem 1.4rem;
+    font-size: 1.6rem;
+    font-family: $font-family;
+    color: $black;
+    background: $white;
+    resize: vertical;
+
+    &--title {
+      font-size: 2.4rem;
+      font-weight: 900;
+      text-transform: uppercase;
+    }
+
+    &:focus {
+      outline: none;
+      box-shadow: 0.2rem 0.2rem 0 $black;
+    }
+  }
+
+  .exercisedetail__edit__difficulty__btns {
+    display: flex;
+    gap: 0.6rem;
+  }
+
+  .exercisedetail__edit__difficulty__btn {
+    width: 3.6rem;
+    height: 3.6rem;
+    border: 0.2rem solid $black;
+    border-radius: 0.8rem;
+    background: $white;
+    font-weight: 700;
+    cursor: pointer;
+
+    &--active {
+      background: $primary-1;
+    }
+  }
+
+  .exercisedetail__edit__tags {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+
+  // ── Session (timer flow) ──────────────────────────────────────────────────
+
+  &__session {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.6rem;
+    text-align: center;
+    padding: 6rem 2rem;
+    max-width: 48rem;
+    margin: 0 auto;
+
+    &__progress {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: $gray-600;
+      letter-spacing: 0.05em;
+    }
+
+    &__title {
+      font-size: 3.2rem;
+      font-weight: 900;
+      text-transform: uppercase;
+      color: $black;
+      margin: 0;
+    }
+
+    &__timer {
+      font-size: 9rem;
+      font-weight: 900;
+      color: $primary-3;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+
+      &--rest {
+        color: $primary-5;
+      }
+    }
+
+    &__controls {
+      display: flex;
+      gap: 1.2rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    &__next {
+      margin-top: 0.8rem;
+    }
+
+    &__hint {
+      font-size: 1.6rem;
+      color: $gray-600;
+      margin: 0;
+    }
+
+    &__stop {
+      margin-top: 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 3.6rem;
+      height: 3.6rem;
+      border-radius: 50%;
+      background: $secondary;
+      border: 0.2rem solid $primary-3;
+      color: $primary-3;
+      cursor: pointer;
+      transition: all $ease;
+
+      &:hover {
+        background: $primary-3;
+        color: $white;
+        transform: translate(-0.1rem, -0.1rem);
+        box-shadow: 0.25rem 0.25rem 0 darken($primary-3, 10%);
+      }
+
+      &:active {
+        transform: translate(0, 0);
+        box-shadow: none;
+      }
+    }
+  }
+
+  &__icon-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
+  @media (max-width: #{$screen-lg-min}) {
+    &__inner {
+      padding: 0 4.8rem;
+    }
+  }
+
+  @media (max-width: #{$screen-md-min}) {
+    &__inner {
+      padding: 0 2.4rem;
+    }
+
+    &__layout {
+      grid-template-columns: 1fr;
+    }
+
+    &__session__timer {
+      font-size: 6.4rem;
+    }
+  }
+}
