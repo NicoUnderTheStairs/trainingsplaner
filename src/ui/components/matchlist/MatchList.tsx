@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import {
   addDoc,
   collection,
@@ -605,13 +605,29 @@ const MatchList = () => {
         data.sort((a, b) => {
           const da = (a.date as any)?.toDate?.() ?? new Date(a.date as any);
           const db_ = (b.date as any)?.toDate?.() ?? new Date(b.date as any);
-          return db_.getTime() - da.getTime();
+          return da.getTime() - db_.getTime(); // oldest first
         });
         setMatches(data);
       })
       .catch(() => setError("Failed to load matches."))
       .finally(() => setLoading(false));
   }, [teamId]);
+
+  // Scroll to the next upcoming match once matches have loaded
+  const hasScrolledToNextRef = useRef(false);
+  useEffect(() => {
+    if (hasScrolledToNextRef.current || matches.length === 0) return;
+    const todayKey = toDateKey(new Date());
+    const nextMatch = matches.find((m) => toDateKey(m.date) >= todayKey);
+    hasScrolledToNextRef.current = true;
+    if (nextMatch) {
+      setTimeout(() => {
+        document
+          .getElementById(`match-card-${nextMatch.id}`)
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 50);
+    }
+  }, [matches]);
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
@@ -678,6 +694,10 @@ const MatchList = () => {
       (locationFilter === "away" && !m.isHomeGame);
     return matchesSearch && matchesLocation;
   });
+
+  const firstUpcomingIndex = filtered.findIndex(
+    (m) => toDateKey(m.date) >= todayKey,
+  );
 
   return (
     <div className="matchlist section">
@@ -1213,55 +1233,74 @@ const MatchList = () => {
                     </div>
                   ) : (
                     <div className="matchlist__cards">
-                      {filtered.map((match) => (
-                        <div
-                          key={match.id}
-                          id={`match-card-${match.id}`}
-                          className={`matchlist__card matchlist__card${toDateKey(match.date) === selectedDay ? " matchlist__card--selected" : ""}`}
-                          onClick={() =>
-                            navigate(`/match-detail/${teamId}/${match.id}`)
-                          }
-                        >
-                          <div className="matchlist__card__accent matchlist__card__accent" />
+                      {filtered.map((match, index) => {
+                        const isPast = toDateKey(match.date) < todayKey;
+                        const showDivider =
+                          firstUpcomingIndex > 0 && index === firstUpcomingIndex;
+                        return (
+                          <Fragment key={match.id}>
+                            {showDivider && (
+                              <div className="matchlist__divider">
+                                <span>Upcoming</span>
+                              </div>
+                            )}
+                            <div
+                              id={`match-card-${match.id}`}
+                              className={[
+                                "matchlist__card",
+                                toDateKey(match.date) === selectedDay
+                                  ? "matchlist__card--selected"
+                                  : "",
+                                isPast ? "matchlist__card--past" : "",
+                              ]
+                                .filter(Boolean)
+                                .join(" ")}
+                              onClick={() =>
+                                navigate(`/match-detail/${teamId}/${match.id}`)
+                              }
+                            >
+                              <div className="matchlist__card__accent matchlist__card__accent" />
 
-                          <div className="matchlist__card__body">
-                            <div className="matchlist__card__top">
-                              <span className="matchlist__card__date">
-                                {formatDate(match.date)}
-                              </span>
-                              <span
-                                className={`matchlist__badge matchlist__badge--${match.isHomeGame ? "home" : "away"}`}
-                              >
-                                {match.isHomeGame ? "Home" : "Away"}
-                              </span>
-                            </div>
+                              <div className="matchlist__card__body">
+                                <div className="matchlist__card__top">
+                                  <span className="matchlist__card__date">
+                                    {formatDate(match.date)}
+                                  </span>
+                                  <span
+                                    className={`matchlist__badge matchlist__badge--${match.isHomeGame ? "home" : "away"}`}
+                                  >
+                                    {match.isHomeGame ? "Home" : "Away"}
+                                  </span>
+                                </div>
 
-                            <h3 className="matchlist__card__title">
-                              Limmattal vs. {match.opponent}
-                            </h3>
+                                <h3 className="matchlist__card__title">
+                                  Limmattal vs. {match.opponent}
+                                </h3>
 
-                            <div className="matchlist__card__footer">
-                              <div className="matchlist__card__exercises">
-                                <span>
-                                  {(match.lineup ?? []).length} player
-                                  {(match.lineup ?? []).length !== 1 ? "s" : ""}
-                                </span>
-                                <svg
-                                  width="16"
-                                  height="10"
-                                  viewBox="0 0 23 12"
-                                  fill="none"
-                                >
-                                  <path
-                                    d="M1 5.25004H0.25V6.75004H1V5.25004ZM22.5303 6.53037C22.8232 6.23748 22.8232 5.7626 22.5303 5.46971L17.7574 0.696739C17.4645 0.403839 16.9896 0.403839 16.6967 0.696739C16.4038 0.989639 16.4038 1.46454 16.6967 1.75744L20.9393 6.00004L16.6967 10.2427C16.4038 10.5356 16.4038 11.0104 16.6967 11.3033C16.9896 11.5962 17.4645 11.5962 17.7574 11.3033L22.5303 6.53037ZM1 6.75004L22 6.75004V5.25004L1 5.25004V6.75004Z"
-                                    fill="currentColor"
-                                  />
-                                </svg>
+                                <div className="matchlist__card__footer">
+                                  <div className="matchlist__card__exercises">
+                                    <span>
+                                      {(match.lineup ?? []).length} player
+                                      {(match.lineup ?? []).length !== 1 ? "s" : ""}
+                                    </span>
+                                    <svg
+                                      width="16"
+                                      height="10"
+                                      viewBox="0 0 23 12"
+                                      fill="none"
+                                    >
+                                      <path
+                                        d="M1 5.25004H0.25V6.75004H1V5.25004ZM22.5303 6.53037C22.8232 6.23748 22.8232 5.7626 22.5303 5.46971L17.7574 0.696739C17.4645 0.403839 16.9896 0.403839 16.6967 0.696739C16.4038 0.989639 16.4038 1.46454 16.6967 1.75744L20.9393 6.00004L16.6967 10.2427C16.4038 10.5356 16.4038 11.0104 16.6967 11.3033C16.9896 11.5962 17.4645 11.5962 17.7574 11.3033L22.5303 6.53037ZM1 6.75004L22 6.75004V5.25004L1 5.25004V6.75004Z"
+                                        fill="currentColor"
+                                      />
+                                    </svg>
+                                  </div>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </div>
-                      ))}
+                          </Fragment>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
