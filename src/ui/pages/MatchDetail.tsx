@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
-import { collection, deleteDoc, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
+import { collection, deleteDoc, doc, getDoc, getDocs, Timestamp, updateDoc } from "firebase/firestore";
 import { useNavigate, useParams } from "react-router-dom";
 import Navigation from "../components/navigation/Navigation";
 import type { Match, Player } from "../../types/Match";
 import db from "../../firebase";
 import { useSecureFile, isPdfKey } from "../../hooks/useSecureFile";
+import PlayerLineup from "../components/matchwizard/playerLineup";
+import { saveNewLineupPlayers, toLineup } from "../../services/matchwizard/createMatch";
+import type { LineupPlayer } from "../../services/matchwizard/createMatch";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -266,6 +269,22 @@ export default function MatchDetail() {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Edit match info (opponent, date, home/away, notes, strategy)
+  const [editingInfo, setEditingInfo] = useState(false);
+  const [savingInfo, setSavingInfo] = useState(false);
+  const [infoDraft, setInfoDraft] = useState({
+    opponent: "",
+    date: "",
+    noteOnOpponent: "",
+    strategy: "",
+    isHomeGame: true,
+  });
+
+  // Edit squad (players added to the match)
+  const [editingSquad, setEditingSquad] = useState(false);
+  const [savingSquad, setSavingSquad] = useState(false);
+  const [squadDraft, setSquadDraft] = useState<LineupPlayer[]>([]);
+
   const [startingDraft, setStartingDraft] = useState<Player[]>([]);
   const [pickingLineup, setPickingLineup] = useState(false);
   const [savingLineup, setSavingLineup] = useState(false);
@@ -319,6 +338,94 @@ export default function MatchDetail() {
       })
       .finally(() => setLoading(false));
   }, [teamId, matchId]);
+
+  // ── Edit match info ────────────────────────────────────────────────────────
+
+  const handleEditInfoStart = () => {
+    if (!match) return;
+    setInfoDraft({
+      opponent: match.opponent,
+      date:
+        match.date && "toDate" in match.date
+          ? match.date.toDate().toISOString().slice(0, 10)
+          : "",
+      noteOnOpponent: match.noteOnOpponent ?? "",
+      strategy: match.strategy ?? "",
+      isHomeGame: match.isHomeGame,
+    });
+    setEditingInfo(true);
+  };
+
+  const handleEditInfoCancel = () => {
+    setEditingInfo(false);
+  };
+
+  const handleSaveInfo = async () => {
+    if (!teamId || !matchId || !match || !infoDraft.opponent.trim() || !infoDraft.date) return;
+    setSavingInfo(true);
+    try {
+      const updated = {
+        opponent: infoDraft.opponent.trim(),
+        date: Timestamp.fromDate(new Date(infoDraft.date)),
+        noteOnOpponent: infoDraft.noteOnOpponent,
+        strategy: infoDraft.strategy,
+        isHomeGame: infoDraft.isHomeGame,
+      };
+      await updateDoc(doc(db, "teams", teamId, "matches", matchId), updated);
+      setMatch((prev) => (prev ? { ...prev, ...updated } : prev));
+      setEditingInfo(false);
+    } finally {
+      setSavingInfo(false);
+    }
+  };
+
+  // ── Edit squad ─────────────────────────────────────────────────────────────
+
+  const handleEditSquadStart = () => {
+    setSquadDraft((match?.lineup ?? []).map((p) => ({ ...p })));
+    setEditingSquad(true);
+  };
+
+  const handleEditSquadCancel = () => {
+    setEditingSquad(false);
+    setSquadDraft([]);
+  };
+
+  const handleSaveSquad = async () => {
+    if (!teamId || !matchId || !match) return;
+    setSavingSquad(true);
+    try {
+      await saveNewLineupPlayers(teamId, squadDraft);
+      const cleanLineup = toLineup(squadDraft);
+
+      // Drop starting-lineup picks for players no longer in the squad
+      const key = (p: Player) => `${p.playerName}-${p.playerNumber}`;
+      const cleanLineupKeys = new Set(cleanLineup.map(key));
+      const updatedStarting = match.starting?.filter((p) =>
+        cleanLineupKeys.has(key(p)),
+      );
+
+      const payload: { lineup: Player[]; starting?: Player[] } = {
+        lineup: cleanLineup,
+      };
+      if (match.starting) payload.starting = updatedStarting;
+
+      await updateDoc(doc(db, "teams", teamId, "matches", matchId), payload);
+      setMatch((prev) =>
+        prev
+          ? {
+              ...prev,
+              lineup: cleanLineup,
+              ...(match.starting ? { starting: updatedStarting } : {}),
+            }
+          : prev,
+      );
+      setEditingSquad(false);
+      setSquadDraft([]);
+    } finally {
+      setSavingSquad(false);
+    }
+  };
 
   const handleDeleteMatch = async () => {
     if (!teamId || !matchId) return;
@@ -485,73 +592,205 @@ export default function MatchDetail() {
           </button>
 
           <div className="matchdetail__topbar__right">
-            <button className="btn__wired" onClick={openRefInspection}>
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <rect x="1" y="2" width="14" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-                <circle cx="5.5" cy="7" r="2" stroke="currentColor" strokeWidth="1.4"/>
-                <path d="M3 12c0-1.4 1.1-2.5 2.5-2.5S8 10.6 8 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-                <path d="M10 6h3M10 9h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
-              </svg>
-              Ref Inspection
-            </button>
-
-            {!deleteConfirm ? (
-              <button className="matchdetail__delete-btn" onClick={() => setDeleteConfirm(true)}>
-                <svg width="13" height="15" viewBox="0 0 13 15" fill="none">
-                  <path d="M1 3.5H12M4.5 3.5V2H8.5V3.5M2 3.5L3 13H10L11 3.5H2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                Delete Match
-              </button>
+            {editingInfo ? (
+              <>
+                <button
+                  className="btn__wired"
+                  onClick={handleEditInfoCancel}
+                  disabled={savingInfo}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn__primary"
+                  onClick={handleSaveInfo}
+                  disabled={savingInfo || !infoDraft.opponent.trim() || !infoDraft.date}
+                >
+                  {savingInfo ? "Saving…" : "Save"}
+                </button>
+              </>
             ) : (
-            <div className="matchdetail__delete-confirm">
-              <span>Delete this match?</span>
-              <button
-                className="matchdetail__delete-confirm__cancel"
-                onClick={() => setDeleteConfirm(false)}
-              >
-                Cancel
-              </button>
-              <button
-                className="matchdetail__delete-confirm__ok"
-                onClick={handleDeleteMatch}
-                disabled={deleting}
-              >
-                {deleting ? "Deleting…" : "Yes, Delete"}
-              </button>
-            </div>
+              <>
+                <button className="btn__wired" onClick={handleEditInfoStart}>
+                  <svg width="14" height="14" viewBox="0 0 18 24" fill="none">
+                    <path
+                      d="M16.8756 21.5929H1.12977C0.831474 21.5929 0.545402 21.7198 0.334478 21.9454C0.123556 22.1711 0.00506036 22.4772 0.00506036 22.7964C0.00506036 23.1156 0.123556 23.4217 0.334478 23.6474C0.545402 23.873 0.831474 23.9999 1.12977 23.9999H16.8756C17.1739 23.9999 17.46 23.873 17.671 23.6474C17.8818 23.4217 18.0004 23.1156 18.0004 22.7964C18.0004 22.4772 17.8818 22.1711 17.671 21.9454C17.46 21.7198 17.1739 21.5929 16.8756 21.5929Z"
+                      fill="currentColor"
+                    />
+                    <path
+                      d="M1.12943 19.1861H1.23066L5.92067 18.7288C6.43444 18.674 6.91495 18.4318 7.28156 18.0428L17.404 7.21152C17.7968 6.76739 18.0091 6.17473 17.9944 5.5634C17.9796 4.95206 17.739 4.37192 17.3251 3.9501L14.2435 0.652573C13.8413 0.248321 13.3142 0.0163667 12.7626 0.000833716C12.211 -0.0146993 11.6733 0.187273 11.2518 0.568331L1.12943 11.3996C0.765888 11.7919 0.53953 12.3061 0.48835 12.8558L0.00472708 17.8744C-0.0104239 18.0505 0.0109516 18.2282 0.0673295 18.3947C0.123707 18.5611 0.2137 18.7122 0.330892 18.8371C0.435984 18.9486 0.56062 19.0369 0.69765 19.0968C0.834682 19.1567 0.981413 19.187 1.12943 19.1861ZM12.6802 2.33744L15.7506 5.62292L13.5012 7.9697L10.487 4.74439L12.6802 2.33744ZM2.67028 13.0604L9.00236 6.33298L12.0391 9.58236L5.74072 16.3218L2.3666 16.6588L2.67028 13.0604Z"
+                      fill="currentColor"
+                    />
+                  </svg>
+                  Edit
+                </button>
+
+                <button className="btn__wired" onClick={openRefInspection}>
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <rect x="1" y="2" width="14" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+                    <circle cx="5.5" cy="7" r="2" stroke="currentColor" strokeWidth="1.4"/>
+                    <path d="M3 12c0-1.4 1.1-2.5 2.5-2.5S8 10.6 8 12" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                    <path d="M10 6h3M10 9h2" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
+                  </svg>
+                  Ref Inspection
+                </button>
+
+                {!deleteConfirm ? (
+                  <button className="matchdetail__delete-btn" onClick={() => setDeleteConfirm(true)}>
+                    <svg width="13" height="15" viewBox="0 0 13 15" fill="none">
+                      <path d="M1 3.5H12M4.5 3.5V2H8.5V3.5M2 3.5L3 13H10L11 3.5H2Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                    Delete Match
+                  </button>
+                ) : (
+                <div className="matchdetail__delete-confirm">
+                  <span>Delete this match?</span>
+                  <button
+                    className="matchdetail__delete-confirm__cancel"
+                    onClick={() => setDeleteConfirm(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    className="matchdetail__delete-confirm__ok"
+                    onClick={handleDeleteMatch}
+                    disabled={deleting}
+                  >
+                    {deleting ? "Deleting…" : "Yes, Delete"}
+                  </button>
+                </div>
+                )}
+              </>
             )}
           </div>
         </div>
 
         {/* ── Header ── */}
-        <div className="matchdetail__header">
-          <h1 className="matchdetail__opponent">
-            Limmattal vs. {match.opponent}
-          </h1>
-          <div className="matchdetail__header__meta">
-            <span className="matchdetail__date">{matchDate}</span>
-            <span
-              className={`matchlist__badge matchlist__badge--${match.isHomeGame ? "home" : "away"}`}
-            >
-              {match.isHomeGame ? "Home" : "Away"}
-            </span>
+        {editingInfo ? (
+          <div className="matchdetail__header">
+            <div className="trainingwizard__input__field">
+              <input
+                id="EditOpponent"
+                className="trainingwizard__input"
+                type="text"
+                placeholder=" "
+                value={infoDraft.opponent}
+                onChange={(e) =>
+                  setInfoDraft((prev) => ({ ...prev, opponent: e.target.value }))
+                }
+              />
+              <label className="trainingwizard__label" htmlFor="EditOpponent">
+                Opponent
+              </label>
+            </div>
+
+            <div className="trainingwizard__input__field">
+              <input
+                id="EditMatchDate"
+                className="trainingwizard__input"
+                type="date"
+                placeholder=" "
+                value={infoDraft.date}
+                onChange={(e) =>
+                  setInfoDraft((prev) => ({ ...prev, date: e.target.value }))
+                }
+              />
+              <label className="trainingwizard__label" htmlFor="EditMatchDate">
+                Match Date
+              </label>
+            </div>
+
+            <div className="matchwizard__location">
+              <button
+                type="button"
+                className={`matchwizard__location__btn${infoDraft.isHomeGame ? " matchwizard__location__btn--active" : ""}`}
+                onClick={() =>
+                  setInfoDraft((prev) => ({ ...prev, isHomeGame: true }))
+                }
+              >
+                Home
+              </button>
+              <button
+                type="button"
+                className={`matchwizard__location__btn${!infoDraft.isHomeGame ? " matchwizard__location__btn--active" : ""}`}
+                onClick={() =>
+                  setInfoDraft((prev) => ({ ...prev, isHomeGame: false }))
+                }
+              >
+                Away
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="matchdetail__header">
+            <h1 className="matchdetail__opponent">
+              Limmattal vs. {match.opponent}
+            </h1>
+            <div className="matchdetail__header__meta">
+              <span className="matchdetail__date">{matchDate}</span>
+              <span
+                className={`matchlist__badge matchlist__badge--${match.isHomeGame ? "home" : "away"}`}
+              >
+                {match.isHomeGame ? "Home" : "Away"}
+              </span>
+            </div>
+          </div>
+        )}
 
         {/* ── Notes on opponent ── */}
-        {match.noteOnOpponent && (
+        {editingInfo ? (
           <section className="matchdetail__section">
             <h2 className="matchdetail__section__title">Notes on Opponent</h2>
-            <p className="matchdetail__section__text">{match.noteOnOpponent}</p>
+            <div className="trainingwizard__input__field trainingwizard__input__field--description">
+              <textarea
+                id="EditNoteOnOpponent"
+                className="trainingwizard__input"
+                placeholder=" "
+                value={infoDraft.noteOnOpponent}
+                onChange={(e) =>
+                  setInfoDraft((prev) => ({ ...prev, noteOnOpponent: e.target.value }))
+                }
+              />
+              <label className="trainingwizard__label" htmlFor="EditNoteOnOpponent">
+                Notes on Opponent (optional)
+              </label>
+            </div>
           </section>
+        ) : (
+          match.noteOnOpponent && (
+            <section className="matchdetail__section">
+              <h2 className="matchdetail__section__title">Notes on Opponent</h2>
+              <p className="matchdetail__section__text">{match.noteOnOpponent}</p>
+            </section>
+          )
         )}
 
         {/* ── Strategy ── */}
-        {match.strategy && (
+        {editingInfo ? (
           <section className="matchdetail__section">
             <h2 className="matchdetail__section__title">Strategy</h2>
-            <p className="matchdetail__section__text">{match.strategy}</p>
+            <div className="trainingwizard__input__field trainingwizard__input__field--description">
+              <textarea
+                id="EditStrategy"
+                className="trainingwizard__input"
+                placeholder=" "
+                value={infoDraft.strategy}
+                onChange={(e) =>
+                  setInfoDraft((prev) => ({ ...prev, strategy: e.target.value }))
+                }
+              />
+              <label className="trainingwizard__label" htmlFor="EditStrategy">
+                Strategy (optional)
+              </label>
+            </div>
           </section>
+        ) : (
+          match.strategy && (
+            <section className="matchdetail__section">
+              <h2 className="matchdetail__section__title">Strategy</h2>
+              <p className="matchdetail__section__text">{match.strategy}</p>
+            </section>
+          )
         )}
 
         {/* ── Starting Lineup ── */}
@@ -772,11 +1011,46 @@ export default function MatchDetail() {
 
         {/* ── Squad grouped by position ── */}
         <section className="matchdetail__section">
-          <h2 className="matchdetail__section__title">
-            Squad ({match.lineup?.length ?? 0} players)
-          </h2>
+          <div className="matchdetail__section__titlerow">
+            <h2 className="matchdetail__section__title">
+              Squad ({(editingSquad ? squadDraft : match.lineup ?? []).length}{" "}
+              players)
+            </h2>
+            {!editingSquad && (
+              <button
+                className="matchdetail__edit-lineup-btn"
+                onClick={handleEditSquadStart}
+              >
+                Edit
+              </button>
+            )}
+          </div>
 
-          {!match.lineup || match.lineup.length === 0 ? (
+          {editingSquad ? (
+            <>
+              <PlayerLineup
+                teamId={teamId}
+                lineup={squadDraft}
+                onChange={({ lineup }) => setSquadDraft(lineup)}
+              />
+              <div className="matchdetail__picker__footer">
+                <button
+                  className="btn__wired"
+                  onClick={handleEditSquadCancel}
+                  disabled={savingSquad}
+                >
+                  Cancel
+                </button>
+                <button
+                  className="btn__primary"
+                  onClick={handleSaveSquad}
+                  disabled={savingSquad || squadDraft.length === 0}
+                >
+                  {savingSquad ? "Saving…" : "Save Squad"}
+                </button>
+              </div>
+            </>
+          ) : !match.lineup || match.lineup.length === 0 ? (
             <p className="matchdetail__empty">
               No players added to this match.
             </p>

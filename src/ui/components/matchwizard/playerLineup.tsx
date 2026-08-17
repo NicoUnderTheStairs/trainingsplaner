@@ -66,14 +66,18 @@ const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange }) => {
       .finally(() => setLoadingRoster(false));
   }, [teamId]);
 
-  const selectedIds = new Set(
-    lineup.filter((p) => !p._new).map((p) => (p as any)._rosterId as string)
+  const playerKey = (p: { playerName: string; playerNumber: number }) =>
+    `${p.playerName}-${p.playerNumber}`;
+
+  const selectedKeys = new Set(
+    lineup.filter((p) => !p._new).map(playerKey)
   );
 
   const toggleRosterPlayer = (player: RosterPlayer) => {
-    const isSelected = selectedIds.has(player.id);
+    const key = playerKey(player);
+    const isSelected = selectedKeys.has(key);
     if (isSelected) {
-      onChange({ lineup: lineup.filter((p) => (p as any)._rosterId !== player.id) });
+      onChange({ lineup: lineup.filter((p) => p._new || playerKey(p) !== key) });
     } else {
       onChange({
         lineup: [
@@ -82,9 +86,7 @@ const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange }) => {
             playerNumber: player.playerNumber,
             playerName: player.playerName,
             playerPosition: player.playerPosition,
-            _new: false,
-            _rosterId: player.id,
-          } as LineupPlayer & { _rosterId: string },
+          },
         ],
       });
     }
@@ -139,7 +141,7 @@ const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange }) => {
         <div className="matchwizard__roster">
           <h3 className="matchwizard__roster__title">Roster</h3>
           {roster.map((player) => {
-            const selected = selectedIds.has(player.id);
+            const selected = selectedKeys.has(playerKey(player));
             return (
               <button
                 key={player.id}
