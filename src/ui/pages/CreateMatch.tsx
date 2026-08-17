@@ -107,6 +107,7 @@ export default function CreateMatch() {
               teamId={teamId}
               lineup={formData.lineup}
               onChange={handleChange}
+              autoSelectAll
             />
             <div className="excercisewizard__btn__wrapper">
               <button className="excercisewizard__btn" onClick={() => setCurrentStep(1)}>

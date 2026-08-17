@@ -38,6 +38,8 @@ interface Props {
   teamId: string | null | undefined;
   lineup: LineupPlayer[];
   onChange: (data: { lineup: LineupPlayer[] }) => void;
+  // Pre-select the whole roster once it loads (used when creating a match; not for editing one)
+  autoSelectAll?: boolean;
 }
 
 const emptyDraft = () => ({
@@ -46,7 +48,7 @@ const emptyDraft = () => ({
   playerPosition: POSITIONS[0],
 });
 
-const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange }) => {
+const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange, autoSelectAll }) => {
   const [roster, setRoster] = useState<RosterPlayer[]>([]);
   const [loadingRoster, setLoadingRoster] = useState(true);
   const [draft, setDraft] = useState(emptyDraft());
@@ -59,11 +61,21 @@ const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange }) => {
     if (!teamId) { setLoadingRoster(false); return; }
     getDocs(collection(db, "teams", teamId, "players"))
       .then((snap) => {
-        setRoster(
-          snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<RosterPlayer, "id">) }))
-        );
+        const fetchedRoster = snap.docs.map((d) => ({ id: d.id, ...(d.data() as Omit<RosterPlayer, "id">) }));
+        setRoster(fetchedRoster);
+        if (autoSelectAll && lineup.length === 0 && fetchedRoster.length > 0) {
+          onChange({
+            lineup: fetchedRoster.map((player) => ({
+              playerNumber: player.playerNumber,
+              playerName: player.playerName,
+              playerPosition: player.playerPosition,
+            })),
+          });
+        }
       })
       .finally(() => setLoadingRoster(false));
+    // Only re-run when the team changes — this is a one-time load + prefill, not a live sync.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teamId]);
 
   const playerKey = (p: { playerName: string; playerNumber: number }) =>
