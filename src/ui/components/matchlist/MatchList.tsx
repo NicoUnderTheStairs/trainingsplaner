@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   addDoc,
   collection,
@@ -9,10 +9,11 @@ import {
   getDocs,
   setDoc,
   updateDoc,
+  writeBatch,
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import db from "../../../firebase";
-import type { Match } from "../../../types/Match";
+import type { Match, Player as MatchPlayer } from "../../../types/Match";
 import { useTeamId } from "../../../hooks/useTeamId";
 import { useSecureFile } from "../../../hooks/useSecureFile";
 
@@ -294,6 +295,14 @@ const MatchList = () => {
   const [playerError, setPlayerError] = useState("");
   const [playerSaving, setPlayerSaving] = useState(false);
 
+  // Offer to cascade a roster player's correction into matches that already reference them
+  const [syncPrompt, setSyncPrompt] = useState<{
+    rosterId: string;
+    updates: { playerName: string; playerNumber: number; playerPosition: string };
+    matches: { id: string; lineup?: MatchPlayer[]; starting?: MatchPlayer[] }[];
+  } | null>(null);
+  const [syncing, setSyncing] = useState(false);
+
   const [coaches, setCoaches] = useState<{
     firstCoach: string;
     secondCoach: string;
@@ -487,6 +496,7 @@ const MatchList = () => {
     setPlayersOpen(true);
     setPlayerMode("list");
     setEditingCoach(null);
+    setSyncPrompt(null);
     loadPlayers();
     loadCoaches();
   };
@@ -535,6 +545,45 @@ const MatchList = () => {
     }
   };
 
+  // Finds matches whose lineup/starting still reference this roster player,
+  // so an edit can offer to correct them too instead of leaving stale copies behind.
+  const findMatchesReferencingPlayer = async (rosterId: string) => {
+    if (!teamId) return [];
+    const snap = await getDocs(collection(db, "teams", teamId, "matches"));
+    const targets: { id: string; lineup?: MatchPlayer[]; starting?: MatchPlayer[] }[] = [];
+    snap.docs.forEach((d) => {
+      const data = d.data() as Match;
+      const inLineup = (data.lineup ?? []).some((p) => p.rosterId === rosterId);
+      const inStarting = (data.starting ?? []).some((p) => p.rosterId === rosterId);
+      if (inLineup || inStarting) {
+        targets.push({ id: d.id, lineup: data.lineup, starting: data.starting });
+      }
+    });
+    return targets;
+  };
+
+  const applyPlayerSync = async () => {
+    if (!teamId || !syncPrompt) return;
+    setSyncing(true);
+    try {
+      const batch = writeBatch(db);
+      syncPrompt.matches.forEach((m) => {
+        const patch = (arr?: MatchPlayer[]) =>
+          arr?.map((p) =>
+            p.rosterId === syncPrompt.rosterId ? { ...p, ...syncPrompt.updates } : p,
+          );
+        const payload: { lineup?: MatchPlayer[]; starting?: MatchPlayer[] } = {};
+        if (m.lineup) payload.lineup = patch(m.lineup);
+        if (m.starting) payload.starting = patch(m.starting);
+        batch.update(doc(db, "teams", teamId, "matches", m.id), payload);
+      });
+      await batch.commit();
+      setSyncPrompt(null);
+    } finally {
+      setSyncing(false);
+    }
+  };
+
   const updatePlayer = async () => {
     if (!teamId || !editingPlayer) return;
     if (!playerDraft.playerName.trim()) {
@@ -547,31 +596,28 @@ const MatchList = () => {
     }
     setPlayerSaving(true);
     try {
-      await updateDoc(doc(db, "teams", teamId, "players", editingPlayer.id), {
+      const updates = {
         playerName: playerDraft.playerName.trim(),
         playerNumber: playerDraft.playerNumber,
         playerPosition: playerDraft.playerPosition,
-      });
+      };
+      await updateDoc(doc(db, "teams", teamId, "players", editingPlayer.id), updates);
       setPlayers((prev) =>
-        prev.map((p) =>
-          p.id === editingPlayer.id
-            ? {
-                ...p,
-                playerName: playerDraft.playerName.trim(),
-                playerNumber: playerDraft.playerNumber,
-                playerPosition: playerDraft.playerPosition,
-              }
-            : p,
-        ),
+        prev.map((p) => (p.id === editingPlayer.id ? { ...p, ...updates } : p)),
       );
       setPlayerMode("list");
-      setEditingPlayer(null);
       setPlayerDraft({
         playerName: "",
         playerNumber: 0,
         playerPosition: POSITIONS[0],
       });
       setPlayerError("");
+
+      const affectedMatches = await findMatchesReferencingPlayer(editingPlayer.id);
+      if (affectedMatches.length > 0) {
+        setSyncPrompt({ rosterId: editingPlayer.id, updates, matches: affectedMatches });
+      }
+      setEditingPlayer(null);
     } catch {
       setPlayerError("Failed to update player. Please try again.");
     } finally {
@@ -695,9 +741,58 @@ const MatchList = () => {
     return matchesSearch && matchesLocation;
   });
 
-  const firstUpcomingIndex = filtered.findIndex(
-    (m) => toDateKey(m.date) >= todayKey,
-  );
+  const hinrundeMatches = filtered.filter((m) => !m.isRueckrunde);
+  const rueckrundeMatches = filtered.filter((m) => m.isRueckrunde);
+
+  const renderMatchCard = (match: Match) => {
+    const isPast = toDateKey(match.date) < todayKey;
+    return (
+      <div
+        key={match.id}
+        id={`match-card-${match.id}`}
+        className={[
+          "matchlist__card",
+          toDateKey(match.date) === selectedDay ? "matchlist__card--selected" : "",
+          isPast ? "matchlist__card--past" : "",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+        onClick={() => navigate(`/match-detail/${teamId}/${match.id}`)}
+      >
+        <div className="matchlist__card__accent matchlist__card__accent" />
+
+        <div className="matchlist__card__body">
+          <div className="matchlist__card__top">
+            <span className="matchlist__card__date">{formatDate(match.date)}</span>
+            <span
+              className={`matchlist__badge matchlist__badge--${match.isHomeGame ? "home" : "away"}`}
+            >
+              {match.isHomeGame ? "Home" : "Away"}
+            </span>
+          </div>
+
+          <h3 className="matchlist__card__title">
+            Limmattal vs. {match.opponent}
+          </h3>
+
+          <div className="matchlist__card__footer">
+            <div className="matchlist__card__exercises">
+              <span>
+                {(match.lineup ?? []).length} player
+                {(match.lineup ?? []).length !== 1 ? "s" : ""}
+              </span>
+              <svg width="16" height="10" viewBox="0 0 23 12" fill="none">
+                <path
+                  d="M1 5.25004H0.25V6.75004H1V5.25004ZM22.5303 6.53037C22.8232 6.23748 22.8232 5.7626 22.5303 5.46971L17.7574 0.696739C17.4645 0.403839 16.9896 0.403839 16.6967 0.696739C16.4038 0.989639 16.4038 1.46454 16.6967 1.75744L20.9393 6.00004L16.6967 10.2427C16.4038 10.5356 16.4038 11.0104 16.6967 11.3033C16.9896 11.5962 17.4645 11.5962 17.7574 11.3033L22.5303 6.53037ZM1 6.75004L22 6.75004V5.25004L1 5.25004V6.75004Z"
+                  fill="currentColor"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="matchlist section">
@@ -1233,74 +1328,19 @@ const MatchList = () => {
                     </div>
                   ) : (
                     <div className="matchlist__cards">
-                      {filtered.map((match, index) => {
-                        const isPast = toDateKey(match.date) < todayKey;
-                        const showDivider =
-                          firstUpcomingIndex > 0 && index === firstUpcomingIndex;
-                        return (
-                          <Fragment key={match.id}>
-                            {showDivider && (
-                              <div className="matchlist__divider">
-                                <span>Upcoming</span>
-                              </div>
-                            )}
-                            <div
-                              id={`match-card-${match.id}`}
-                              className={[
-                                "matchlist__card",
-                                toDateKey(match.date) === selectedDay
-                                  ? "matchlist__card--selected"
-                                  : "",
-                                isPast ? "matchlist__card--past" : "",
-                              ]
-                                .filter(Boolean)
-                                .join(" ")}
-                              onClick={() =>
-                                navigate(`/match-detail/${teamId}/${match.id}`)
-                              }
-                            >
-                              <div className="matchlist__card__accent matchlist__card__accent" />
+                      {hinrundeMatches.length > 0 && (
+                        <div className="matchlist__divider">
+                          <span>Hinrunde</span>
+                        </div>
+                      )}
+                      {hinrundeMatches.map(renderMatchCard)}
 
-                              <div className="matchlist__card__body">
-                                <div className="matchlist__card__top">
-                                  <span className="matchlist__card__date">
-                                    {formatDate(match.date)}
-                                  </span>
-                                  <span
-                                    className={`matchlist__badge matchlist__badge--${match.isHomeGame ? "home" : "away"}`}
-                                  >
-                                    {match.isHomeGame ? "Home" : "Away"}
-                                  </span>
-                                </div>
-
-                                <h3 className="matchlist__card__title">
-                                  Limmattal vs. {match.opponent}
-                                </h3>
-
-                                <div className="matchlist__card__footer">
-                                  <div className="matchlist__card__exercises">
-                                    <span>
-                                      {(match.lineup ?? []).length} player
-                                      {(match.lineup ?? []).length !== 1 ? "s" : ""}
-                                    </span>
-                                    <svg
-                                      width="16"
-                                      height="10"
-                                      viewBox="0 0 23 12"
-                                      fill="none"
-                                    >
-                                      <path
-                                        d="M1 5.25004H0.25V6.75004H1V5.25004ZM22.5303 6.53037C22.8232 6.23748 22.8232 5.7626 22.5303 5.46971L17.7574 0.696739C17.4645 0.403839 16.9896 0.403839 16.6967 0.696739C16.4038 0.989639 16.4038 1.46454 16.6967 1.75744L20.9393 6.00004L16.6967 10.2427C16.4038 10.5356 16.4038 11.0104 16.6967 11.3033C16.9896 11.5962 17.4645 11.5962 17.7574 11.3033L22.5303 6.53037ZM1 6.75004L22 6.75004V5.25004L1 5.25004V6.75004Z"
-                                        fill="currentColor"
-                                      />
-                                    </svg>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </Fragment>
-                        );
-                      })}
+                      {rueckrundeMatches.length > 0 && (
+                        <div className="matchlist__divider">
+                          <span>Rückrunde</span>
+                        </div>
+                      )}
+                      {rueckrundeMatches.map(renderMatchCard)}
                     </div>
                   )}
                 </div>
@@ -1355,6 +1395,33 @@ const MatchList = () => {
                     </button>
                   </div>
                 </div>
+
+                {/* ── Cascade-sync prompt ── */}
+                {syncPrompt && (
+                  <div className="matchlist__sync-prompt">
+                    <p>
+                      This player appears in {syncPrompt.matches.length} existing
+                      match{syncPrompt.matches.length !== 1 ? "es" : ""}. Apply this
+                      correction there too?
+                    </p>
+                    <div className="matchlist__sync-prompt__actions">
+                      <button
+                        className="btn__wired"
+                        onClick={() => setSyncPrompt(null)}
+                        disabled={syncing}
+                      >
+                        Skip
+                      </button>
+                      <button
+                        className="btn__primary"
+                        onClick={applyPlayerSync}
+                        disabled={syncing}
+                      >
+                        {syncing ? "Updating…" : "Update matches"}
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 {/* ── Coaches ── */}
                 <div className="matchlist__players__coaches">

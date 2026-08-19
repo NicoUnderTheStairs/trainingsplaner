@@ -937,6 +937,35 @@
     width: min(56rem, calc(100vw - 3.2rem));
   }
 
+  &__sync-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.6rem;
+    flex-wrap: wrap;
+    margin: 1.6rem 0;
+    padding: 1.4rem 1.8rem;
+    border: 0.2rem solid $primary-4;
+    border-radius: 1.4rem;
+    background: rgba($primary-4, 0.1);
+
+    p {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      font-family: $font-family;
+      color: $black;
+      flex: 1;
+      min-width: 20rem;
+    }
+
+    &__actions {
+      display: flex;
+      gap: 0.8rem;
+      flex-shrink: 0;
+    }
+  }
+
   &__players {
     &__count {
       font-size: 1.4rem;

@@ -278,6 +278,7 @@ export default function MatchDetail() {
     noteOnOpponent: "",
     strategy: "",
     isHomeGame: true,
+    isRueckrunde: false,
   });
 
   // Edit squad (players added to the match)
@@ -352,6 +353,7 @@ export default function MatchDetail() {
       noteOnOpponent: match.noteOnOpponent ?? "",
       strategy: match.strategy ?? "",
       isHomeGame: match.isHomeGame,
+      isRueckrunde: match.isRueckrunde ?? false,
     });
     setEditingInfo(true);
   };
@@ -370,6 +372,7 @@ export default function MatchDetail() {
         noteOnOpponent: infoDraft.noteOnOpponent,
         strategy: infoDraft.strategy,
         isHomeGame: infoDraft.isHomeGame,
+        isRueckrunde: infoDraft.isRueckrunde,
       };
       await updateDoc(doc(db, "teams", teamId, "matches", matchId), updated);
       setMatch((prev) => (prev ? { ...prev, ...updated } : prev));
@@ -395,8 +398,8 @@ export default function MatchDetail() {
     if (!teamId || !matchId || !match) return;
     setSavingSquad(true);
     try {
-      await saveNewLineupPlayers(teamId, squadDraft);
-      const cleanLineup = toLineup(squadDraft);
+      const squadWithIds = await saveNewLineupPlayers(teamId, squadDraft);
+      const cleanLineup = toLineup(squadWithIds);
 
       // Drop starting-lineup picks for players no longer in the squad
       const key = (p: Player) => `${p.playerName}-${p.playerNumber}`;
@@ -720,6 +723,27 @@ export default function MatchDetail() {
                 Away
               </button>
             </div>
+
+            <div className="matchwizard__location">
+              <button
+                type="button"
+                className={`matchwizard__location__btn${!infoDraft.isRueckrunde ? " matchwizard__location__btn--active" : ""}`}
+                onClick={() =>
+                  setInfoDraft((prev) => ({ ...prev, isRueckrunde: false }))
+                }
+              >
+                Hinrunde
+              </button>
+              <button
+                type="button"
+                className={`matchwizard__location__btn${infoDraft.isRueckrunde ? " matchwizard__location__btn--active" : ""}`}
+                onClick={() =>
+                  setInfoDraft((prev) => ({ ...prev, isRueckrunde: true }))
+                }
+              >
+                Rückrunde
+              </button>
+            </div>
           </div>
         ) : (
           <div className="matchdetail__header">
@@ -732,6 +756,11 @@ export default function MatchDetail() {
                 className={`matchlist__badge matchlist__badge--${match.isHomeGame ? "home" : "away"}`}
               >
                 {match.isHomeGame ? "Home" : "Away"}
+              </span>
+              <span
+                className={`matchlist__badge matchlist__badge--${match.isRueckrunde ? "rueckrunde" : "hinrunde"}`}
+              >
+                {match.isRueckrunde ? "Rückrunde" : "Hinrunde"}
               </span>
             </div>
           </div>

@@ -6,12 +6,14 @@ interface Props {
   noteOnOpponent: string;
   strategy: string;
   isHomeGame: boolean;
+  isRueckrunde: boolean;
   onChange: (data: Partial<{
     opponent: string;
     date: string;
     noteOnOpponent: string;
     strategy: string;
     isHomeGame: boolean;
+    isRueckrunde: boolean;
   }>) => void;
   onNext: () => void;
   onBack: () => void;
@@ -23,6 +25,7 @@ const MatchDefaultInfo: React.FC<Props> = ({
   noteOnOpponent,
   strategy,
   isHomeGame,
+  isRueckrunde,
   onChange,
   onNext,
   onBack,
@@ -94,6 +97,24 @@ const MatchDefaultInfo: React.FC<Props> = ({
           onClick={() => onChange({ isHomeGame: false })}
         >
           Away
+        </button>
+      </div>
+
+      {/* Hinrunde / Rückrunde toggle */}
+      <div className="matchwizard__location">
+        <button
+          type="button"
+          className={`matchwizard__location__btn${!isRueckrunde ? " matchwizard__location__btn--active" : ""}`}
+          onClick={() => onChange({ isRueckrunde: false })}
+        >
+          Hinrunde
+        </button>
+        <button
+          type="button"
+          className={`matchwizard__location__btn${isRueckrunde ? " matchwizard__location__btn--active" : ""}`}
+          onClick={() => onChange({ isRueckrunde: true })}
+        >
+          Rückrunde
         </button>
       </div>
 

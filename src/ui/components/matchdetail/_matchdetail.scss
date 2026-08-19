@@ -791,6 +791,16 @@
     background: rgba(230, 60, 47, 0.12);
     color: #c0291c;
   }
+
+  &--hinrunde {
+    background: rgba(62, 198, 212, 0.15);
+    color: #227c88;
+  }
+
+  &--rueckrunde {
+    background: rgba(98, 77, 184, 0.15);
+    color: #4c3b90;
+  }
 }
 
 // ─── Match List card overrides ────────────────────────────────────────────────

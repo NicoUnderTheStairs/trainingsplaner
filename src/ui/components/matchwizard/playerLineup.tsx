@@ -69,6 +69,7 @@ const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange, autoSelectAll
               playerNumber: player.playerNumber,
               playerName: player.playerName,
               playerPosition: player.playerPosition,
+              rosterId: player.id,
             })),
           });
         }
@@ -81,15 +82,23 @@ const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange, autoSelectAll
   const playerKey = (p: { playerName: string; playerNumber: number }) =>
     `${p.playerName}-${p.playerNumber}`;
 
-  const selectedKeys = new Set(
-    lineup.filter((p) => !p._new).map(playerKey)
-  );
+  // Prefer matching by roster id (reliable even after a rename); fall back to name+number
+  // for lineup entries saved before rosterId existed.
+  const isRosterEntrySelected = (player: RosterPlayer) =>
+    lineup.some((p) =>
+      !p._new && (p.rosterId ? p.rosterId === player.id : playerKey(p) === playerKey(player)),
+    );
 
   const toggleRosterPlayer = (player: RosterPlayer) => {
-    const key = playerKey(player);
-    const isSelected = selectedKeys.has(key);
+    const isSelected = isRosterEntrySelected(player);
     if (isSelected) {
-      onChange({ lineup: lineup.filter((p) => p._new || playerKey(p) !== key) });
+      onChange({
+        lineup: lineup.filter(
+          (p) =>
+            p._new ||
+            (p.rosterId ? p.rosterId !== player.id : playerKey(p) !== playerKey(player)),
+        ),
+      });
     } else {
       onChange({
         lineup: [
@@ -98,6 +107,7 @@ const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange, autoSelectAll
             playerNumber: player.playerNumber,
             playerName: player.playerName,
             playerPosition: player.playerPosition,
+            rosterId: player.id,
           },
         ],
       });
@@ -153,7 +163,7 @@ const PlayerLineup: React.FC<Props> = ({ teamId, lineup, onChange, autoSelectAll
         <div className="matchwizard__roster">
           <h3 className="matchwizard__roster__title">Roster</h3>
           {roster.map((player) => {
-            const selected = selectedKeys.has(playerKey(player));
+            const selected = isRosterEntrySelected(player);
             return (
               <button
                 key={player.id}

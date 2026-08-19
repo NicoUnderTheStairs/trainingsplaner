@@ -25,6 +25,7 @@ interface FormData {
   noteOnOpponent: string;
   strategy: string;
   isHomeGame: boolean;
+  isRueckrunde: boolean;
   lineup: LineupPlayer[];
 }
 
@@ -42,6 +43,7 @@ export default function CreateMatch() {
     noteOnOpponent: "",
     strategy: "",
     isHomeGame: true,
+    isRueckrunde: false,
     lineup: [],
   });
   const [isSaving, setIsSaving] = useState(false);
@@ -61,6 +63,7 @@ export default function CreateMatch() {
         noteOnOpponent: formData.noteOnOpponent,
         strategy: formData.strategy,
         isHomeGame: formData.isHomeGame,
+        isRueckrunde: formData.isRueckrunde,
         lineup: formData.lineup,
       });
       navigate(`/match-detail/${teamId}/${id}`);
@@ -95,6 +98,7 @@ export default function CreateMatch() {
             noteOnOpponent={formData.noteOnOpponent}
             strategy={formData.strategy}
             isHomeGame={formData.isHomeGame}
+            isRueckrunde={formData.isRueckrunde}
             onChange={handleChange}
             onNext={() => setCurrentStep(2)}
             onBack={() => navigate(-1)}
