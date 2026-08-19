@@ -6,6 +6,21 @@
     padding: 0 2.4rem;
   }
 
+  &__variant-banner {
+    padding: 1.2rem 1.8rem;
+    margin-bottom: 2.4rem;
+    border: 0.2rem solid $notice;
+    border-radius: 1.2rem;
+    background: rgba($notice, 0.15);
+    color: $black;
+    font-family: $font-family;
+    font-size: 1.5rem;
+
+    strong {
+      font-weight: 700;
+    }
+  }
+
   & h2 {
     margin: 0 0 1.2rem 0;
   }

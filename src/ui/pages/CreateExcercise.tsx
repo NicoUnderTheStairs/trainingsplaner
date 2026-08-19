@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { collection, getDocs } from "firebase/firestore";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 
 import Navigation from "../components/navigation/Navigation";
 import Step1 from "../components/excercisewizard/defaultInfo";
@@ -67,13 +67,29 @@ const ArrowRight = () => (
 
 export default function CreateExcercise() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   const { currentUser } = useAuth() || { currentUser: null };
   // @ts-ignore
   const userData = useGetUserData(currentUser?.uid ?? "");
 
+  // Arrived via "Add Variant" on an exercise's detail page — the variant link
+  // is already decided, so the variant-selection step is skipped entirely.
+  const variantOfId = (location.state as { variantOfId?: string } | null)
+    ?.variantOfId;
+  const [variantOfTitle, setVariantOfTitle] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!variantOfId) return;
+    getDoc(doc(db, "Excercises", variantOfId)).then((snap) => {
+      if (snap.exists()) setVariantOfTitle(snap.data().title ?? "Untitled");
+    });
+  }, [variantOfId]);
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<FormData>({});
+  const [formData, setFormData] = useState<FormData>({
+    variantIds: variantOfId ? [variantOfId] : undefined,
+  });
   const [isSaving, setIsSaving] = useState(false);
 
   const handlePrev = () => {
@@ -87,7 +103,14 @@ export default function CreateExcercise() {
   // ── Step navigation ────────────────────────────────────────────────────────
 
   const handleStep1Next = () => setCurrentStep(2);
-  const handleStep2Next = () => setCurrentStep(3);
+  // When the variant link is already known, skip step 3 (variant selection) and finish directly.
+  const handleStep2Next = () => {
+    if (variantOfId) {
+      handleFinish();
+    } else {
+      setCurrentStep(3);
+    }
+  };
 
   // ── Final submit: create exercise + link variants + notify ────────────────
 
@@ -168,6 +191,15 @@ export default function CreateExcercise() {
       <Navigation />
 
       <div className="Createexcercise">
+        {variantOfId && currentStep !== 3 && (
+          <div className="excercisewizard">
+            <div className="excercisewizard__variant-banner">
+              Adding a variant of{" "}
+              <strong>{variantOfTitle ?? "…"}</strong>
+            </div>
+          </div>
+        )}
+
         {/* ── Step 1: info — withNavigation HOC renders its own nav buttons ── */}
         {currentStep === 1 && (
           <Step1

@@ -1551,6 +1551,32 @@ const ExerciseDetail = () => {
                       </svg>
                       Edit
                     </button>
+                    <button
+                      className="exercisedetail__btn"
+                      onClick={() =>
+                        navigate("/create-exercise", {
+                          state: { variantOfId: exerciseId },
+                        })
+                      }
+                    >
+                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none">
+                        <rect
+                          x="3"
+                          y="6"
+                          width="11"
+                          height="11"
+                          rx="1.5"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                        />
+                        <path
+                          d="M6.5 6V4.5C6.5 3.67157 7.17157 3 8 3H16C16.8284 3 17.5 3.67157 17.5 4.5V12.5C17.5 13.3284 16.8284 14 16 14H14.5"
+                          stroke="currentColor"
+                          strokeWidth="1.6"
+                        />
+                      </svg>
+                      Add Variant
+                    </button>
                     {canDelete && (
                       <button
                         className="exercisedetail__btn exercisedetail__btn--danger"
