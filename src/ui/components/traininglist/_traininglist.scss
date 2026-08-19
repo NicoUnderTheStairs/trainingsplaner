@@ -623,12 +623,15 @@
   // ── Empty state ───────────────────────────────────────────────────────────
 
   &__empty {
-    padding: 6rem 0;
+    padding: 5.2rem 3.2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 2rem;
+    gap: 1rem;
     text-align: center;
+    border: 0.3rem dashed rgba($black, 0.2);
+    border-radius: 2rem;
+    background: rgba($black, 0.02);
 
     & p {
       font-size: 2rem;
@@ -636,6 +639,32 @@
       font-family: $font-family;
       color: $black;
       margin: 0;
+    }
+
+    .btn__wired,
+    .btn__primary {
+      margin-top: 1rem;
+    }
+
+    &__icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 6.4rem;
+      height: 6.4rem;
+      border-radius: 50%;
+      background: rgba($black, 0.05);
+      color: rgba($black, 0.35);
+      margin-bottom: 0.6rem;
+    }
+
+    &__hint {
+      font-size: 1.5rem;
+      font-weight: 400;
+      font-family: $font-family;
+      color: rgba($black, 0.5);
+      max-width: 34rem;
+      line-height: 1.5;
     }
   }
 

@@ -408,6 +408,31 @@ const TrainingList = () => {
     return weekKeys.has(key);
   };
 
+  const calendarRangeLabel =
+    calendarView === "yearly"
+      ? "year"
+      : calendarView === "monthly"
+        ? "month"
+        : "week";
+
+  const calendarRangeCaption =
+    calendarView === "yearly"
+      ? String(calendarMonth.getFullYear())
+      : calendarView === "monthly"
+        ? calendarMonth.toLocaleDateString("en-GB", { month: "long", year: "numeric" })
+        : (() => {
+            const weekDays = getWeekDays(weekStart);
+            return `${weekDays[0].getDate()} – ${weekDays[6].getDate()} ${weekDays[6].toLocaleDateString("en-GB", { month: "long", year: "numeric" })}`;
+          })();
+
+  // Prefill "create training" with a sensible date inside the currently viewed range
+  const calendarRangeStart =
+    calendarView === "yearly"
+      ? new Date(calendarMonth.getFullYear(), 0, 1)
+      : calendarView === "monthly"
+        ? new Date(calendarMonth.getFullYear(), calendarMonth.getMonth(), 1)
+        : weekStart;
+
   // ── Filtered list ─────────────────────────────────────────────────────────
   const filtered = trainings.filter((tr) => {
     const q = search.trim().toLowerCase();
@@ -863,21 +888,44 @@ const TrainingList = () => {
                     <div className="traininglist__empty">
                       {hasActiveFilters ? (
                         <>
+                          <div className="traininglist__empty__icon">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                              <circle cx="14" cy="14" r="9" stroke="currentColor" strokeWidth="2.4" />
+                              <path d="M20.5 20.5L27 27" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                            </svg>
+                          </div>
                           <p>No trainings match your filters.</p>
+                          <span className="traininglist__empty__hint">
+                            Try a different search term, or clear your filters to see everything.
+                          </span>
                           <button className="btn__wired" onClick={clearFilters}>
                             Clear filters
                           </button>
                         </>
                       ) : (
-                        <p>
-                          No trainings this{" "}
-                          {calendarView === "yearly"
-                            ? "year"
-                            : calendarView === "monthly"
-                              ? "month"
-                              : "week"}
-                          .
-                        </p>
+                        <>
+                          <div className="traininglist__empty__icon">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                              <rect x="3" y="6" width="26" height="22" rx="3" stroke="currentColor" strokeWidth="2.4" />
+                              <path d="M3 12.5H29" stroke="currentColor" strokeWidth="2.4" />
+                              <path d="M9.5 3V8.5M22.5 3V8.5" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
+                            </svg>
+                          </div>
+                          <p>No trainings this {calendarRangeLabel}.</p>
+                          <span className="traininglist__empty__hint">
+                            Nothing planned for {calendarRangeCaption} yet.
+                          </span>
+                          <button
+                            className="btn__primary"
+                            onClick={() =>
+                              navigate("/create-training", {
+                                state: { date: toDateKey(calendarRangeStart) },
+                              })
+                            }
+                          >
+                            + Plan a training
+                          </button>
+                        </>
                       )}
                     </div>
                   ) : (
