@@ -390,6 +390,24 @@ const TrainingList = () => {
     }
   };
 
+  // Restricts the list to whatever range the calendar is currently showing
+  // (the selected week/month/year), so the list on the right stays in sync
+  // with the calendar on the left instead of showing every training ever made.
+  const isWithinCalendarRange = (tr: ListTraining): boolean => {
+    const key = toDateKey(tr.date);
+    if (!key) return false;
+    if (calendarView === "yearly") {
+      return key.slice(0, 4) === String(calendarMonth.getFullYear());
+    }
+    if (calendarView === "monthly") {
+      const monthKey = `${calendarMonth.getFullYear()}-${String(calendarMonth.getMonth() + 1).padStart(2, "0")}`;
+      return key.slice(0, 7) === monthKey;
+    }
+    // weekly
+    const weekKeys = new Set(getWeekDays(weekStart).map((d) => toDateKey(d)));
+    return weekKeys.has(key);
+  };
+
   // ── Filtered list ─────────────────────────────────────────────────────────
   const filtered = trainings.filter((tr) => {
     const q = search.trim().toLowerCase();
@@ -413,7 +431,11 @@ const TrainingList = () => {
       : 0;
     const matchesPlayers = minPlayers === 0 || totalPlayers >= minPlayers;
 
-    return matchesSearch && matchesTags && matchesPlayers;
+    // While actively searching/filtering, search the whole list; otherwise
+    // stay scoped to whatever the calendar is currently showing.
+    const matchesCalendar = hasActiveFilters || isWithinCalendarRange(tr);
+
+    return matchesSearch && matchesTags && matchesPlayers && matchesCalendar;
   });
 
   // ── Render ────────────────────────────────────────────────────────────────
@@ -839,10 +861,24 @@ const TrainingList = () => {
                 <div className="traininglist__content">
                   {filtered.length === 0 ? (
                     <div className="traininglist__empty">
-                      <p>No trainings match your filters.</p>
-                      <button className="btn__wired" onClick={clearFilters}>
-                        Clear filters
-                      </button>
+                      {hasActiveFilters ? (
+                        <>
+                          <p>No trainings match your filters.</p>
+                          <button className="btn__wired" onClick={clearFilters}>
+                            Clear filters
+                          </button>
+                        </>
+                      ) : (
+                        <p>
+                          No trainings this{" "}
+                          {calendarView === "yearly"
+                            ? "year"
+                            : calendarView === "monthly"
+                              ? "month"
+                              : "week"}
+                          .
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div className="traininglist__cards">
