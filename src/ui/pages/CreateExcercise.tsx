@@ -79,10 +79,22 @@ export default function CreateExcercise() {
     ?.variantOfId;
   const [variantOfTitle, setVariantOfTitle] = useState<string | null>(null);
 
+  // Prefill the wizard with the original exercise's info + sketch, so the user
+  // only has to change what's different about this variant.
   useEffect(() => {
     if (!variantOfId) return;
     getDoc(doc(db, "Excercises", variantOfId)).then((snap) => {
-      if (snap.exists()) setVariantOfTitle(snap.data().title ?? "Untitled");
+      if (!snap.exists()) return;
+      const data = snap.data();
+      setVariantOfTitle(data.title ?? "Untitled");
+      setFormData((prev) => ({
+        ...prev,
+        title: data.title ?? prev.title,
+        description: data.description ?? prev.description,
+        difficulty: data.difficulty ?? prev.difficulty,
+        tags: data.tags ?? prev.tags,
+        sketch: data.sketch ?? prev.sketch,
+      }));
     });
   }, [variantOfId]);
 
@@ -194,8 +206,9 @@ export default function CreateExcercise() {
         {variantOfId && currentStep !== 3 && (
           <div className="excercisewizard">
             <div className="excercisewizard__variant-banner">
-              Adding a variant of{" "}
-              <strong>{variantOfTitle ?? "…"}</strong>
+              Adding a variant of <strong>{variantOfTitle ?? "…"}</strong> —
+              its info and sketch were copied over, just change what's
+              different.
             </div>
           </div>
         )}
