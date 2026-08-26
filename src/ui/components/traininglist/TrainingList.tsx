@@ -205,13 +205,22 @@ const TrainingList = () => {
               const snap = await getDoc(
                 doc(db, "users", ref.ownerId, "trainings", ref.trainingId),
               );
-              if (!snap.exists()) return null;
+              if (!snap.exists()) {
+                console.warn(
+                  `[TrainingList] Shared training ${ref.trainingId} (owner ${ref.ownerId}) no longer exists.`,
+                );
+                return null;
+              }
               return {
                 id: snap.id,
                 ...(snap.data() as Omit<Training, "id">),
                 ownerId: ref.ownerId,
               } as ListTraining;
-            } catch {
+            } catch (e) {
+              console.warn(
+                `[TrainingList] Failed to load shared training ${ref.trainingId} (owner ${ref.ownerId}):`,
+                e,
+              );
               return null;
             }
           }),
