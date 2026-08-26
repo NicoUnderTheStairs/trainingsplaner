@@ -102,6 +102,8 @@ export default function CreateTraining() {
         tags: formData.tags ?? [],
         selectedExercises: formData.selectedExercises ?? [],
         players: formData.players ?? EMPTY_PLAYERS,
+        team: userData?.team ?? null,
+        automaticSharing: userData?.automaticSharing ?? true,
       });
       navigate(`/training-detail/${currentUser?.uid}/${id}`);
     } catch (error) {

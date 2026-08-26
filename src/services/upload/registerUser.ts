@@ -26,6 +26,8 @@ export interface UserProfile {
   notificationScope?: "all" | "team";
   tourCompleted?: boolean;
   sharedWithMe?: SharedTrainingRef[];
+  // Defaults to true when absent — new trainings are auto-shared with the user's team.
+  automaticSharing?: boolean;
 }
 
 export const registerUser = async (

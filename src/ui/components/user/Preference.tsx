@@ -15,12 +15,14 @@ interface UserSettings {
   mobileMode: MobileMode;
   planningDirection: PlanningDirection;
   notificationScope: NotificationScope;
+  automaticSharing: boolean;
 }
 
 const DEFAULT_SETTINGS: UserSettings = {
   mobileMode: "advanced",
   planningDirection: "forward",
   notificationScope: "all",
+  automaticSharing: true,
 };
 
 // ─── Section wrapper ──────────────────────────────────────────────────────────
@@ -170,6 +172,8 @@ const Preference = () => {
               data.planningDirection ?? DEFAULT_SETTINGS.planningDirection,
             notificationScope:
               data.notificationScope ?? DEFAULT_SETTINGS.notificationScope,
+            automaticSharing:
+              data.automaticSharing ?? DEFAULT_SETTINGS.automaticSharing,
           });
         }
       } catch (e) {
@@ -307,6 +311,35 @@ const Preference = () => {
                 />
               </div>
               {saving === "notificationScope" && (
+                <span className="preference__saving">Saving...</span>
+              )}
+            </SettingRow>
+          </SettingsSection>
+
+          {/* ── Sharing ───────────────────────────────────────────────────── */}
+          <SettingsSection
+            title="Sharing"
+            description="Control how your trainings are shared with your team."
+          >
+            <SettingRow
+              label="Automatic sharing"
+              hint="Automatically share every training you create with everyone on your team."
+            >
+              <div className="preference__options">
+                <OptionCard
+                  title="On"
+                  description="New trainings are shared with your team right away."
+                  active={settings.automaticSharing}
+                  onClick={() => updateSetting("automaticSharing", true)}
+                />
+                <OptionCard
+                  title="Off"
+                  description="Share trainings manually whenever you choose to."
+                  active={!settings.automaticSharing}
+                  onClick={() => updateSetting("automaticSharing", false)}
+                />
+              </div>
+              {saving === "automaticSharing" && (
                 <span className="preference__saving">Saving...</span>
               )}
             </SettingRow>

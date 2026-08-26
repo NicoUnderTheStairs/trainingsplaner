@@ -1,8 +1,9 @@
 import db from "../../firebase";
-import { addDoc, collection, Timestamp } from "firebase/firestore";
+import { addDoc, collection, getDocs, query, Timestamp, where } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import type { SelectedExercise } from "../../ui/components/trainingwizard/exerciseSelection";
 import type { Players } from "../../ui/components/trainingwizard/playerSelection";
+import { shareTrainingWithUsers } from "../sharing/shareTraining";
 
 interface CreateTrainingPayload {
   date: Date;
@@ -14,6 +15,8 @@ interface CreateTrainingPayload {
   tags: string[];
   selectedExercises: SelectedExercise[];
   players: Players;
+  team?: string | null;
+  automaticSharing?: boolean;
 }
 
 export async function createTraining(
@@ -57,6 +60,28 @@ export async function createTraining(
       createdAt: Timestamp.now(),
     },
   );
+
+  // Auto-share with the rest of the team, unless the user opted out
+  if (payload.automaticSharing && payload.team) {
+    try {
+      const teamSnap = await getDocs(
+        query(collection(db, "users"), where("team", "==", payload.team)),
+      );
+      const recipientIds = teamSnap.docs
+        .map((d) => d.id)
+        .filter((id) => id !== userId);
+
+      await shareTrainingWithUsers({
+        trainingId: trainingRef.id,
+        ownerId: userId,
+        title,
+        senderName: author,
+        recipientIds,
+      });
+    } catch (e) {
+      console.warn("Auto-share with team failed:", e);
+    }
+  }
 
   return trainingRef.id;
 }

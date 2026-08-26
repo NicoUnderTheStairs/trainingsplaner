@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { collection, doc, getDocs, updateDoc, arrayUnion } from "firebase/firestore";
+import { collection, getDocs } from "firebase/firestore";
 import type { Training } from "../../../types/Training";
-import type { UserProfile, SharedTrainingRef } from "../../../services/upload/registerUser";
-import { notifyTrainingShared } from "../../../services/notifications/notifications";
+import type { UserProfile } from "../../../services/upload/registerUser";
+import { shareTrainingWithUsers } from "../../../services/sharing/shareTraining";
 import db from "../../../firebase";
 
 interface ShareDialogProps {
@@ -49,49 +49,18 @@ const ShareDialog = ({
     if (selected.size === 0) return;
     setSharing(true);
     const recipientIds = Array.from(selected);
-    const sharedAt = new Date();
 
     try {
       await Promise.all(
-        trainings.map(async (training) => {
-          const trainingId = (training as any).id ?? "";
-
-          await Promise.all(
-            recipientIds.map((recipientId) => {
-              const ref: SharedTrainingRef = {
-                trainingId,
-                ownerId: currentUserId,
-                sharedBy: currentUserId,
-                sharedAt,
-              };
-              return updateDoc(doc(db, "users", recipientId), {
-                sharedWithMe: arrayUnion(ref),
-              });
-            }),
-          );
-
-          await updateDoc(
-            doc(db, "users", currentUserId, "trainings", trainingId),
-            { sharedWith: arrayUnion(...recipientIds) },
-          );
-
-          try {
-            await Promise.all(
-              recipientIds.map((recipientId) =>
-                notifyTrainingShared(
-                  recipientId,
-                  currentUserId,
-                  trainingId,
-                  training.title,
-                  senderName,
-                  currentUserId,
-                ),
-              ),
-            );
-          } catch (notifError) {
-            console.warn("Could not send share notifications:", notifError);
-          }
-        }),
+        trainings.map((training) =>
+          shareTrainingWithUsers({
+            trainingId: (training as any).id ?? "",
+            ownerId: currentUserId,
+            title: training.title,
+            senderName,
+            recipientIds,
+          }),
+        ),
       );
 
       setShared(true);
